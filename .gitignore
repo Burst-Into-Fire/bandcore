@@ -1,0 +1,7 @@
+.env
+api/target/
+web/node_modules/
+web/dist/
+.idea/
+.vscode/
+*.loggit rm --cached .env
