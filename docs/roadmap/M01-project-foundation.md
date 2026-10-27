@@ -19,7 +19,7 @@ The repository only contains the README. The layout and contribution rules need 
 
 ### Scope
 
-- [ ] Create `backend/`, `frontend/` and `docs/` (with `docs/adr/` and `docs/security/`); `docker-compose.yml` and `.env.example` at the root, as described in the README
+- [ ] Create `api/`, `web/` and `docs/` (with `docs/adr/` and `docs/security/`); `docker-compose.yml` and `.env.example` at the root, as described in the README
 - [ ] Add `.editorconfig`, `.gitattributes` (LF line endings) and a root `.gitignore` (Java, Node, IDE files, `.env`)
 - [ ] Add a pull request template containing the full [Definition of Done](../roadmap.md#definition-of-done) checklist
 - [ ] Add issue templates: feature, bug, chore, and a security template that points to private vulnerability reporting
@@ -86,7 +86,7 @@ The API needs a structure that keeps modules independent from the start, so new 
 
 ### Scope
 
-- [ ] Java 25, latest stable Spring Boot 4.x, Maven wrapper
+- [ ] Java 21, latest stable Spring Boot 4.x, Maven wrapper
 - [ ] Spring Modulith with top-level modules `identity`, `tenancy`, `finance`, `merch`, `audit` and `shared`, each with `package-info.java` and internal subpackages
 - [ ] All API routes under `/api`
 - [ ] Actuator on a separate management port (not routed by the public proxy), exposing liveness and readiness only
@@ -121,8 +121,8 @@ Row-Level Security only protects data if the application role neither owns the t
 ### Scope
 
 - [ ] Pin the PostgreSQL major version (aligned with the managed version chosen in M1-10)
-- [ ] Roles: `bandhub_owner` owns the schema and runs Flyway; `bandhub_app` is the runtime role with `NOSUPERUSER`, `NOBYPASSRLS` and no object ownership
-- [ ] Grants through `ALTER DEFAULT PRIVILEGES` so new tables are automatically granted to `bandhub_app` (append-only tables revoke `UPDATE`/`DELETE` explicitly)
+- [ ] Roles: `bandcore_owner` owns the schema and runs Flyway; `bandcore_app` is the runtime role with `NOSUPERUSER`, `NOBYPASSRLS` and no object ownership
+- [ ] Grants through `ALTER DEFAULT PRIVILEGES` so new tables are automatically granted to `bandcore_app` (append-only tables revoke `UPDATE`/`DELETE` explicitly)
 - [ ] Separate credentials: Flyway uses the owner, the datasource uses the app role
 - [ ] Baseline migration; only standard PostgreSQL features (no platform-specific extensions)
 - [ ] Role bootstrap SQL for docker-compose and a documented procedure for the managed database
@@ -131,13 +131,13 @@ Row-Level Security only protects data if the application role neither owns the t
 
 ### Acceptance criteria
 
-- The API starts connected as `bandhub_app` and cannot run DDL
+- The API starts connected as `bandcore_app` and cannot run DDL
 - Flyway migrates using the owner role
-- `bandhub_app` has `rolbypassrls = false` and owns no objects
+- `bandcore_app` has `rolbypassrls = false` and owns no objects
 
 ### Tests required
 
-- Integration (Testcontainers): `CREATE TABLE` as `bandhub_app` fails; `pg_roles` shows no bypass and no superuser for the app role; the app role owns no tables
+- Integration (Testcontainers): `CREATE TABLE` as `bandcore_app` fails; `pg_roles` shows no bypass and no superuser for the app role; the app role owns no tables
 
 ### Security notes
 
@@ -157,7 +157,7 @@ Integration tests are the primary test layer. They must run against the same Pos
 ### Scope
 
 - [ ] Testcontainers PostgreSQL with the same image and tag as production, one container shared by all test classes (reuse enabled locally)
-- [ ] Flyway runs as the owner and the application connects as `bandhub_app` in tests
+- [ ] Flyway runs as the owner and the application connects as `bandcore_app` in tests
 - [ ] Surefire runs unit tests (`*Test`), Failsafe runs integration tests (`*IT`); `./mvnw verify` runs both
 - [ ] Base support for integration tests: HTTP test client helpers, request helpers that set the `Host` header per band, a fixed `Clock`, and a cleanup strategy (truncate as owner, or a fresh tenant per test)
 - [ ] Test data builders (`aBand()`, `aUser()`, …) that each module extends
@@ -173,7 +173,7 @@ Integration tests are the primary test layer. They must run against the same Pos
 
 ### Tests required
 
-- A smoke integration test proving the app connects as `bandhub_app` and Flyway ran as the owner
+- A smoke integration test proving the app connects as `bandcore_app` and Flyway ran as the owner
 
 ---
 
@@ -299,12 +299,16 @@ Most real-world breaches start with a vulnerable dependency or a leaked secret. 
 
 ## M1-10 · Spike: choose hosting platform and validate wildcard subdomains
 
-**Labels:** type:spike, area:infra, priority:high
+**Labels:** type:spike, area:infra, priority:high, needs-discussion
 **Depends on:** M1-07
 
 ### Context
 
 One subdomain per band only works if the hosting platform supports wildcard custom domains with TLS and private networking between the web and API containers. This must be validated before the authentication design is built in M2.
+
+### Open question
+
+The requirements and architecture docs do not mention one subdomain per band; there the tenant comes from the token and a selected band (`docs/ARCHTECTURE.md`). This issue assumes subdomain routing. To be decided before this issue starts.
 
 ### Scope
 

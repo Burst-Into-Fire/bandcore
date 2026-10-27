@@ -10,12 +10,16 @@
 
 ## M6-01 · Calculate member balances
 
-**Labels:** type:feature, area:backend, module:finance, priority:critical
+**Labels:** type:feature, area:backend, module:finance, priority:critical, needs-discussion
 **Depends on:** M5-05
 
 ### Context
 
 The balance answers "who owes whom". In the mockup, the vocalist paid R$ 2.700,00 split among four members, so the vocalist receives R$ 2.025,00 and each of the others owes R$ 675,00.
+
+### Open question
+
+The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
 
 ### Scope
 
@@ -39,12 +43,16 @@ The balance answers "who owes whom". In the mockup, the vocalist paid R$ 2.700,0
 
 ## M6-02 · Record settlement payments between members
 
-**Labels:** type:feature, area:backend, module:finance, priority:high
+**Labels:** type:feature, area:backend, module:finance, priority:high, needs-discussion
 **Depends on:** M6-01
 
 ### Context
 
 Members settle debts by paying each other. Recording those payments brings balances back to zero.
+
+### Open question
+
+The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
 
 ### Scope
 
@@ -69,7 +77,7 @@ Members settle debts by paying each other. Recording those payments brings balan
 
 ### Context
 
-Instead of everyone working out who pays whom, bandhub suggests a short list of transfers that settles everything.
+Instead of everyone working out who pays whom, bandcore suggests a short list of transfers that settles everything.
 
 ### Scope
 
@@ -90,12 +98,16 @@ Instead of everyone working out who pays whom, bandhub suggests a short list of 
 
 ## M6-04 · Provide monthly finance summary
 
-**Labels:** type:feature, area:backend, module:finance, priority:high
+**Labels:** type:feature, area:backend, module:finance, priority:high, needs-discussion
 **Depends on:** M6-01
 
 ### Context
 
 The dashboard needs one fast call with the month's numbers, computed in the band's timezone.
+
+### Open question
+
+The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
 
 ### Scope
 

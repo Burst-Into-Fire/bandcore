@@ -10,12 +10,16 @@
 
 ## M5-01 · Implement Money value object and allocation algorithm
 
-**Labels:** type:feature, area:backend, module:finance, priority:critical
+**Labels:** type:feature, area:backend, module:finance, priority:critical, needs-discussion
 **Depends on:** M1-05
 
 ### Context
 
-Every money rule in bandhub depends on splitting an amount into parts that always sum exactly to the total. The cent that does not divide evenly must always go to the same place for the same input.
+Every money rule in bandcore depends on splitting an amount into parts that always sum exactly to the total. The cent that does not divide evenly must always go to the same place for the same input.
+
+### Open question
+
+The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
 
 ### Scope
 
@@ -64,12 +68,16 @@ Categories (rehearsal space, gear, video, photography, travel, merch) organize e
 
 ## M5-03 · Create and manage expenses
 
-**Labels:** type:feature, area:backend, module:finance, priority:critical
+**Labels:** type:feature, area:backend, module:finance, priority:critical, needs-discussion
 **Depends on:** M5-01, M5-02
 
 ### Context
 
 Expenses are the base of balances. Planned expenses (future dates) are tracked but only paid expenses affect balances.
+
+### Open question
+
+The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
 
 ### Scope
 
@@ -93,12 +101,16 @@ Expenses are the base of balances. Planned expenses (future dates) are tracked b
 
 ## M5-04 · Split expenses equally or with custom amounts or percentages
 
-**Labels:** type:feature, area:backend, module:finance, priority:critical
+**Labels:** type:feature, area:backend, module:finance, priority:critical, needs-discussion
 **Depends on:** M5-03
 
 ### Context
 
 Splits decide who owes what. The stored shares must always sum exactly to the expense amount.
+
+### Open question
+
+The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
 
 ### Scope
 

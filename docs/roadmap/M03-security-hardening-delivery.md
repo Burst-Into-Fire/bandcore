@@ -75,7 +75,7 @@ Money and stock changes need a trail that explains who did what and when. The tr
 
 - [ ] Tenant table `audit_events` with RLS: `id`, `band_id`, `occurred_at`, `actor_user_id`, `action` (for example `expense.created`), `entity_type`, `entity_id`, `changes` (JSONB diff without unnecessary personal data), `request_id`, IP, user agent
 - [ ] Global table `security_events` (owned by `identity`) for login success and failure, refresh token reuse, password reset, signup
-- [ ] Grants: `bandhub_app` has only `INSERT` and `SELECT` on both tables
+- [ ] Grants: `bandcore_app` has only `INSERT` and `SELECT` on both tables
 - [ ] `AuditRecorder` API in the `audit` module, called by other modules in the same transaction as the change
 - [ ] Retention period for IP and user agent documented (feeds the LGPD record in M10-01)
 
@@ -85,7 +85,7 @@ Money and stock changes need a trail that explains who did what and when. The tr
 
 ### Tests required
 
-- Integration: `UPDATE` and `DELETE` on audit tables as `bandhub_app` → permission denied; a business failure rolls back its audit record; audit events are isolated between bands; a failed login is recorded without the password
+- Integration: `UPDATE` and `DELETE` on audit tables as `bandcore_app` → permission denied; a business failure rolls back its audit record; audit events are isolated between bands; a failed login is recorded without the password
 
 ---
 

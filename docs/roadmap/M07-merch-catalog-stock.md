@@ -10,12 +10,18 @@
 
 ## M7-01 · Manage products and variants
 
-**Labels:** type:feature, area:backend, module:merch, priority:high
+**Labels:** type:feature, area:backend, module:merch, priority:high, needs-discussion
 **Depends on:** M4-01
 
 ### Context
 
 Merch items such as "Camiseta preta" come in variants (M, G, GG). Stock and price live on the variant.
+
+### Open question
+
+The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
+
+RF21 has a unit cost entered manually on each product. This roadmap derives the unit cost from production batches (weighted average). To be decided before this issue starts.
 
 ### Scope
 
@@ -46,7 +52,7 @@ Stock must never go negative, even when several phones sell the last unit at the
 ### Scope
 
 - [ ] `stock_levels` tenant table: `variant_id`, `quantity_on_hand` with `CHECK (quantity_on_hand >= 0)`
-- [ ] `stock_movements` append-only tenant table: `variant_id`, `type` (`BATCH_IN`, `SALE`, `REFUND`, `ADJUSTMENT`, `RECONCILIATION`), `quantity_delta`, reference to the source, actor, `occurred_at`; `bandhub_app` has only `INSERT` and `SELECT`
+- [ ] `stock_movements` append-only tenant table: `variant_id`, `type` (`BATCH_IN`, `SALE`, `REFUND`, `ADJUSTMENT`, `RECONCILIATION`), `quantity_delta`, reference to the source, actor, `occurred_at`; `bandcore_app` has only `INSERT` and `SELECT`
 - [ ] A single module-internal `StockService` through which every change passes: atomic conditional update (`… SET quantity_on_hand = quantity_on_hand + :delta WHERE … AND quantity_on_hand + :delta >= 0`); zero rows updated means insufficient stock; the movement is inserted in the same transaction
 - [ ] Consistency check: `quantity_on_hand` equals the sum of movements for every variant
 
@@ -56,18 +62,22 @@ Stock must never go negative, even when several phones sell the last unit at the
 
 ### Tests required
 
-- Integration: 20 threads each selling one unit of a variant with 5 units → exactly 5 succeed, quantity ends at 0 with 5 `SALE` movements; a direct SQL update to a negative value is rejected by the `CHECK`; consistency check passes after mixed operations; `UPDATE` or `DELETE` on movements as `bandhub_app` → denied; isolation entry
+- Integration: 20 threads each selling one unit of a variant with 5 units → exactly 5 succeed, quantity ends at 0 with 5 `SALE` movements; a direct SQL update to a negative value is rejected by the `CHECK`; consistency check passes after mixed operations; `UPDATE` or `DELETE` on movements as `bandcore_app` → denied; isolation entry
 
 ---
 
 ## M7-03 · Register production batches with weighted average unit cost
 
-**Labels:** type:feature, area:backend, module:merch, priority:high
+**Labels:** type:feature, area:backend, module:merch, priority:high, needs-discussion
 **Depends on:** M7-02, M5-01
 
 ### Context
 
 Profit uses the cost of what was sold (COGS). Each batch brings stock in at a cost, and the variant's unit cost is the weighted average of what is in stock.
+
+### Open question
+
+RF21 has a unit cost entered manually on each product. This roadmap derives the unit cost from production batches (weighted average). To be decided before this issue starts.
 
 ### Scope
 

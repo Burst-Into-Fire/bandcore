@@ -1,6 +1,6 @@
 # M13 · Plans & Billing
 
-**Goal:** Define plans, billing and platform administration from the README roadmap, so bandhub can be sold to other bands.
+**Goal:** Define plans, billing and platform administration from the README roadmap, so bandcore can be sold to other bands.
 
 **Exit criteria:** plans, limits, payment provider and back-office requirements are agreed, and a follow-up set of issues exists for this milestone.
 

@@ -1,6 +1,6 @@
-# bandhub roadmap
+# bandcore roadmap
 
-This document is the implementation plan for bandhub: product scope, architecture decisions, testing strategy, Definition of Done, and the full list of milestones and issues. Each milestone has its own file in [`docs/roadmap/`](roadmap/) with complete issue descriptions.
+This document is the implementation plan for bandcore: product scope, architecture decisions, testing strategy, Definition of Done, and the full list of milestones and issues. Each milestone has its own file in [`docs/roadmap/`](roadmap/) with complete issue descriptions.
 
 > [!NOTE]
 > Status: **planning**. Milestones, labels and issues will be created on GitHub from these files once repository permissions are in place (see [Turning these files into GitHub issues](#turning-these-files-into-github-issues)).
@@ -9,6 +9,7 @@ This document is the implementation plan for bandhub: product scope, architectur
 
 - [Product summary](#product-summary)
 - [Key decisions](#key-decisions)
+- [Open points with the requirements docs](#open-points-with-the-requirements-docs)
 - [Reference architecture](#reference-architecture)
 - [Testing strategy](#testing-strategy)
 - [Definition of Done](#definition-of-done)
@@ -21,7 +22,7 @@ This document is the implementation plan for bandhub: product scope, architectur
 
 ## Product summary
 
-bandhub is a multi-tenant SaaS (web + PWA) for bands to manage shared expenses and merch. Every band is a tenant with its own subdomain (`{slug}.bandhub.app`) and must never see or affect another band's data.
+bandcore is a multi-tenant SaaS (web + PWA) for bands to manage shared expenses and merch. Every band is a tenant with its own subdomain (`{slug}.bandcore.app`) and must never see or affect another band's data.
 
 | Module | Scope |
 |---|---|
@@ -47,11 +48,25 @@ The dashboard mockup (summary page) defines the UI direction: dark theme, left s
 
 These decisions are recorded as ADRs in [M1-02](roadmap/M01-project-foundation.md).
 
+## Open points with the requirements docs
+
+`docs/REQUIREMENTS.md` and `docs/ARCHTECTURE.md` were written in parallel with this roadmap and differ on a few decisions. Issues affected by them carry the `needs-discussion` label and an *Open question* section.
+
+| Topic | This roadmap | Requirements docs | Affected issues |
+|---|---|---|---|
+| Row Level Security | In M2, as part of tenant isolation | *Later* (RNF07) | M2-04, M2-05 |
+| One subdomain per band | Tenant resolved from the subdomain; sessions scoped per host | Not mentioned; tenant from the token and a selected band | M1-10, M2-03, M2-07, M2-09, M4-05 |
+| Multiple bands per user | From the start (global accounts) | *Next* (RF06) | M4-05 |
+| Currency | BRL only | BRL and USD, totals and balances per currency (RF40, RNF08, RN08) | M5-01, M5-03, M5-04, M6-01, M6-02, M6-04, M7-01, M8-02, M8-05 |
+| Product unit cost | Weighted average of production batches | Entered on the product (RF21) | M7-01, M7-03, M8-04 |
+
+Priorities also differ: the requirements mark password recovery, audit trail, soft delete, LGPD, OpenAPI and health check as *Next*, while this roadmap places several of them before the business modules. Requirements not yet covered here: receipt attachment (RF13), manual income (RF20), product photo (RF23), sale discount (RF28), merch profit allocation (RF35), reports and CSV (RF37 to RF39), exchange rate (RF41) and English UI from the start (RNF18).
+
 ## Reference architecture
 
 ```mermaid
 flowchart LR
-    B["Browser / PWA<br/>{slug}.bandhub.app"] -->|HTTPS| N["web container (nginx)<br/>SPA + /api reverse proxy"]
+    B["Browser / PWA<br/>{slug}.bandcore.app"] -->|HTTPS| N["web container (nginx)<br/>SPA + /api reverse proxy"]
     N -->|private network| A["Spring Boot API"]
     A --> T{"Tenant from Host<br/>matches JWT band_id<br/>and membership active?"}
     T -->|no| X["401 / 404"]
@@ -59,7 +74,7 @@ flowchart LR
     S --> P[("PostgreSQL<br/>RLS: band_id = app.band_id")]
 ```
 
-**Backend.** Java 25 LTS, Spring Boot 4.x, Maven wrapper. A modular monolith with Spring Modulith; top-level modules `identity`, `tenancy`, `finance`, `merch`, `audit` and `shared`, with boundaries verified in tests. Future modules (press, Instagram, billing) are added as new modules. OpenAPI via springdoc; errors as RFC 9457 Problem Details.
+**Backend.** Java 21 LTS, Spring Boot 4.x, Maven wrapper. A modular monolith with Spring Modulith; top-level modules `identity`, `tenancy`, `finance`, `merch`, `audit` and `shared`, with boundaries verified in tests. Future modules (press, Instagram, billing) are added as new modules. OpenAPI via springdoc; errors as RFC 9457 Problem Details.
 
 **Routing.** Wildcard DNS `*.{BASE_DOMAIN}`. `app.{BASE_DOMAIN}` is the central host (sign up, create band, "my bands"); `{slug}.{BASE_DOMAIN}` is a band. The web container serves the SPA and proxies `/api` to the API, so the API is same-origin on every host: no CORS, and cookies are host-only per band. The tenant is resolved from the `Host` header; forwarded headers are trusted only from the configured proxy. Each subdomain is a separate browser origin, so IndexedDB and localStorage are isolated per band for free. Local development uses `*.localhost`.
 
@@ -67,7 +82,7 @@ flowchart LR
 
 1. Every authenticated request: the JWT `band_id` must equal the band resolved from `Host`, and the membership is re-checked (short cache, evicted on change).
 2. Repositories always filter by the current band.
-3. PostgreSQL RLS: at the start of each transaction the API runs `set_config('app.band_id', …, true)` (transaction-local, so pooled connections never carry a previous tenant). Policies compare `band_id` against that setting and return nothing when it is unset. The API connects as `bandhub_app`, which owns no tables and has no `BYPASSRLS`; Flyway runs as the owner role. Composite foreign keys `(band_id, id)` prevent a child row from pointing to another band's parent. Cross-tenant access returns 404.
+3. PostgreSQL RLS: at the start of each transaction the API runs `set_config('app.band_id', …, true)` (transaction-local, so pooled connections never carry a previous tenant). Policies compare `band_id` against that setting and return nothing when it is unset. The API connects as `bandcore_app`, which owns no tables and has no `BYPASSRLS`; Flyway runs as the owner role. Composite foreign keys `(band_id, id)` prevent a child row from pointing to another band's parent. Cross-tenant access returns 404.
 
 **Data conventions.** UUIDv7 identifiers generated by the application (offline sales use a client-generated UUID as idempotency key). Money as `BIGINT` cents with a `Money` value object and deterministic cent allocation. Stock with `CHECK (quantity >= 0)`, atomic conditional decrements and an append-only `stock_movements` ledger. Timestamps as `timestamptz`; month boundaries computed in the band's timezone.
 
@@ -81,7 +96,7 @@ Integration tests are the main layer. The goal is that every rule that protects 
 
 | Layer | What it covers | Tools |
 |---|---|---|
-| **Integration (primary)** | Every use case through the HTTP API against real PostgreSQL (same image as production), with the API connected as `bandhub_app` so RLS is exercised exactly as in production | `@SpringBootTest`, Testcontainers, Failsafe (`*IT`) |
+| **Integration (primary)** | Every use case through the HTTP API against real PostgreSQL (same image as production), with the API connected as `bandcore_app` so RLS is exercised exactly as in production | `@SpringBootTest`, Testcontainers, Failsafe (`*IT`) |
 | **Security guards (every PR)** | *Schema guard:* every table with `band_id` has RLS enabled, forced and covered by policies; the app role owns nothing and cannot bypass RLS. *Isolation harness:* two bands; every endpoint is tested with band A's token on band B's host, band B's IDs, tampered/expired/missing tokens; an enumeration test fails if a new endpoint is neither covered nor explicitly public. *Authorization matrix:* role × endpoint | JUnit 5, Testcontainers |
 | **Unit and property-based** | Allocation (parts always sum to the total), balances (always sum to zero), settlement plan (always zeroes balances), weighted average cost, COGS | JUnit 5, AssertJ, jqwik |
 | **Concurrency** | N parallel sales of the last unit: exactly the possible ones succeed and stock never goes negative; double refunds; last-admin removal | Integration tests with parallel executors |
@@ -131,6 +146,7 @@ To be validated with the band and finalized in [M2-10](roadmap/M02-multitenancy-
 | Type | `type:feature`, `type:chore`, `type:test`, `type:docs`, `type:security`, `type:spike` |
 | Area | `area:backend`, `area:frontend`, `area:infra`, `area:database` |
 | Module | `module:identity`, `module:tenancy`, `module:finance`, `module:merch`, `module:audit`, `module:lgpd` |
+| Discussion | `needs-discussion` (the issue depends on an open point listed in [Open points](#open-points-with-the-requirements-docs)) |
 | Priority | `priority:critical` (tenant isolation, authentication, money and stock correctness), `priority:high`, `priority:normal` |
 
 ## Milestones
@@ -313,7 +329,7 @@ These do not block the start of the work and are resolved inside specific issues
 | Decision | Resolved in |
 |---|---|
 | Hosting platform (Railway or Render) and PostgreSQL major version | [M1-10](roadmap/M01-project-foundation.md) |
-| Product domain name (`bandhub.app` is a placeholder) | Before [M3-06](roadmap/M03-security-hardening-delivery.md) |
+| Product domain name (`bandcore.app` is a placeholder) | Before [M3-06](roadmap/M03-security-hardening-delivery.md) |
 | SMTP provider for transactional email | Before [M3-06](roadmap/M03-security-hardening-delivery.md) |
 | Error tracking tool | [M10-05](roadmap/M10-production-readiness-lgpd.md) |
 | Backup storage provider and retention | [M10-06](roadmap/M10-production-readiness-lgpd.md) |
@@ -324,7 +340,7 @@ These do not block the start of the work and are resolved inside specific issues
 Each milestone file follows a fixed structure so a script can create everything on GitHub later:
 
 - The `# ` heading is the milestone title and the `**Goal:**` line is its description.
-- Each `## <ID> · <Title>` heading is one issue. The issue title is the text after `·`.
+- Each `## <ID> · <Title>` heading is one issue, titled `[<ID>] <Title>` on GitHub.
 - The `**Labels:**` line lists the labels, comma-separated.
 - The `**Depends on:**` line lists roadmap IDs (or `none`). The script replaces IDs with GitHub issue numbers (`#N`).
 - Everything from the `### Context` heading until the next `## ` heading is the issue body. The script appends a link to the [Definition of Done](#definition-of-done) and the roadmap ID.

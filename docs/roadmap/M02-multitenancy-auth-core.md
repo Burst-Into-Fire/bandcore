@@ -69,16 +69,20 @@ The band is the tenant. Its slug becomes the subdomain, so it has to be valid as
 
 ## M2-03 · Resolve tenant from request host
 
-**Labels:** type:security, area:backend, module:tenancy, priority:critical
+**Labels:** type:security, area:backend, module:tenancy, priority:critical, needs-discussion
 **Depends on:** M2-02, M1-10
 
 ### Context
 
 The subdomain decides which band a request belongs to. The tenant must come only from the validated host, never from the request body, query string or arbitrary headers.
 
+### Open question
+
+The requirements and architecture docs do not mention one subdomain per band; there the tenant comes from the token and a selected band (`docs/ARCHTECTURE.md`). This issue assumes subdomain routing. To be decided before this issue starts.
+
 ### Scope
 
-- [ ] `BASE_DOMAIN` configuration (`bandhub.app` in production, `localhost` in development); `app.{BASE_DOMAIN}` is the central host, `{slug}.{BASE_DOMAIN}` is a band host
+- [ ] `BASE_DOMAIN` configuration (`bandcore.app` in production, `localhost` in development); `app.{BASE_DOMAIN}` is the central host, `{slug}.{BASE_DOMAIN}` is a band host
 - [ ] Resolve from `Host`; honor `X-Forwarded-Host` only from the configured trusted proxy
 - [ ] Normalize the host (lowercase, strip port and trailing dot) before matching
 - [ ] Immutable, request-scoped `TenantContext` holding band id and slug
@@ -98,12 +102,16 @@ The subdomain decides which band a request belongs to. The tenant must come only
 
 ## M2-04 · Enforce row-level security per transaction
 
-**Labels:** type:security, area:database, module:tenancy, priority:critical
+**Labels:** type:security, area:database, module:tenancy, priority:critical, needs-discussion
 **Depends on:** M1-04, M2-03
 
 ### Context
 
 RLS is the last line of defense: even if a query forgets to filter by band, PostgreSQL returns nothing from other bands. The tenant setting must be transaction-local, so a pooled connection never carries a previous band.
+
+### Open question
+
+`docs/REQUIREMENTS.md` marks PostgreSQL Row Level Security as *Later* (RNF07). This roadmap adds it in M2, because adding it after the business tables exist means revisiting every table and query. To be decided before this issue starts.
 
 ### Scope
 
@@ -123,7 +131,7 @@ RLS is the last line of defense: even if a query forgets to filter by band, Post
 
 ### Tests required
 
-- Integration, connected as `bandhub_app`:
+- Integration, connected as `bandcore_app`:
   - no context → zero rows; context A → only A's rows
   - insert with band B's id while the context is A → rejected by `WITH CHECK`; update moving a row to another band → rejected
   - pool leak test with pool size 1: a transaction for band A followed by one for band B sees no rows from A; a query outside a transaction afterwards sees nothing
@@ -133,12 +141,16 @@ RLS is the last line of defense: even if a query forgets to filter by band, Post
 
 ## M2-05 · Add database schema guard tests for RLS
 
-**Labels:** type:test, area:database, module:tenancy, priority:critical
+**Labels:** type:test, area:database, module:tenancy, priority:critical, needs-discussion
 **Depends on:** M2-04
 
 ### Context
 
 The most likely future leak is a new table created without RLS. A test that inspects the schema after migrations turns that mistake into a failing build.
+
+### Open question
+
+`docs/REQUIREMENTS.md` marks PostgreSQL Row Level Security as *Later* (RNF07). This roadmap adds it in M2, because adding it after the business tables exist means revisiting every table and query. To be decided before this issue starts.
 
 ### Scope
 
@@ -147,7 +159,7 @@ The most likely future leak is a new table created without RLS. A test that insp
   - every foreign key between tenant tables includes `band_id`
   - every tenant table has an index (or primary key) whose first column is `band_id`
 - [ ] Allowlist of global tables (for example `users`, `bands`, `refresh_tokens`, `flyway_schema_history`), each with a justification; a table without `band_id` that is not allowlisted fails the test
-- [ ] `bandhub_app` owns nothing, is not superuser and has `rolbypassrls = false`
+- [ ] `bandcore_app` owns nothing, is not superuser and has `rolbypassrls = false`
 
 ### Acceptance criteria
 
@@ -195,19 +207,23 @@ Accounts are global (one email, one account) and can belong to several bands. Ve
 
 ## M2-07 · Implement login with short-lived JWT and rotating refresh tokens
 
-**Labels:** type:security, area:backend, module:identity, priority:critical
+**Labels:** type:security, area:backend, module:identity, priority:critical, needs-discussion
 **Depends on:** M2-03, M2-06
 
 ### Context
 
 Sessions are scoped to one host: a session on band A's subdomain is useless on band B's. The access token lives only in memory; the refresh token is an `HttpOnly` cookie that JavaScript cannot read.
 
+### Open question
+
+The requirements and architecture docs do not mention one subdomain per band; there the tenant comes from the token and a selected band (`docs/ARCHTECTURE.md`). This issue assumes subdomain routing. To be decided before this issue starts.
+
 ### Scope
 
 - [ ] `POST /api/auth/login` on a band host: email and password; requires a verified email and an active membership in that band. Wrong password, unknown email and missing membership return the same generic error; the password encoder runs even when the user does not exist
 - [ ] The same endpoint on the central host issues a central session without `band_id`, limited to "my bands" and band creation
 - [ ] Access token: JWT signed with HS256 (`JWT_SECRET`, at least 256 bits, `kid` header for rotation), 15-minute lifetime, claims `sub`, `band_id` (absent on central sessions), `role`, `aud` (the host), `iss`, `jti`; returned in the response body
-- [ ] Refresh token: 256-bit random, stored hashed with family id, user, band, sliding expiry of 14 days and absolute expiry of 30 days; sent as cookie `__Host-bandhub_rt` (`Secure`, `HttpOnly`, `SameSite=Strict`, `Path=/`, no `Domain`)
+- [ ] Refresh token: 256-bit random, stored hashed with family id, user, band, sliding expiry of 14 days and absolute expiry of 30 days; sent as cookie `__Host-bandcore_rt` (`Secure`, `HttpOnly`, `SameSite=Strict`, `Path=/`, no `Domain`)
 - [ ] `POST /api/auth/refresh` rotates the refresh token; reuse of an already rotated token revokes the whole family; requires a custom header (for example `X-Requested-With`) as CSRF protection
 - [ ] `POST /api/auth/logout` revokes the current family; `POST /api/auth/logout-all` revokes every session of the user
 - [ ] Spring Security configured stateless with method security enabled
@@ -263,12 +279,16 @@ Any verified user can create a band on the central host and becomes its first ad
 
 ## M2-09 · Validate tenant and membership on every authenticated request
 
-**Labels:** type:security, area:backend, module:tenancy, priority:critical
+**Labels:** type:security, area:backend, module:tenancy, priority:critical, needs-discussion
 **Depends on:** M2-04, M2-07
 
 ### Context
 
 A valid token is not enough: it must belong to the band of the current host, and the membership must still be active. Removing a member or changing a role must take effect immediately, not when the token expires.
+
+### Open question
+
+The requirements and architecture docs do not mention one subdomain per band; there the tenant comes from the token and a selected band (`docs/ARCHTECTURE.md`). This issue assumes subdomain routing. To be decided before this issue starts.
 
 ### Scope
 
@@ -359,7 +379,7 @@ The SPA must keep the access token out of persistent storage and refresh it tran
 
 ### Scope
 
-- [ ] Central host pages: sign up, email verification landing, login, create band (name and slug with live availability and a preview of `slug.bandhub.app`)
+- [ ] Central host pages: sign up, email verification landing, login, create band (name and slug with live availability and a preview of `slug.bandcore.app`)
 - [ ] Band host pages: login (showing the band name) and logout
 - [ ] Access token kept only in memory, never in localStorage or sessionStorage; on load, call refresh; a single shared refresh in flight when several requests get 401, then retry; logout clears memory and the query cache
 - [ ] Route guards and redirect back after login

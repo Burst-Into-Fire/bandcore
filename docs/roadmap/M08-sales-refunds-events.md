@@ -35,12 +35,16 @@ Sales usually happen at shows, and the closing report is per show.
 
 ## M8-02 · Register sales atomically
 
-**Labels:** type:feature, area:backend, module:merch, priority:critical
+**Labels:** type:feature, area:backend, module:merch, priority:critical, needs-discussion
 **Depends on:** M7-02, M7-03, M8-01
 
 ### Context
 
 A sale and its stock update happen in the same transaction. The sale also freezes the price and the unit cost at that moment, so later changes do not rewrite past profit.
+
+### Open question
+
+The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
 
 ### Scope
 
@@ -91,12 +95,16 @@ Refunds give money back and usually put the item back into stock. They can never
 
 ## M8-04 · Close events and generate profit report
 
-**Labels:** type:feature, area:backend, module:merch, priority:high
+**Labels:** type:feature, area:backend, module:merch, priority:high, needs-discussion
 **Depends on:** M8-03
 
 ### Context
 
 After a show, the band needs to know what sold, how much came in by payment method (to check the cash box and PIX), and the profit per product.
+
+### Open question
+
+RF21 has a unit cost entered manually on each product. This roadmap derives the unit cost from production batches (weighted average). To be decided before this issue starts.
 
 ### Scope
 
@@ -119,12 +127,16 @@ After a show, the band needs to know what sold, how much came in by payment meth
 
 ## M8-05 · Provide merch summary metrics
 
-**Labels:** type:feature, area:backend, module:merch, priority:high
+**Labels:** type:feature, area:backend, module:merch, priority:high, needs-discussion
 **Depends on:** M8-04
 
 ### Context
 
 The dashboard shows merch sales, items sold, profit after production cost and low stock for the month.
+
+### Open question
+
+The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
 
 ### Scope
 

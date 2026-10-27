@@ -1,6 +1,6 @@
 # M10 · Production Readiness & LGPD
 
-**Goal:** Make bandhub ready to be offered to other bands: LGPD rights (consent, export, deletion), the audit trail viewer, observability, off-platform backups with a tested restore, the production pipeline, a security review and load tests.
+**Goal:** Make bandcore ready to be offered to other bands: LGPD rights (consent, export, deletion), the audit trail viewer, observability, off-platform backups with a tested restore, the production pipeline, a security review and load tests.
 
 **Exit criteria:** production runs on the chosen platform with wildcard TLS; backups are restored successfully in a drill; users can export and delete their data; the security review has no open high or critical findings; load targets are met.
 

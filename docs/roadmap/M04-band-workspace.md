@@ -118,12 +118,18 @@ Admins need to edit basic band information. The timezone matters because months 
 
 ## M4-05 · Implement central "my bands" page with secure subdomain handoff
 
-**Labels:** type:security, area:backend, area:frontend, module:identity, priority:high
+**Labels:** type:security, area:backend, area:frontend, module:identity, priority:high, needs-discussion
 **Depends on:** M2-07, M4-03
 
 ### Context
 
 Sessions are host-only, so moving from the central host to a band (or between bands) needs a safe handoff that does not share cookies across subdomains.
+
+### Open question
+
+The requirements and architecture docs do not mention one subdomain per band; there the tenant comes from the token and a selected band (`docs/ARCHTECTURE.md`). This issue assumes subdomain routing. To be decided before this issue starts.
+
+Multiple bands per user is *Next* in the requirements (RF06). This roadmap assumes global accounts with memberships in several bands from the start.
 
 ### Scope
 
