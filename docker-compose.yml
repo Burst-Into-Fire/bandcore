@@ -46,6 +46,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mailpit:
+        condition: service_healthy
     # No published ports: the API is reached only through the web proxy, and the management
     # port (8081) stays inside the network.
 
