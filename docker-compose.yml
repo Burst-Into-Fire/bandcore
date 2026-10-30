@@ -1,18 +1,70 @@
+# Local development stack. Copy .env.example to .env first, then: docker compose up --build
+# Open http://app.localhost:3000 (central host) or http://burst.localhost:3000 (a band).
+name: bandcore
+
 services:
   db:
-    image: postgres:16
+    # Same image as the integration tests (api/pom.xml, postgres.image) and production.
+    image: postgres:17-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "${DB_PORT:-5432}:5432"
+      POSTGRES_DB: ${POSTGRES_DB:-bandcore}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?set POSTGRES_SUPERUSER_PASSWORD in .env}
+      # Read by api/db/bootstrap on the first start, to create bandcore_owner and bandcore_app.
+      DB_OWNER_PASSWORD: ${DB_OWNER_PASSWORD:?set DB_OWNER_PASSWORD in .env}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?set DB_APP_PASSWORD in .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./api/db/bootstrap:/docker-entrypoint-initdb.d:ro
+    ports:
+      # Development only, and only on this machine.
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_DB:-bandcore}"]
       interval: 5s
       timeout: 5s
+      retries: 20
+
+  api:
+    build: ./api
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-bandcore}
+      DB_APP_USER: bandcore_app
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD}
+      DB_OWNER_USER: bandcore_owner
+      DB_OWNER_PASSWORD: ${DB_OWNER_PASSWORD}
+      BASE_DOMAIN: ${BASE_DOMAIN:-localhost}
+      JWT_SECRET: ${JWT_SECRET:-}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    # No published ports: the API is reached only through the web proxy, and the management
+    # port (8081) stays inside the network.
+
+  web:
+    build: ./web
+    environment:
+      API_UPSTREAM: api:8080
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3000}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  mailpit:
+    # Catches every email sent locally. Inbox: http://localhost:8025
+    image: axllent/mailpit:v1.32
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
       retries: 10
 
 volumes:
