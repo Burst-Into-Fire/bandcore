@@ -2,6 +2,7 @@ package com.burstintofire.bandcore.tenancy.band;
 
 import java.time.Clock;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -23,12 +24,15 @@ public class BandRegistry {
 
 	private final BandRepository bands;
 
+	private final BandDirectory directory;
+
 	private final IdGenerator ids;
 
 	private final Clock clock;
 
-	public BandRegistry(BandRepository bands, IdGenerator ids, Clock clock) {
+	public BandRegistry(BandRepository bands, BandDirectory directory, IdGenerator ids, Clock clock) {
 		this.bands = bands;
+		this.directory = directory;
 		this.ids = ids;
 		this.clock = clock;
 	}
@@ -43,7 +47,9 @@ public class BandRegistry {
 		String slug = requireAvailable(requestedSlug);
 		Band band = new Band(ids.newId(), slug, name.strip(), clock.instant());
 		try {
-			return bands.saveAndFlush(band);
+			Band saved = bands.saveAndFlush(band);
+			directory.evict(slug);
+			return saved;
 		}
 		catch (DataIntegrityViolationException ex) {
 			if (isSlugConflict(ex)) {
@@ -70,6 +76,14 @@ public class BandRegistry {
 			throw slugTaken();
 		}
 		return slug;
+	}
+
+	/** Suspending a band blocks its host on the next request (the slug cache is evicted). */
+	@Transactional
+	public void changeStatus(UUID bandId, BandStatus status) {
+		Band band = bands.findById(bandId).orElseThrow(ApiException::notFound);
+		band.changeStatus(status, clock.instant());
+		directory.evict(band.getSlug());
 	}
 
 	@Transactional(readOnly = true)

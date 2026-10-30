@@ -11,3 +11,9 @@ spring:
 springdoc:
   swagger-ui:
     enabled: false
+
+bandcore:
+  platform:
+    base-domain: ${BASE_DOMAIN}
+    public-scheme: https
+    public-port: ${PUBLIC_URL_PORT:}

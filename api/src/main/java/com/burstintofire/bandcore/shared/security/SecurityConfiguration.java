@@ -12,6 +12,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
+import com.burstintofire.bandcore.shared.web.EndpointRegistry;
+
 /**
  * Baseline: everything requires authentication unless listed here. The authentication
  * mechanism itself (JWT access token, refresh cookie) arrives in M2; until then every
@@ -23,7 +25,7 @@ import org.springframework.security.web.SecurityFilterChain;
 class SecurityConfiguration {
 
 	@Bean
-	SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+	SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, EndpointRegistry endpoints) throws Exception {
 		http.authorizeHttpRequests(requests -> requests
 			// Error dispatches render Problem Details for responses already decided upstream.
 			.dispatcherTypeMatchers(DispatcherType.ERROR)
@@ -31,7 +33,8 @@ class SecurityConfiguration {
 			// Health probes on the management port (never routed by the public proxy).
 			.requestMatchers(EndpointRequest.to("health"))
 			.permitAll()
-			.requestMatchers(HttpMethod.GET, "/status")
+			// @PublicEndpoint and @PlatformEndpoint controllers (see EndpointRegistry).
+			.requestMatchers(endpoints::isPublic)
 			.permitAll()
 			// OpenAPI document; Swagger UI itself is disabled in production.
 			.requestMatchers(HttpMethod.GET, "/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")

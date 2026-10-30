@@ -33,6 +33,9 @@ spring:
 
 server:
   port: ${PORT:8080}
+  # The band comes from the Host header; forwarded headers are read only from trusted proxies
+  # (bandcore.platform.trusted-proxies), never applied by the server itself.
+  forward-headers-strategy: none
   servlet:
     context-path: /api
   error:
@@ -72,3 +75,15 @@ springdoc:
     path: /swagger-ui.html
   writer-with-order-by-keys: true
   show-actuator: false
+
+bandcore:
+  platform:
+    # Band hosts are {slug}.BASE_DOMAIN and the central host is app.BASE_DOMAIN.
+    base-domain: ${BASE_DOMAIN:localhost}
+    # URLs sent to users (emails, redirects). Locally the web container listens on :3000.
+    public-scheme: ${PUBLIC_URL_SCHEME:http}
+    public-port: ${PUBLIC_URL_PORT:3000}
+    # Comma-separated remote addresses allowed to set X-Forwarded-Host.
+    trusted-proxies: ${TRUSTED_PROXIES:}
+  tenancy:
+    band-cache-ttl: 60s

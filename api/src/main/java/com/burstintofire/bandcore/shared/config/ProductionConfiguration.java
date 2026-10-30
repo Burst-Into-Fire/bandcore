@@ -63,6 +63,7 @@ class ProductionConfiguration {
 		settings.put("spring.datasource.password", "DB_APP_PASSWORD");
 		settings.put("spring.flyway.user", "DB_OWNER_USER");
 		settings.put("spring.flyway.password", "DB_OWNER_PASSWORD");
+		settings.put("bandcore.platform.base-domain", "BASE_DOMAIN");
 		return Collections.unmodifiableMap(settings);
 	}
 

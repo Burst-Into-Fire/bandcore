@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
  * detailed health endpoints stay on the management port.
  */
 @RestController
+@PlatformEndpoint
 @Tag(name = "Status")
 class StatusController {
 

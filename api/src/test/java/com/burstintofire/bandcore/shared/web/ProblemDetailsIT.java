@@ -41,14 +41,14 @@ class ProblemDetailsIT extends IntegrationTest {
 
 	@Test
 	void unknownRouteForAnonymousCallerIsUnauthorizedProblem() {
-		ResponseEntity<String> response = api.get("/api/does-not-exist");
+		ResponseEntity<String> response = api.central().get("/api/does-not-exist");
 
 		assertProblem(response, HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED");
 	}
 
 	@Test
 	void unknownPublicRouteIsNotFoundProblem() {
-		ResponseEntity<String> response = api.get("/api/test/does-not-exist");
+		ResponseEntity<String> response = api.central().get("/api/test/does-not-exist");
 
 		assertProblem(response, HttpStatus.NOT_FOUND, "NOT_FOUND");
 	}
@@ -132,6 +132,7 @@ class ProblemDetailsIT extends IntegrationTest {
 	}
 
 	@RestController
+	@PlatformEndpoint
 	static class TestController {
 
 		@PostMapping("/test/validation")
