@@ -36,7 +36,10 @@ public enum ErrorCode {
 	/** Verification (and later reset, invitation) token unknown, used or expired: one code for all. */
 	TOKEN_INVALID,
 	/** Wrong email or password, unverified email or no access to the band: one code for all. */
-	INVALID_CREDENTIALS;
+	INVALID_CREDENTIALS,
+	/** The action needs a verified email (creating a band, accepting an invitation). */
+	EMAIL_NOT_VERIFIED,
+	BAND_LIMIT_REACHED;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {

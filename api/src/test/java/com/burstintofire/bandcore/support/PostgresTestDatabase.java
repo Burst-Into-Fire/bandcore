@@ -71,6 +71,14 @@ public final class PostgresTestDatabase {
 		return DriverManager.getConnection(CONTAINER.getJdbcUrl(), OWNER_ROLE, OWNER_PASSWORD);
 	}
 
+	/**
+	 * Direct connection as the container's superuser, which bypasses row-level security. Only for
+	 * assertions that must see every band's rows at once (for example, that nothing was written).
+	 */
+	public static Connection superuserConnection() throws SQLException {
+		return DriverManager.getConnection(CONTAINER.getJdbcUrl(), CONTAINER.getUsername(), CONTAINER.getPassword());
+	}
+
 	/** Direct connection as the runtime role, to prove what the application can and cannot do. */
 	public static Connection appConnection() throws SQLException {
 		return DriverManager.getConnection(CONTAINER.getJdbcUrl(), APP_ROLE, APP_PASSWORD);

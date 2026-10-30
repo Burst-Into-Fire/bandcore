@@ -1,5 +1,7 @@
 package com.burstintofire.bandcore.tenancy.band;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,5 +15,9 @@ public interface BandRepository extends JpaRepository<Band, UUID> {
 
 	@Query("SELECT count(b) > 0 FROM Band b WHERE lower(b.slug) = lower(:slug)")
 	boolean existsBySlug(String slug);
+
+	long countByCreatedBy(UUID createdBy);
+
+	List<Band> findByIdIn(Collection<UUID> ids);
 
 }

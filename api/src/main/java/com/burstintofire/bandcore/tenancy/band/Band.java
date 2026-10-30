@@ -39,6 +39,9 @@ public class Band extends AssignedIdEntity {
 	@Column(nullable = false)
 	private BandStatus status;
 
+	@Column(name = "created_by", updatable = false)
+	private UUID createdBy;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
@@ -48,10 +51,11 @@ public class Band extends AssignedIdEntity {
 	protected Band() {
 	}
 
-	Band(UUID id, String slug, String name, Instant now) {
+	Band(UUID id, String slug, String name, UUID createdBy, Instant now) {
 		super(id);
 		this.slug = slug;
 		this.name = name;
+		this.createdBy = createdBy;
 		this.currency = DEFAULT_CURRENCY;
 		this.timezone = DEFAULT_TIMEZONE;
 		this.status = BandStatus.ACTIVE;
@@ -77,6 +81,10 @@ public class Band extends AssignedIdEntity {
 
 	public BandStatus getStatus() {
 		return status;
+	}
+
+	public UUID getCreatedBy() {
+		return createdBy;
 	}
 
 	public Instant getCreatedAt() {

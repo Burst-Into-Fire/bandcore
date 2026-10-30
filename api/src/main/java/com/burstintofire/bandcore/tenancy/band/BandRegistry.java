@@ -1,6 +1,8 @@
 package com.burstintofire.bandcore.tenancy.band;
 
 import java.time.Clock;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -44,8 +46,14 @@ public class BandRegistry {
 	 */
 	@Transactional
 	public Band register(String requestedSlug, String name) {
+		return register(requestedSlug, name, null);
+	}
+
+	/** Same as {@link #register(String, String)}, recording the account that created the band. */
+	@Transactional
+	public Band register(String requestedSlug, String name, UUID createdBy) {
 		String slug = requireAvailable(requestedSlug);
-		Band band = new Band(ids.newId(), slug, name.strip(), clock.instant());
+		Band band = new Band(ids.newId(), slug, name.strip(), createdBy, clock.instant());
 		try {
 			Band saved = bands.saveAndFlush(band);
 			directory.evict(slug);
@@ -57,6 +65,32 @@ public class BandRegistry {
 			}
 			throw ex;
 		}
+	}
+
+	/** Whether a slug can be used now, and why not. Never throws for bad input. */
+	@Transactional(readOnly = true)
+	public Availability availability(String requestedSlug) {
+		String slug = Slugs.normalize(requestedSlug);
+		Optional<Slugs.Problem> problem = Slugs.check(slug);
+		if (problem.isPresent()) {
+			return new Availability(slug, false, problem.get() == Slugs.Problem.INVALID ? ErrorCode.SLUG_INVALID
+					: ErrorCode.SLUG_RESERVED);
+		}
+		return bands.existsBySlug(slug) ? new Availability(slug, false, ErrorCode.SLUG_TAKEN)
+				: new Availability(slug, true, null);
+	}
+
+	public record Availability(String slug, boolean available, ErrorCode reason) {
+	}
+
+	@Transactional(readOnly = true)
+	public long countCreatedBy(UUID userId) {
+		return bands.countByCreatedBy(userId);
+	}
+
+	@Transactional(readOnly = true)
+	public List<Band> findAll(Collection<UUID> ids) {
+		return bands.findByIdIn(ids);
 	}
 
 	/** Normalized slug, or a 422/409 problem explaining why it cannot be used. */
