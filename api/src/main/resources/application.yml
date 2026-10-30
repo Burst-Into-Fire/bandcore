@@ -101,6 +101,9 @@ bandcore:
     trusted-proxies: ${TRUSTED_PROXIES:}
   tenancy:
     band-cache-ttl: 60s
+    # Membership and role are re-checked on every request through this cache (at most 60s;
+    # evicted as soon as a membership changes).
+    membership-cache-ttl: 60s
     # Curbs abuse of self-service band creation.
     max-bands-per-user: 5
   mail:
