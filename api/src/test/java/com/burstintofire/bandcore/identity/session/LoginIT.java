@@ -160,9 +160,11 @@ class LoginIT extends IntegrationTest {
 		assertThat(JsonPath.<String>read(response.getBody(), "$.code")).isEqualTo("INVALID_CREDENTIALS");
 	}
 
-	/** Problem body without the request id, which differs per request. */
+	/** Problem body without the request id (also in instance), which differs per request. */
 	private static String body(ResponseEntity<String> response) {
-		return response.getBody().replaceAll("\"requestId\":\"[^\"]*\"", "");
+		return response.getBody()
+			.replaceAll("\"requestId\":\"[^\"]*\"", "")
+			.replaceAll("\"instance\":\"[^\"]*\"", "");
 	}
 
 	static String claims(String token) {

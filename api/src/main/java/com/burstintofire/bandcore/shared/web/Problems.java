@@ -1,5 +1,7 @@
 package com.burstintofire.bandcore.shared.web;
 
+import java.net.URI;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.http.HttpStatus;
@@ -17,6 +19,8 @@ public final class Problems {
 	public static final String CODE = "code";
 
 	public static final String REQUEST_ID = "requestId";
+
+	static final String INSTANCE_PREFIX = "urn:bandcore:request:";
 
 	private Problems() {
 	}
@@ -39,6 +43,9 @@ public final class Problems {
 		}
 		if (request != null && request.getAttribute(RequestId.ATTRIBUTE) instanceof String requestId) {
 			problem.setProperty(REQUEST_ID, requestId);
+			// Identify the occurrence by request id instead of echoing the request path, which can
+			// carry identifiers or secrets the response must not reflect (Spring would use the path).
+			problem.setInstance(URI.create(INSTANCE_PREFIX + requestId));
 		}
 		return problem;
 	}

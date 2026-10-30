@@ -93,6 +93,14 @@ class ProblemDetailsIT extends IntegrationTest {
 
 		assertThat(response.getHeaders().getFirst(RequestId.HEADER)).isEqualTo("abc-123");
 		assertThat(JsonPath.<String>read(response.getBody(), "$.requestId")).isEqualTo("abc-123");
+		assertThat(JsonPath.<String>read(response.getBody(), "$.instance")).isEqualTo("urn:bandcore:request:abc-123");
+	}
+
+	@Test
+	void problemsNeverEchoTheRequestPath() {
+		ResponseEntity<String> response = api.central().get("/api/does-not-exist/secret-value?token=secret-query");
+
+		assertThat(response.getBody()).doesNotContain("secret-value").doesNotContain("secret-query");
 	}
 
 	@Test
