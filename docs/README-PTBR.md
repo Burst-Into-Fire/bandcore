@@ -15,13 +15,12 @@
 ![Docker](https://img.shields.io/badge/Docker-11151d?style=for-the-badge&logo=docker&logoColor=7ed8ff)
 ![PWA](https://img.shields.io/badge/PWA-11151d?style=for-the-badge&logo=pwa&logoColor=9b91d9)
 
-<!-- CI badge: only renders for visitors once the repository is public.
-[![CI](https://img.shields.io/github/actions/workflow/status/Burst-Into-Fire/bandcore/ci.yml?branch=main&style=flat-square&labelColor=11151d&color=7ed8ff&label=CI)](https://github.com/Burst-Into-Fire/bandcore/actions) -->
+[![CI](https://img.shields.io/github/actions/workflow/status/Burst-Into-Fire/bandcore/ci.yml?branch=development&style=flat-square&labelColor=11151d&color=7ed8ff&label=CI)](https://github.com/Burst-Into-Fire/bandcore/actions/workflows/ci.yml)
 ![Status](https://img.shields.io/badge/status-in_development-9b91d9?style=flat-square&labelColor=11151d)
 
 [English](../README.md) | **Português (Brasil)**
 
-**[Funcionalidades](#funcionalidades)** · **[Arquitetura](#arquitetura)** · **[Requisitos](#requisitos)** · **[Product Backlog](#product-backlog)** · **[Sprint Backlog](#sprint-backlog)** · **[Roadmap](#roadmap)** · **[Documentação](#documentação)**
+**[Funcionalidades](#funcionalidades)** · **[Arquitetura](#arquitetura)** · **[Como rodar](#como-rodar)** · **[Requisitos](#requisitos)** · **[Product Backlog](#product-backlog)** · **[Sprint Backlog](#sprint-backlog)** · **[Roadmap](#roadmap)** · **[Documentação](#documentação)**
 
 </div>
 
@@ -109,6 +108,28 @@ flowchart LR
 | Deploy | Plataforma gerenciada (Railway ou Render, a decidir) com deploy automático pelo GitHub |
 
 O deploy é portátil de propósito, para o projeto poder migrar para uma VPS com Docker Compose se custo ou controle exigirem. Detalhes em [Architecture](ARCHTECTURE.md) e [Deployment](DEPLOYMENT.md) (em inglês).
+
+## Como rodar
+
+Você só precisa de Git e Docker. Instruções completas, variáveis de ambiente e como rodar sem Docker: [Getting Started](GETTING-STARTED.md) (em inglês).
+
+```bash
+git clone https://github.com/Burst-Into-Fire/bandcore.git
+cd bandcore
+cp .env.example .env
+docker compose up --build
+```
+
+Depois abra <http://app.localhost:3000>. Cada banda tem o próprio subdomínio, como <http://burst.localhost:3000>.
+
+| Tarefa | Comando |
+|---|---|
+| Testes unitários e de integração da API (precisa de Docker) | `cd api && ./mvnw verify` |
+| Lint, tipos e testes do web | `cd web && npm ci && npm run lint && npm run typecheck && npm test` |
+| Smoke test da stack inteira | `scripts/compose-smoke-test.sh` |
+| Ativar os hooks de commit e branch | `git config core.hooksPath .githooks` |
+
+Leia [Testing](TESTING.md) e [Contributing](CONTRIBUTING.md) antes de abrir um pull request.
 
 ## Requisitos
 
@@ -238,6 +259,9 @@ As user stories são escritas a partir dos requisitos acima e listadas aqui com 
 
 ## Roadmap
 
+O plano de implementação, com milestones, issues, decisões e a definição de pronto, está em [docs/roadmap.md](roadmap.md) (em inglês).
+
+- [ ] Fundação do projeto: esqueletos, papéis do banco, testes, Docker e CI ([M1](roadmap/M01-project-foundation.md), em andamento)
 - [ ] Módulo de gestão de contas (em andamento)
 - [ ] Módulo de merch (em andamento)
 - [ ] Módulo de imprensa (envio de material para veículos)
@@ -262,6 +286,10 @@ As user stories são escritas a partir dos requisitos acima e listadas aqui com 
 | [Architecture](ARCHTECTURE.md) | Componentes, estrutura do projeto, multi-tenancy, dinheiro e sincronização offline |
 | [Deployment](DEPLOYMENT.md) | CI/CD, hospedagem, backups e como migrar para uma VPS |
 | [Testing](TESTING.md) | Como rodar os testes e quais regras precisam de cobertura |
+| [Database](DATABASE.md) | Papéis do banco, migrations e o checklist de tabelas por tenant |
+| [Decisões de arquitetura](adr/README.md) | ADRs: monólito modular, multi-tenancy, autenticação, dinheiro e outras |
+| [Roadmap](roadmap.md) | Milestones, issues, estratégia de testes e definição de pronto |
+| [Contributing](CONTRIBUTING.md) | Branches, commits, pull requests e expectativas de teste |
 
 <!-- Licença: decidir quando o repositório for aberto ao público. -->
 

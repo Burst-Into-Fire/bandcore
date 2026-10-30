@@ -4,23 +4,28 @@ The plan is a managed platform (Railway or Render, still to be decided) with aut
 
 ## CI/CD
 
-A push to `main` runs the tests, builds the images and publishes. Workflows live in `.github/workflows/` and filter by folder:
+Workflows live in `.github/workflows/`:
 
-- Changes in `api/**` run the backend tests and deploy the API.
-- Changes in `web/**` run the web tests and deploy the web app.
-- Changes only in `docs/**` or the README trigger neither.
+| Workflow | When | What |
+|---|---|---|
+| `ci.yml` | Pull requests, pushes to `main` and `development` | Backend tests, frontend checks, API client drift check, Docker images with the compose smoke test and a Trivy scan |
+| `security.yml` | Pull requests, pushes, weekly | CodeQL, gitleaks, dependency review |
+| `validate-standards.yml` | Pull requests | Branch name, pull request title and commit messages |
 
-The repository is private, so the hosting platform needs permission to read it from your GitHub account or organization.
+Every job runs on every pull request (no path filters), so required checks never stay pending. Images are only built, not pushed: continuous deploy to staging comes in [M3-06](roadmap/M03-security-hardening-delivery.md), and the hosting platform is chosen in [M1-10](roadmap/M01-project-foundation.md).
+
+Production containers run with `SPRING_PROFILES_ACTIVE=prod`. The roles and schema are created once with the bootstrap script described in [Database](DATABASE.md).
 
 ## Managed platform
 
 1. Create the project on the chosen platform and connect the GitHub repository.
 2. Create a managed PostgreSQL instance.
-3. Create two services, one for `api/` and one for `web/`, each built from its own Dockerfile.
-4. Set the environment variables listed in [Getting Started](GETTING-STARTED.md#environment-variables) in the platform settings. Use production values, never the local ones.
-5. Enable automatic deploys from `main`.
-6. Check the regions available. Prefer one close to Brazil to reduce latency.
-7. Set up the backup routine below.
+3. Run the role bootstrap script on the new database (see [Database](DATABASE.md#bootstrap)).
+4. Create two services, one for `api/` and one for `web/`, each built from its own Dockerfile. Only the web service is public; it reaches the API over the private network (`API_UPSTREAM`).
+5. Set the environment variables listed in [Getting Started](GETTING-STARTED.md#environment-variables) in the platform settings. Use production values, never the local ones.
+6. Enable automatic deploys from `main`.
+7. Check the regions available. Prefer one close to Brazil to reduce latency.
+8. Set up the backup routine below.
 
 ## Backups
 
