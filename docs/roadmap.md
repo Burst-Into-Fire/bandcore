@@ -54,9 +54,9 @@ These decisions are recorded as ADRs in [M1-02](roadmap/M01-project-foundation.m
 
 | Topic | This roadmap | Requirements docs | Affected issues |
 |---|---|---|---|
-| Row Level Security | In M2, as part of tenant isolation | *Later* (RNF07) | M2-04, M2-05 |
-| One subdomain per band | Tenant resolved from the subdomain; sessions scoped per host | Not mentioned; tenant from the token and a selected band | M1-10, M2-03, M2-07, M2-09, M4-05 |
-| Multiple bands per user | From the start (global accounts) | *Next* (RF06) | M4-05 |
+| Row Level Security | In M2, as part of tenant isolation | *Later* (RNF07) | **Decided 2026-10-30:** in M2 ([ADR-0002](adr/0002-multi-tenancy-shared-schema-band-id-rls.md)) |
+| One subdomain per band | Tenant resolved from the subdomain; sessions scoped per host | Not mentioned; tenant from the token and a selected band | **Decided 2026-10-30:** subdomain per band ([ADR-0005](adr/0005-subdomain-per-band-same-origin-api.md)); M1-10 still validates the platform |
+| Multiple bands per user | From the start (global accounts) | *Next* (RF06) | **Decided 2026-10-30:** global accounts ([ADR-0003](adr/0003-global-accounts-per-band-memberships.md)); UI in M4-05 |
 | Currency | BRL only | BRL and USD, totals and balances per currency (RF40, RNF08, RN08) | M5-01, M5-03, M5-04, M6-01, M6-02, M6-04, M7-01, M8-02, M8-05 |
 | Product unit cost | Weighted average of production batches | Entered on the product (RF21) | M7-01, M7-03, M8-04 |
 

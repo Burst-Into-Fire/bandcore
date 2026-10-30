@@ -1,6 +1,6 @@
 # ADR-0005: Subdomain per band and same-origin API behind a reverse proxy
 
-- **Status:** Proposed (not in the requirements docs, which take the band from the token and a band selector; to be confirmed with the hosting spike, [M1-10](../roadmap/M01-project-foundation.md))
+- **Status:** Accepted (2026-10-30, before M2; the hosting spike [M1-10](../roadmap/M01-project-foundation.md) must still confirm that the chosen platform supports wildcard domains)
 - **Date:** 2026-10-29
 - **Related:** RNF01, [M1-07, M1-10](../roadmap/M01-project-foundation.md), [M2-03, M2-09](../roadmap/M02-multitenancy-auth-core.md), [M4-05](../roadmap/M04-band-workspace.md)
 
