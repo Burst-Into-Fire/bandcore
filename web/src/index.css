@@ -1,0 +1,45 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens from the dashboard mockup: dark background, surface cards, muted secondary
+ * text and a coral accent for primary actions and warnings. Use these names (bg-surface,
+ * text-muted, bg-accent, ...) instead of raw colors.
+ */
+@theme {
+  --color-background: #0d0f14;
+  --color-surface: #161a22;
+  --color-surface-raised: #1e232d;
+  --color-border: #2a303c;
+  --color-foreground: #f2f4f8;
+  --color-muted: #9aa3b2;
+  --color-accent: #ff6f61;
+  --color-accent-hover: #ff8a7f;
+  --color-accent-foreground: #1b0d0b;
+  --color-warning: #ff6f61;
+  --color-success: #4ade80;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Typography scale: KPI values, page titles, card titles, body, captions. */
+  --text-kpi: 1.75rem;
+  --text-kpi--line-height: 2.25rem;
+  --text-title: 1.5rem;
+  --text-title--line-height: 2rem;
+  --text-card-title: 0.875rem;
+  --text-card-title--line-height: 1.25rem;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+
+  --radius-card: 0.75rem;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    min-width: 360px;
+  }
+}

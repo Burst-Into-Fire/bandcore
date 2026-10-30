@@ -1,0 +1,22 @@
+{
+  "app": {
+    "name": "bandcore",
+    "tagline": "Gastos e merch da banda em um só lugar"
+  },
+  "home": {
+    "title": "Bem-vindo ao bandcore",
+    "apiStatus": {
+      "label": "Status da API",
+      "loading": "Verificando…",
+      "online": "Online",
+      "offline": "Indisponível"
+    }
+  },
+  "notFound": {
+    "title": "Página não encontrada",
+    "backHome": "Voltar ao início"
+  },
+  "money": {
+    "invalid": "Valor inválido"
+  }
+}
