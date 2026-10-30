@@ -16,7 +16,8 @@ import com.burstintofire.bandcore.shared.cache.ResettableCache;
 
 /**
  * Base class for integration tests ({@code *IT}): the full application on a random port,
- * connected to the shared PostgreSQL container as the runtime role, with a fixed clock.
+ * connected to the shared PostgreSQL container as the runtime role, with a fixed clock and an
+ * in-process SMTP server ({@link TestMailServer}).
  * Tables and security caches are emptied after each test.
  *
  * <p>Test data builders ({@code aBand()}, {@code aUser()}, ...) live next to the entities they
@@ -38,6 +39,7 @@ public abstract class IntegrationTest {
 	@DynamicPropertySource
 	static void database(DynamicPropertyRegistry registry) {
 		PostgresTestDatabase.register(registry);
+		TestMailServer.register(registry);
 	}
 
 	@BeforeEach
@@ -52,6 +54,7 @@ public abstract class IntegrationTest {
 	void cleanDatabase() {
 		DatabaseCleaner.truncateAll();
 		caches.forEach(ResettableCache::clear);
+		TestMailServer.purge();
 	}
 
 }

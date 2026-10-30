@@ -27,7 +27,9 @@ class SchemaGuardIT extends IntegrationTest {
 	 */
 	static final Map<String, String> GLOBAL_TABLES = Map.of(
 			"flyway_schema_history", "Flyway's migration history; the app role cannot read it",
-			"bands", "the tenant itself; only the tenancy module reads or writes it");
+			"bands", "the tenant itself; only the tenancy module reads or writes it",
+			"users", "global accounts (ADR-0003): one account across bands; only the identity module uses it",
+			"email_verification_tokens", "belongs to an account, used before any band is involved");
 
 	@Autowired
 	JdbcTemplate jdbc;

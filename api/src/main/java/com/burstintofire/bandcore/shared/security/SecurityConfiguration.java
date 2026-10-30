@@ -42,8 +42,9 @@ class SecurityConfiguration {
 			.anyRequest()
 			.authenticated())
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			// CSRF protection stays on (Spring Security's default). M2-07 configures it for the
-			// refresh token cookie; bearer-token requests carry no ambient credentials.
+			// Unsafe requests without a bearer token must send X-Requested-With (see CsrfHeader).
+			.csrf(csrf -> csrf.requireCsrfProtectionMatcher(CsrfHeader::requiresProtection)
+				.csrfTokenRepository(new CsrfHeader.NoTokenRepository()))
 			.httpBasic(AbstractHttpConfigurer::disable)
 			.formLogin(AbstractHttpConfigurer::disable)
 			.logout(AbstractHttpConfigurer::disable)

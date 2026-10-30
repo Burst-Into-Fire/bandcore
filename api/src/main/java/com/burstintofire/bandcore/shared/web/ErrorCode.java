@@ -27,7 +27,14 @@ public enum ErrorCode {
 	// Bands
 	SLUG_INVALID,
 	SLUG_RESERVED,
-	SLUG_TAKEN;
+	SLUG_TAKEN,
+
+	// Accounts
+	PASSWORD_TOO_SHORT,
+	PASSWORD_TOO_LONG,
+	PASSWORD_TOO_COMMON,
+	/** Verification (and later reset, invitation) token unknown, used or expired: one code for all. */
+	TOKEN_INVALID;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {

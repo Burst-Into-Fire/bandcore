@@ -24,6 +24,20 @@ spring:
     default-schema: bandcore
     create-schemas: false
     locations: classpath:db/migration
+  mail:
+    # Locally every email goes to Mailpit (http://localhost:8025).
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail.smtp.auth: ${SMTP_AUTH:false}
+      mail.smtp.starttls.enable: ${SMTP_STARTTLS:false}
+      mail.smtp.starttls.required: ${SMTP_STARTTLS:false}
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
   jpa:
     open-in-view: false
     hibernate:
@@ -87,3 +101,5 @@ bandcore:
     trusted-proxies: ${TRUSTED_PROXIES:}
   tenancy:
     band-cache-ttl: 60s
+  mail:
+    from: ${MAIL_FROM:bandcore <no-reply@localhost>}

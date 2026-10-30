@@ -8,6 +8,13 @@ final class TestRows {
 	private TestRows() {
 	}
 
+	static String user(UUID id) {
+		return """
+				INSERT INTO users (id, email, password_hash, display_name, email_verified_at, created_at, updated_at)
+				VALUES ('%s', '%s@example.com', '{noop}unused', 'User', now(), now(), now())
+				""".formatted(id, id);
+	}
+
 	static String band(UUID id, String slug) {
 		return """
 				INSERT INTO bands (id, slug, name, created_at, updated_at)

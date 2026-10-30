@@ -83,6 +83,17 @@ class ArchitectureRulesTest {
 	}
 
 	@Test
+	void usersAreOnlyAccessedThroughTheIdentityModule() {
+		ArchRule rule = noClasses().that()
+			.resideOutsideOfPackage("..identity..")
+			.should()
+			.dependOnClassesThat()
+			.resideInAnyPackage("..identity.user..", "..identity.verification..")
+			.because("users is a global table owned by the identity module (ADR-0003)");
+		rule.check(CLASSES);
+	}
+
+	@Test
 	void tenantRepositoriesAlwaysNameTheBand() {
 		ArchRule rule = classes().that()
 			.areAssignableTo(Repository.class)

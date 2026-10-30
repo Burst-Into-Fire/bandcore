@@ -7,6 +7,13 @@ spring:
   flyway:
     user: ${DB_OWNER_USER}
     password: ${DB_OWNER_PASSWORD}
+  mail:
+    # Empty default: the prod validator reports it, instead of a placeholder error.
+    host: ${SMTP_HOST:}
+    properties:
+      mail.smtp.auth: ${SMTP_AUTH:true}
+      mail.smtp.starttls.enable: ${SMTP_STARTTLS:true}
+      mail.smtp.starttls.required: ${SMTP_STARTTLS:true}
 
 springdoc:
   swagger-ui:
@@ -17,3 +24,5 @@ bandcore:
     base-domain: ${BASE_DOMAIN}
     public-scheme: https
     public-port: ${PUBLIC_URL_PORT:}
+  mail:
+    from: ${MAIL_FROM}

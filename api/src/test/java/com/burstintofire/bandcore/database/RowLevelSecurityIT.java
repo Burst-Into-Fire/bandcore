@@ -62,7 +62,8 @@ class RowLevelSecurityIT extends IntegrationTest {
 	}
 
 	static void seed() {
-		OwnerSql.global(TestRows.band(BAND_A, "alpha"), TestRows.band(BAND_B, "beta"));
+		OwnerSql.global(TestRows.user(USER_1), TestRows.user(USER_2), TestRows.band(BAND_A, "alpha"),
+				TestRows.band(BAND_B, "beta"));
 		OwnerSql.inBand(BAND_A, TestRows.membership(BAND_A, USER_1), TestRows.membership(BAND_A, USER_2),
 				TestRows.member(BAND_A, "Ana", USER_1));
 		OwnerSql.inBand(BAND_B, TestRows.membership(BAND_B, USER_1), TestRows.member(BAND_B, "Bia", null));
