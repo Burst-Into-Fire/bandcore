@@ -1,0 +1,49 @@
+name: Validate standards
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: standards-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate
+    # Dependabot branches and commits follow their own format.
+    if: ${{ !startsWith(github.head_ref, 'dependabot/') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # Untrusted values go through env, never straight into the script.
+      - name: Branch name
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: sh .githooks/lib/validate-branch.sh "$BRANCH"
+      - name: Pull request title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: sh .githooks/lib/validate-message.sh --header-only "$TITLE"
+      - name: Commit messages
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          status=0
+          message=$(mktemp)
+          for sha in $(git rev-list --no-merges "$BASE_SHA..$HEAD_SHA"); do
+            git log -1 --format=%B "$sha" > "$message"
+            if ! sh .githooks/lib/validate-message.sh "$message"; then
+              echo "::error::Invalid commit message in $(git log -1 --format='%h %s' "$sha")"
+              status=1
+            fi
+          done
+          exit $status

@@ -1,0 +1,38 @@
+name: Feature
+description: New functionality
+labels: ['type:feature']
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why is this needed? Link requirements (RF, RNF, RN) when they exist.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What is included, as a checklist.
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Tests required
+      description: Integration tests first. Include authorization and cross-tenant cases for new endpoints.
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: Security notes
+      description: Tenant isolation, authorization, personal data, money or stock concerns.

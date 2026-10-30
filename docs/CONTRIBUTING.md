@@ -14,12 +14,13 @@
 2. [Commit Standards](#commit-standards)
 3. [Branch Standards](#branch-standards)
 4. [Pull Requests](#pull-requests)
-5. [Full Flow](#full-flow)
-6. [Automations](#automations)
-7. [Practical Examples](#practical-examples)
-8. [Best Practices](#best-practices)
-9. [Troubleshooting](#troubleshooting)
-10. [Initial Setup](#initial-setup)
+5. [Testing Expectations](#testing-expectations)
+6. [Full Flow](#full-flow)
+7. [Automations](#automations)
+8. [Practical Examples](#practical-examples)
+9. [Best Practices](#best-practices)
+10. [Troubleshooting](#troubleshooting)
+11. [Initial Setup](#initial-setup)
 
 ---
 
@@ -214,6 +215,20 @@ NO   my-feature                     (no type, no number)
 - **Checks:** the `validate-standards` workflow and the CI tests must pass before merging.
 - **Merge strategy:** **squash and merge**. This keeps `main` linear, one pull request equals one Conventional Commit, and the deploy history is easy to read. Edit the squash message so it keeps the Conventional header and the `Closes #N` line.
 - **After merging:** delete the branch.
+
+---
+
+## Testing Expectations
+
+Every pull request proves it keeps the rules intact. Details and examples in [Testing](TESTING.md).
+
+- **Integration tests first.** Every new or changed endpoint has an `*IT` test through HTTP against PostgreSQL (extend `IntegrationTest`): happy path, validation errors, authorization per role and an attempt from another band (from M2, through the isolation harness).
+- **Unit and property-based tests** for pure rules (splits, balances, allocation, average cost), with jqwik where an invariant applies ("parts always add up to the total").
+- **Never mock the database** and never use an in-memory database.
+- **Money is integer cents** in Java, SQL and TypeScript.
+- **Run locally before pushing:** `./mvnw verify` in `api/`; `npm run lint && npm run typecheck && npm test` in `web/`. If you changed the API, run `npm run api:generate` in `web/` and commit `src/api/schema.ts`.
+- **Required checks** (see `ruleset.json`): `validate`, `backend`, `frontend`, `api-contract`, `docker`, `gitleaks` and `dependency-review`. A pull request with a failing check cannot be merged.
+- The pull request template contains the [Definition of Done](roadmap.md#definition-of-done). Tick what applies and explain anything left unchecked.
 
 ---
 
@@ -485,11 +500,27 @@ git commit --allow-empty -m "test"
 
 If the second command creates a commit, the hooks are not active. Undo it with `git reset --soft HEAD~1` and check the [Hooks do not run](#hooks-do-not-run) section.
 
+### Optional: secret scanning before each commit
+
+CI runs [gitleaks](https://github.com/gitleaks/gitleaks) on every pull request. To catch a secret before it ever leaves your machine, install gitleaks and add a `pre-commit` hook that chains it:
+
+```bash
+cat > .githooks/pre-commit.local <<'HOOK'
+#!/bin/sh
+exec gitleaks git --pre-commit --staged --redact --no-banner
+HOOK
+chmod +x .githooks/pre-commit.local
+ln -sf pre-commit.local .githooks/pre-commit
+```
+
+`.githooks/pre-commit*` files stay local (they are ignored by Git).
+
 ---
 
 ## Related Documentation
 
-- [Getting Started](GETTING_STARTED.md): how to run the project
+- [Getting Started](GETTING-STARTED.md): how to run the project
+- [Database](DATABASE.md): roles, migrations and the tenant table checklist
 - [Testing](TESTING.md): which rules need test coverage
 - [Deployment](DEPLOYMENT.md): CI/CD and hosting
 - [Conventional Commits](https://www.conventionalcommits.org/): official specification
