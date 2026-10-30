@@ -73,7 +73,7 @@ class ProblemDetailsExceptionHandler extends ResponseEntityExceptionHandler {
 			problem.setProperty("errors",
 					List.of(Map.of("field", ex.field(), "code", ex.code().name(), "message", ex.getMessage())));
 		}
-		return handleExceptionInternal(ex, problem, new HttpHeaders(), ex.status(), request);
+		return handleExceptionInternal(ex, problem, HttpHeaders.copyOf(ex.headers()), ex.status(), request);
 	}
 
 	/**

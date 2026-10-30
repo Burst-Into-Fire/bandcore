@@ -34,7 +34,9 @@ public enum ErrorCode {
 	PASSWORD_TOO_LONG,
 	PASSWORD_TOO_COMMON,
 	/** Verification (and later reset, invitation) token unknown, used or expired: one code for all. */
-	TOKEN_INVALID;
+	TOKEN_INVALID,
+	/** Wrong email or password, unverified email or no access to the band: one code for all. */
+	INVALID_CREDENTIALS;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {

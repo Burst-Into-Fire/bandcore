@@ -29,7 +29,8 @@ class SchemaGuardIT extends IntegrationTest {
 			"flyway_schema_history", "Flyway's migration history; the app role cannot read it",
 			"bands", "the tenant itself; only the tenancy module reads or writes it",
 			"users", "global accounts (ADR-0003): one account across bands; only the identity module uses it",
-			"email_verification_tokens", "belongs to an account, used before any band is involved");
+			"email_verification_tokens", "belongs to an account, used before any band is involved",
+			"refresh_tokens", "looked up by token hash before the band is known; logout-all spans every band");
 
 	@Autowired
 	JdbcTemplate jdbc;

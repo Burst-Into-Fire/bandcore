@@ -64,6 +64,7 @@ class ProductionConfiguration {
 		settings.put("spring.flyway.user", "DB_OWNER_USER");
 		settings.put("spring.flyway.password", "DB_OWNER_PASSWORD");
 		settings.put("bandcore.platform.base-domain", "BASE_DOMAIN");
+		settings.put("bandcore.security.jwt.secret", "JWT_SECRET");
 		settings.put("spring.mail.host", "SMTP_HOST");
 		settings.put("bandcore.mail.from", "MAIL_FROM");
 		return Collections.unmodifiableMap(settings);

@@ -1,5 +1,6 @@
 package com.burstintofire.bandcore.shared.web;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
 /**
@@ -14,6 +15,8 @@ public class ApiException extends RuntimeException {
 	private final ErrorCode code;
 
 	private final String field;
+
+	private final HttpHeaders headers = new HttpHeaders();
 
 	public ApiException(HttpStatus status, ErrorCode code, String detail) {
 		this(status, code, detail, null);
@@ -36,6 +39,16 @@ public class ApiException extends RuntimeException {
 
 	public String field() {
 		return field;
+	}
+
+	/** Extra response headers, for example a {@code Set-Cookie} that clears a dead session. */
+	public HttpHeaders headers() {
+		return headers;
+	}
+
+	public ApiException withHeader(String name, String value) {
+		headers.add(name, value);
+		return this;
 	}
 
 	/** 404 that reveals nothing, used for other bands' resources as well as missing ones. */

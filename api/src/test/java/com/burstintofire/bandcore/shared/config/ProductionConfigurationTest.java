@@ -22,7 +22,7 @@ class ProductionConfigurationTest {
 			.withProperty("spring.flyway.user", "${DB_OWNER_USER}");
 
 		assertThat(ProductionConfiguration.missing(environment)).containsExactly("DB_APP_PASSWORD", "DB_OWNER_USER",
-				"DB_OWNER_PASSWORD", "BASE_DOMAIN", "SMTP_HOST", "MAIL_FROM");
+				"DB_OWNER_PASSWORD", "BASE_DOMAIN", "JWT_SECRET", "SMTP_HOST", "MAIL_FROM");
 	}
 
 	@Test

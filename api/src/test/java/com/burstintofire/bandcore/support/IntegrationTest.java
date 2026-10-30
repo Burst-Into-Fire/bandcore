@@ -25,7 +25,7 @@ import com.burstintofire.bandcore.shared.cache.ResettableCache;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
 		properties = "management.server.port=0")
-@Import(TestClockConfiguration.class)
+@Import({ TestClockConfiguration.class, TestFixtures.class })
 public abstract class IntegrationTest {
 
 	@LocalServerPort
@@ -35,6 +35,9 @@ public abstract class IntegrationTest {
 	protected int managementPort;
 
 	protected ApiClient api;
+
+	@Autowired
+	protected TestFixtures fixtures;
 
 	@DynamicPropertySource
 	static void database(DynamicPropertyRegistry registry) {
