@@ -22,7 +22,12 @@ public enum ErrorCode {
 	UNSUPPORTED_MEDIA_TYPE,
 	TOO_MANY_REQUESTS,
 	INTERNAL_ERROR,
-	SERVICE_UNAVAILABLE;
+	SERVICE_UNAVAILABLE,
+
+	// Bands
+	SLUG_INVALID,
+	SLUG_RESERVED,
+	SLUG_TAKEN;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {

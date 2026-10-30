@@ -64,6 +64,17 @@ class ArchitectureRulesTest {
 	}
 
 	@Test
+	void bandsAreOnlyAccessedThroughTheTenancyModule() {
+		ArchRule rule = noClasses().that()
+			.resideOutsideOfPackage("..tenancy..")
+			.should()
+			.dependOnClassesThat()
+			.resideInAPackage("..tenancy.band..")
+			.because("bands is a global table owned by the tenancy module (ADR-0002)");
+		rule.check(CLASSES);
+	}
+
+	@Test
 	void controllersDoNotUseRepositoriesDirectly() {
 		ArchRule rule = noClasses().that()
 			.areAnnotatedWith(RestController.class)
