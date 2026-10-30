@@ -3,7 +3,6 @@ package com.burstintofire.bandcore.tenancy.membership;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -45,7 +44,7 @@ public class MembershipAccess implements BandAccess, ResettableCache {
 		return cache.get(new Key(bandId, userId),
 				key -> memberships.findByBandIdAndUserId(key.bandId(), key.userId())
 					.filter(Membership::isActive)
-					.map(membership -> new Grant(membership.getRole().name(), Set.of())));
+					.map(membership -> new Grant(membership.getRole().name(), membership.getRole().permissions())));
 	}
 
 	/** Call after any change to a membership. */

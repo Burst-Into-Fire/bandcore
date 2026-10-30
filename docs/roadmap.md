@@ -124,7 +124,7 @@ Every issue is done only when all applicable items are true. This checklist goes
 
 ## Permission matrix (proposal)
 
-To be validated with the band and finalized in [M2-10](roadmap/M02-multitenancy-auth-core.md). The backend enforces it; the UI only hides what the user cannot do.
+Adopted in [M2-10](roadmap/M02-multitenancy-auth-core.md); the current matrix, with the named permissions behind each capability, is in [docs/security/permissions.md](security/permissions.md). It still needs to be validated with the band before M4. The backend enforces it; the UI only hides what the user cannot do.
 
 | Capability | ADMIN | MEMBER | READ_ONLY |
 |---|---|---|---|

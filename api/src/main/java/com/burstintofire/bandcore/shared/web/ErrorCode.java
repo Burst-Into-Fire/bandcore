@@ -28,6 +28,7 @@ public enum ErrorCode {
 	SLUG_INVALID,
 	SLUG_RESERVED,
 	SLUG_TAKEN,
+	TIMEZONE_INVALID,
 
 	// Accounts
 	PASSWORD_TOO_SHORT,

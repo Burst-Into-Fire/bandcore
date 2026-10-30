@@ -104,6 +104,11 @@ public class Band extends AssignedIdEntity {
 		this.updatedAt = now;
 	}
 
+	void changeTimezone(String newTimezone, Instant now) {
+		this.timezone = newTimezone;
+		this.updatedAt = now;
+	}
+
 	void changeStatus(BandStatus newStatus, Instant now) {
 		this.status = newStatus;
 		this.updatedAt = now;
