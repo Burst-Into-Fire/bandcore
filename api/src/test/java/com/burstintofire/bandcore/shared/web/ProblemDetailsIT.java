@@ -23,7 +23,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -125,7 +124,8 @@ class ProblemDetailsIT extends IntegrationTest {
 		SecurityFilterChain testEndpointsSecurity(HttpSecurity http) throws Exception {
 			return http.securityMatcher("/test/**")
 				.authorizeHttpRequests(requests -> requests.anyRequest().permitAll())
-				.csrf(AbstractHttpConfigurer::disable)
+				// Test-only endpoints, called without a CSRF token.
+				.csrf(csrf -> csrf.ignoringRequestMatchers("/test/**"))
 				.build();
 		}
 
