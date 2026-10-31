@@ -1,6 +1,6 @@
 # ADR-0002: Multi-tenancy with a shared schema, band_id and PostgreSQL RLS
 
-- **Status:** Proposed (the requirements docs place RLS as *Later*, RNF07; see [open points](../roadmap.md#open-points-with-the-requirements-docs))
+- **Status:** Accepted (2026-10-30, before M2: RLS ships in M2 instead of *Later* as in RNF07)
 - **Date:** 2026-10-29
 - **Related:** RNF01, RNF07, [M1-04](../roadmap/M01-project-foundation.md), [M2-04, M2-05](../roadmap/M02-multitenancy-auth-core.md), [docs/DATABASE.md](../DATABASE.md)
 

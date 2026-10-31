@@ -40,7 +40,8 @@ npm run format:check  # Prettier
 |---|---|---|---|
 | Integration | `*IT` | Failsafe | The application on a random port, called over HTTP, against PostgreSQL in Testcontainers |
 | Unit and property-based | `*Test` | Surefire | Pure logic, with JUnit 5, AssertJ and jqwik (`@Property`) |
-| Architecture | `*Test` | Surefire | Module boundaries (`ModularityTest`) and ArchUnit rules (`ArchitectureRulesTest`): no `float`/`double` in money packages, no field injection, controllers never use repositories |
+| Architecture | `*Test` | Surefire | Module boundaries (`ModularityTest`) and ArchUnit rules (`ArchitectureRulesTest`): no `float`/`double` in money packages, no field injection, controllers never use repositories, `bands` and `users` only reached through their modules, tenant repositories always name the band |
+| Security guards | `*IT` | Failsafe | `SchemaGuardIT` (every tenant table has forced RLS, policies, a `band_id` index and composite keys), `AuthorizationMatrixIT` (role × endpoint), `TenantIsolationIT` (six cross-tenant attacks per band endpoint). See [Securing a new endpoint](endpoint-security.md) |
 | Web | `*.test.ts(x)` | Vitest | Logic and components with React Testing Library; the API is mocked with MSW |
 
 ### Writing an integration test
@@ -68,7 +69,13 @@ What the base class gives you:
 - **A clean database** after each test (tables are truncated as the owner).
 - `PostgresTestDatabase.ownerConnection()` and `appConnection()` for direct SQL checks.
 
-Test data builders (`aBand()`, `aUser()`, ...) are added next to their entities, starting in M2.
+- **`fixtures`** (`TestFixtures`): accounts, bands, memberships and members written straight to the database, and `fixtures.login(api.forBand("alpha"), email)` for an access token.
+- **Emails**: an in-process SMTP server (`TestMailServer.awaitEmail(to)`), emptied after each test.
+- `TestTokens` builds signed, expired, tampered and unsigned tokens; `Cookies` reads and sends the refresh cookie.
+
+The fixed clock and the database disagree on "now": compare stored timestamps with `TestClockConfiguration.NOW`, not with SQL `now()`.
+
+Row-level security is forced for the owner too. `OwnerSql.inBand(bandId, ...)` writes tenant rows with the band's context; `PostgresTestDatabase.superuserConnection()` reads every band's rows at once, for assertions only.
 
 ## What must be covered
 
@@ -79,7 +86,7 @@ The critical business rules come first (RNF31). Each item below must have tests 
 - **Stock:** a sale deducts stock, a sale above the available stock is rejected, stock never goes negative (RN03).
 - **Refunds:** stock returns and revenue is reverted (RN04).
 - **Historical profit:** changing a product price does not change past sales (RN05).
-- **Tenant isolation:** a user from band A cannot read or change data from band B (RNF01).
+- **Tenant isolation:** a user from band A cannot read or change data from band B (RNF01). Every band endpoint must be registered in the isolation harness ([guide](endpoint-security.md)).
 - **Authorization:** each role can only do what it is allowed to (RN06, RNF03).
 - **Currency:** amounts in BRL and USD are never mixed in totals or balances (RN08).
 - **Idempotency:** sending the same offline sale twice creates only one sale (RNF13), once offline sync exists.

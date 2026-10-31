@@ -5,6 +5,9 @@
   },
   "home": {
     "title": "Bem-vindo ao bandcore",
+    "signIn": "Entrar",
+    "signUp": "Criar conta",
+    "myBands": "Minhas bandas",
     "apiStatus": {
       "label": "Status da API",
       "loading": "Verificando…",
@@ -18,5 +21,99 @@
   },
   "money": {
     "invalid": "Valor inválido"
+  },
+  "common": {
+    "logout": "Sair",
+    "logoutEverywhere": "Sair de todos os dispositivos",
+    "back": "Voltar"
+  },
+  "fields": {
+    "email": "Email",
+    "password": "Senha",
+    "displayName": "Seu nome",
+    "bandName": "Nome da banda",
+    "slug": "Endereço da banda"
+  },
+  "validation": {
+    "required": "Preencha este campo.",
+    "emailInvalid": "Informe um email válido.",
+    "passwordTooShort": "Use pelo menos 12 caracteres.",
+    "passwordTooLong": "Use no máximo 128 caracteres.",
+    "nameTooLong": "Use no máximo 80 caracteres.",
+    "slugInvalid": "Use de 3 a 32 letras minúsculas, números e hifens simples, sem hífen no começo ou no fim."
+  },
+  "errors": {
+    "generic": "Algo deu errado. Tente de novo em instantes.",
+    "VALIDATION_FAILED": "Confira os campos destacados.",
+    "INVALID_CREDENTIALS": "Email ou senha incorretos, ou esta conta não tem acesso a esta banda.",
+    "PASSWORD_TOO_SHORT": "Use pelo menos 12 caracteres.",
+    "PASSWORD_TOO_LONG": "Use no máximo 128 caracteres.",
+    "PASSWORD_TOO_COMMON": "Essa senha é muito comum. Escolha outra, por exemplo uma frase.",
+    "TOKEN_INVALID": "Este link é inválido ou expirou.",
+    "SLUG_INVALID": "Use de 3 a 32 letras minúsculas, números e hifens simples.",
+    "SLUG_RESERVED": "Este endereço é reservado. Escolha outro.",
+    "SLUG_TAKEN": "Este endereço já está em uso. Escolha outro.",
+    "EMAIL_NOT_VERIFIED": "Confirme seu email antes de criar uma banda.",
+    "BAND_LIMIT_REACHED": "Você atingiu o limite de bandas criadas por conta.",
+    "TOO_MANY_REQUESTS": "Muitas tentativas. Aguarde um pouco e tente de novo."
+  },
+  "session": {
+    "loading": "Carregando sua sessão…"
+  },
+  "signup": {
+    "title": "Criar conta",
+    "submit": "Criar conta",
+    "submitting": "Criando…",
+    "passwordHint": "Pelo menos 12 caracteres. Uma frase é mais fácil de lembrar e mais difícil de adivinhar.",
+    "haveAccount": "Já tem conta?",
+    "login": "Entrar",
+    "sentTitle": "Verifique seu email",
+    "sentBody": "Se {{email}} puder receber uma conta nova, enviamos para lá um link de confirmação. Ele vale por 24 horas.",
+    "resend": "Reenviar email",
+    "resent": "Pronto. Se houver uma conta aguardando confirmação, um novo link foi enviado."
+  },
+  "verify": {
+    "title": "Confirmação de email",
+    "verifying": "Confirmando seu email…",
+    "success": "Email confirmado! Agora você já pode entrar.",
+    "missing": "O link de confirmação está incompleto. Abra o link do email novamente.",
+    "login": "Entrar",
+    "resendTitle": "Receber um novo link",
+    "resend": "Enviar novo link"
+  },
+  "login": {
+    "titleCentral": "Entrar no bandcore",
+    "titleBand": "Entrar em {{band}}",
+    "subtitleBand": "Use a conta que tem acesso a esta banda.",
+    "submit": "Entrar",
+    "submitting": "Entrando…",
+    "noAccount": "Ainda não tem conta?",
+    "signUp": "Criar conta",
+    "bandNotFound": "Esta banda não existe ou está indisponível."
+  },
+  "bands": {
+    "title": "Minhas bandas",
+    "empty": "Você ainda não participa de nenhuma banda.",
+    "create": "Criar banda",
+    "open": "Abrir",
+    "roles": {
+      "ADMIN": "Administrador",
+      "MEMBER": "Integrante",
+      "READ_ONLY": "Somente leitura"
+    }
+  },
+  "createBand": {
+    "title": "Criar banda",
+    "subtitle": "Você será o primeiro administrador e integrante.",
+    "addressPreview": "Endereço: {{host}}",
+    "checking": "Verificando disponibilidade…",
+    "available": "Disponível",
+    "submit": "Criar banda",
+    "submitting": "Criando…"
+  },
+  "bandHome": {
+    "welcome": "Olá, {{name}}!",
+    "role": "Seu papel nesta banda: {{role}}",
+    "comingSoon": "Gastos, merch e integrantes chegam nas próximas versões."
   }
 }
