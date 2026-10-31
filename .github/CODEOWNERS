@@ -1,0 +1,4 @@
+# Reviewers requested automatically for every pull request.
+# The ruleset requires a code owner review, so keep at least two owners once the team grows:
+# GitHub does not let authors approve their own pull requests.
+* @Esteves31

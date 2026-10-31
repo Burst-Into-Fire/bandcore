@@ -1,13 +1,74 @@
+# All settings come from environment variables. The defaults below are for local development
+# only; the prod profile (application-prod.yml) removes them so a missing secret stops startup.
 spring:
+  application:
+    name: bandcore-api
+  autoconfigure:
+    exclude:
+      # No in-memory user with a generated password: authentication arrives in M2.
+      - org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
+    # Runtime connection: bandcore_app owns nothing and cannot bypass row-level security.
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/bandcore}
+    username: ${DB_APP_USER:bandcore_app}
+    password: ${DB_APP_PASSWORD:dev_only_app_password}
+    hikari:
+      schema: bandcore
+      # The JDBC driver would otherwise use the JVM time zone for the session.
+      connection-init-sql: SET TIME ZONE 'UTC'
+  flyway:
+    # Migrations run as the schema owner, never as the runtime role.
+    user: ${DB_OWNER_USER:bandcore_owner}
+    password: ${DB_OWNER_PASSWORD:dev_only_owner_password}
+    schemas: bandcore
+    default-schema: bandcore
+    create-schemas: false
+    locations: classpath:db/migration
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: validate
-    open-in-view: false
-  flyway:
-    enabled: true
+    properties:
+      hibernate.jdbc.time_zone: UTC
+
 server:
   port: ${PORT:8080}
+  servlet:
+    context-path: /api
+  error:
+    include-exception: false
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+    whitelabel:
+      enabled: false
+
+management:
+  server:
+    # Separate port, never routed by the public proxy.
+    port: ${MANAGEMENT_PORT:8081}
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+      group:
+        readiness:
+          include: readinessState,db
+
+logging:
+  structured:
+    format:
+      console: ecs
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  writer-with-order-by-keys: true
+  show-actuator: false

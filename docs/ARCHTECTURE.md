@@ -15,16 +15,30 @@ The web app talks only to the API. All business rules live in the Java backend. 
 
 ```text
 bandcore/
-├── .github/workflows/        CI/CD, filtered by folder (api, web)
+├── .github/
+│   ├── workflows/            CI, security scans, commit and branch standards
+│   ├── ISSUE_TEMPLATE/       Feature, bug, chore and security templates
+│   ├── pull_request_template.md   Definition of Done checklist
+│   ├── CODEOWNERS, SECURITY.md, dependabot.yml
+├── .githooks/                commit-msg, pre-push and post-checkout hooks
 ├── api/                      Spring Boot API (Java 21, Maven)
-│   ├── src/main/java/        Application code
+│   ├── db/bootstrap/         Creates the database roles and schema (local and managed)
+│   ├── src/main/java/        Application code, one package per module
 │   ├── src/main/resources/
 │   │   ├── db/migration/     Flyway migrations
-│   │   └── application.yml   Configuration (values come from environment variables)
-│   └── src/test/java/        Backend tests
+│   │   ├── application.yml   Configuration (values come from environment variables)
+│   │   └── application-prod.yml   Production profile: no defaults, fails fast
+│   ├── src/test/java/        Unit (*Test) and integration (*IT) tests
+│   └── Dockerfile
 ├── web/                      React PWA (TypeScript, Vite)
-├── docs/                     Project documentation
-├── docker-compose.yml        api, web and PostgreSQL for local development
+│   ├── src/api/              Typed API client generated from OpenAPI
+│   ├── src/i18n/             Translations (pt-BR)
+│   ├── src/lib/              Money and date helpers
+│   ├── nginx/                nginx config: SPA and /api reverse proxy
+│   └── Dockerfile
+├── docs/                     Documentation, ADRs (docs/adr), security notes (docs/security), roadmap
+├── scripts/                  Compose smoke test and repository checks
+├── docker-compose.yml        db, api, web and mailpit for local development
 ├── .env.example              Template for environment variables
 ├── ruleset.json              GitHub ruleset
 └── README.md
@@ -32,30 +46,33 @@ bandcore/
 
 ## Backend
 
-Organize the code by feature rather than by layer, so each module owns its controller, service, repository and tests:
+A modular monolith with Spring Modulith ([ADR-0001](adr/0001-modular-monolith-with-spring-modulith.md)). Each top-level package is a module that owns its controllers, services, repositories and tests:
 
 ```text
 com.burstintofire.bandcore
-├── band/        bands, members, roles, invitations
-├── auth/        sign up, sign in, tokens
-├── expense/     expenses, categories, shares
-├── settlement/  balances and settlement payments
-├── merch/       products, variations, stock
-├── sale/        sales, refunds, event closing
-└── shared/      money, tenant context, error handling
+├── identity/    accounts, credentials, sessions and tokens
+├── tenancy/     bands, tenant resolution, members, memberships and roles
+├── finance/     expenses, categories, splits, balances and settlements
+├── merch/       products, variants, stock, batches, sales, refunds and events
+├── audit/       append-only audit trail
+└── shared/      error handling, request id, clock, security baseline, Money
 ```
 
-Adjust the base package to the one in your `pom.xml`.
+- The root package of a module is its public API; subpackages are internal. `shared` is open to every module and depends on none. `ModularityTest` verifies this on every build.
+- Every route is under `/api`. Health endpoints run on a separate management port (8081) that the public proxy never routes.
+- Errors are RFC 9457 Problem Details (`application/problem+json`) with a stable `code` and the `requestId`, and never contain stack traces or SQL.
+- Every request carries an `X-Request-Id` (generated or propagated), stored in the log context and returned in the response. Logs are structured JSON.
+- Time is read only through an injected `java.time.Clock`, so tests can fix it.
 
 ### Multi-tenancy
 
 Every band is a tenant. Rules:
 
 - Every business table has a `band_id` column.
-- The `band_id` comes from the authenticated user's token and the selected band, never from a request parameter the client can change.
+- The `band_id` comes from the authenticated user's token and the band of the request, never from a request parameter the client can change.
 - Every repository query filters by `band_id`. A shared tenant context makes this hard to forget.
 - Automated tests try to read and change another band's data and must fail (RNF01).
-- PostgreSQL Row Level Security can be added later as a second barrier (RNF07).
+- PostgreSQL Row Level Security as a second barrier, with the API connected as a role that cannot bypass it. The roadmap proposes RLS from M2, while the requirements place it later (RNF07); see [ADR-0002](adr/0002-multi-tenancy-shared-schema-band-id-rls.md). The least-privilege roles are already in place ([Database](DATABASE.md)).
 
 ### Money
 
@@ -85,8 +102,10 @@ Spring Security with JWT: a short-lived access token plus a refresh token. OAuth
 
 - React with TypeScript and Vite, styled with Tailwind CSS.
 - Installable PWA through `vite-plugin-pwa`.
-- Suggested libraries: React Router for navigation, TanStack Query for server data, React Hook Form with Zod for forms, and Vitest with Testing Library for tests.
-- Texts are externalized for pt-BR and English from the start (RNF18).
+- Libraries: React Router for navigation, TanStack Query for server data, React Hook Form with Zod for forms, and Vitest with Testing Library and MSW for tests.
+- Texts are externalized with react-i18next; pt-BR is the default language and a lint rule rejects hardcoded UI text (RNF18).
+- The API client is typed from the OpenAPI document (`npm run api:generate`); CI fails if it is out of date.
+- Design tokens from the mockup (dark background, surface cards, muted text, coral accent) are defined in `web/src/index.css`.
 
 ### Offline sales
 

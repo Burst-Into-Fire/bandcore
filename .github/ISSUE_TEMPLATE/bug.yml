@@ -1,0 +1,40 @@
+name: Bug
+description: Something does not work as expected
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Security problem (for example, seeing another band's data)? Do not use this form.
+        Report it privately: https://github.com/Burst-Into-Fire/bandcore/security/advisories/new
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Local, staging or production; browser and device.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Request id or logs
+      description: The requestId from the error response helps find the logs. Remove personal data and tokens.
+      render: text

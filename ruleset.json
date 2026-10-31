@@ -4,7 +4,10 @@
   "enforcement": "active",
   "conditions": {
     "ref_name": {
-      "include": ["~DEFAULT_BRANCH"],
+      "include": [
+        "~DEFAULT_BRANCH",
+        "refs/heads/development"
+      ],
       "exclude": []
     }
   },
@@ -16,9 +19,15 @@
     }
   ],
   "rules": [
-    { "type": "deletion" },
-    { "type": "non_fast_forward" },
-    { "type": "required_linear_history" },
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "required_linear_history"
+    },
     {
       "type": "pull_request",
       "parameters": {
@@ -34,7 +43,27 @@
       "parameters": {
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
-          { "context": "build" }
+          {
+            "context": "validate"
+          },
+          {
+            "context": "backend"
+          },
+          {
+            "context": "frontend"
+          },
+          {
+            "context": "api-contract"
+          },
+          {
+            "context": "docker"
+          },
+          {
+            "context": "gitleaks"
+          },
+          {
+            "context": "dependency-review"
+          }
         ]
       }
     }

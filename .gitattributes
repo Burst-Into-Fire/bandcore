@@ -1,1 +1,21 @@
+# Normalize line endings: LF everywhere, except Windows scripts.
 * text=auto eol=lf
+
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Shell scripts and hooks must stay LF, or they fail with "\r: command not found".
+*.sh text eol=lf
+mvnw text eol=lf
+.githooks/** text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.jar binary

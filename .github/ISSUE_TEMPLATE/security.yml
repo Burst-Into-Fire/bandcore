@@ -1,0 +1,26 @@
+name: Security hardening
+description: A security control or review task. Not for reporting vulnerabilities.
+labels: ['type:security']
+body:
+  - type: markdown
+    attributes:
+      value: >
+        **Found a vulnerability?** Do not describe it here: public issues are visible to everyone.
+        Report it privately: https://github.com/Burst-Into-Fire/bandcore/security/advisories/new
+  - type: textarea
+    id: control
+    attributes:
+      label: Control or review
+      description: What should be added or reviewed, and which threat it addresses.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Tests required

@@ -1,0 +1,47 @@
+# Served for every host (app.localhost, {band}.localhost, {band}.bandcore.app, ...).
+server_tokens off;
+
+server {
+    listen 8080;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Same-origin API: no CORS, and cookies stay scoped to the band's host.
+    location /api/ {
+        proxy_pass http://${API_UPSTREAM};
+        proxy_http_version 1.1;
+        # The API resolves the band from the Host header.
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Connection "";
+        proxy_read_timeout 60s;
+        client_max_body_size 10m;
+    }
+
+    # Container healthcheck for nginx itself.
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # Hashed build assets never change: cache them for a year.
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    # The SPA entry point must always be revalidated, so a deploy is picked up immediately.
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+    }
+
+    # Client-side routes fall back to the SPA.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

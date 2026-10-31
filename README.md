@@ -15,13 +15,12 @@
 ![Docker](https://img.shields.io/badge/Docker-11151d?style=for-the-badge&logo=docker&logoColor=7ed8ff)
 ![PWA](https://img.shields.io/badge/PWA-11151d?style=for-the-badge&logo=pwa&logoColor=9b91d9)
 
-<!-- CI badge: only renders for visitors once the repository is public.
-[![CI](https://img.shields.io/github/actions/workflow/status/Burst-Into-Fire/bandcore/ci.yml?branch=main&style=flat-square&labelColor=11151d&color=7ed8ff&label=CI)](https://github.com/Burst-Into-Fire/bandcore/actions) -->
+[![CI](https://img.shields.io/github/actions/workflow/status/Burst-Into-Fire/bandcore/ci.yml?branch=development&style=flat-square&labelColor=11151d&color=7ed8ff&label=CI)](https://github.com/Burst-Into-Fire/bandcore/actions/workflows/ci.yml)
 ![Status](https://img.shields.io/badge/status-in_development-9b91d9?style=flat-square&labelColor=11151d)
 
 **English** | [Português (Brasil)](docs/README-PTBR.md)
 
-**[Features](#features)** · **[Architecture](#architecture)** · **[Requirements](#requirements)** · **[Product Backlog](#product-backlog)** · **[Sprint Backlog](#sprint-backlog)** · **[Roadmap](#roadmap)** · **[Documentation](#documentation)**
+**[Features](#features)** · **[Architecture](#architecture)** · **[Getting started](#getting-started)** · **[Requirements](#requirements)** · **[Product Backlog](#product-backlog)** · **[Sprint Backlog](#sprint-backlog)** · **[Roadmap](#roadmap)** · **[Documentation](#documentation)**
 
 </div>
 
@@ -109,6 +108,28 @@ flowchart LR
 | Deploy | Managed platform (Railway or Render, to be decided) with automatic deploys from GitHub |
 
 The deploy is portable on purpose, so the project can move to a VPS with Docker Compose if cost or control requires it. Details in [Architecture](docs/ARCHTECTURE.md) and [Deployment](docs/DEPLOYMENT.md).
+
+## Getting started
+
+You only need Git and Docker. Full instructions, environment variables and running without Docker: [Getting Started](docs/GETTING-STARTED.md).
+
+```bash
+git clone https://github.com/Burst-Into-Fire/bandcore.git
+cd bandcore
+cp .env.example .env
+docker compose up --build
+```
+
+Then open <http://app.localhost:3000>. Each band gets its own subdomain, such as <http://burst.localhost:3000>.
+
+| Task | Command |
+|---|---|
+| API unit and integration tests (needs Docker) | `cd api && ./mvnw verify` |
+| Web lint, types and tests | `cd web && npm ci && npm run lint && npm run typecheck && npm test` |
+| Whole stack smoke test | `scripts/compose-smoke-test.sh` |
+| Enable the commit and branch hooks | `git config core.hooksPath .githooks` |
+
+See [Testing](docs/TESTING.md) and [Contributing](docs/CONTRIBUTING.md) before opening a pull request.
 
 ## Requirements
 
@@ -238,6 +259,9 @@ User stories are written from the requirements above and listed here with priori
 
 ## Roadmap
 
+The implementation plan, with milestones, issues, key decisions and the Definition of Done, is in [docs/roadmap.md](docs/roadmap.md).
+
+- [ ] Project foundation: skeletons, database roles, tests, Docker and CI ([M1](docs/roadmap/M01-project-foundation.md), in progress)
 - [ ] Account management module (in progress)
 - [ ] Merch module (in progress)
 - [ ] Press module (sending material to media outlets)
@@ -262,6 +286,10 @@ User stories are written from the requirements above and listed here with priori
 | [Architecture](docs/ARCHTECTURE.md) | Components, project structure, multi-tenancy, money and offline sync |
 | [Deployment](docs/DEPLOYMENT.md) | CI/CD, hosting, backups and how to move to a VPS |
 | [Testing](docs/TESTING.md) | How to run the tests and which rules must be covered |
+| [Database](docs/DATABASE.md) | Roles, migrations and the tenant table checklist |
+| [Architecture decisions](docs/adr/README.md) | ADRs: modular monolith, multi-tenancy, authentication, money and more |
+| [Roadmap](docs/roadmap.md) | Milestones, issues, testing strategy and Definition of Done |
+| [Contributing](docs/CONTRIBUTING.md) | Branches, commits, pull requests and testing expectations |
 
 <!-- License: decide when the repository is opened to the public. -->
 

@@ -1,0 +1,3 @@
+#!/bin/sh
+# Rejects commit messages that do not follow docs/CONTRIBUTING.md.
+exec sh "$(dirname "$0")/lib/validate-message.sh" "$1"

@@ -1,0 +1,13 @@
+# Production and staging. No defaults: a missing variable fails the startup.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_APP_USER}
+    password: ${DB_APP_PASSWORD}
+  flyway:
+    user: ${DB_OWNER_USER}
+    password: ${DB_OWNER_PASSWORD}
+
+springdoc:
+  swagger-ui:
+    enabled: false

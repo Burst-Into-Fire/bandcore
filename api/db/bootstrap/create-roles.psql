@@ -1,0 +1,37 @@
+-- Creates the bandcore roles and schema. Run once per database, as an administrator.
+-- Safe to run again: it only creates what is missing and resets the role attributes.
+--
+--   psql -v ON_ERROR_STOP=1 -v db_name=bandcore \
+--        -v owner_password=... -v app_password=... -f create-roles.psql
+--
+-- bandcore_owner owns the schema and runs Flyway. bandcore_app is the runtime role: it owns
+-- nothing, cannot run DDL and can never bypass row-level security.
+
+\set ON_ERROR_STOP on
+
+SELECT NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'bandcore_owner') AS create_owner \gset
+\if :create_owner
+    CREATE ROLE bandcore_owner;
+\endif
+ALTER ROLE bandcore_owner WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS
+    PASSWORD :'owner_password';
+
+SELECT NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'bandcore_app') AS create_app \gset
+\if :create_app
+    CREATE ROLE bandcore_app;
+\endif
+ALTER ROLE bandcore_app WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS
+    PASSWORD :'app_password';
+
+-- Only the two roles may connect, and nobody may create objects in the public schema.
+REVOKE ALL ON DATABASE :"db_name" FROM PUBLIC;
+GRANT CONNECT ON DATABASE :"db_name" TO bandcore_owner, bandcore_app;
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+
+CREATE SCHEMA IF NOT EXISTS bandcore AUTHORIZATION bandcore_owner;
+ALTER SCHEMA bandcore OWNER TO bandcore_owner;
+REVOKE ALL ON SCHEMA bandcore FROM PUBLIC;
+
+ALTER ROLE bandcore_owner SET search_path = bandcore;
+ALTER ROLE bandcore_app SET search_path = bandcore;
+ALTER DATABASE :"db_name" SET timezone TO 'UTC';
