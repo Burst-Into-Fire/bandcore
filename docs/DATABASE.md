@@ -12,7 +12,7 @@ Row-level security only protects data if the role the API uses neither owns the 
 | `bandcore_app` | The API at runtime (datasource) | `SELECT`, `INSERT`, `UPDATE`, `DELETE` on tables; nothing else. `NOSUPERUSER`, `NOBYPASSRLS`, owns nothing, cannot create objects |
 
 - Privileges for `bandcore_app` come from `ALTER DEFAULT PRIVILEGES` in the baseline migration, so every new table is usable automatically.
-- Append-only tables (audit log, stock movements) must `REVOKE UPDATE, DELETE ... FROM bandcore_app` in their migration.
+- Append-only tables must `REVOKE UPDATE, DELETE, TRUNCATE ... FROM bandcore_app` in their migration. Today: `audit_events` and `security_events` ([audit log](security/audit-log.md)); later: stock movements.
 - Never use the owner or a superuser for the runtime connection, not even in tests.
 - `DatabaseRolesIT` proves all of the above on every build.
 
@@ -55,10 +55,10 @@ Every table that holds band data must have, in the same migration:
 - [ ] `band_id uuid NOT NULL` referencing `bands`
 - [ ] `UNIQUE (band_id, id)`, so child tables can reference it with a composite key
 - [ ] `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` and `FORCE ROW LEVEL SECURITY`
-- [ ] A policy comparing `band_id` with `app.band_id` for every command (`USING` and `WITH CHECK`)
+- [ ] A policy comparing `band_id` with `app.band_id` for every command (`USING` and `WITH CHECK`); append-only tables need policies only for `SELECT` and `INSERT`
 - [ ] Composite foreign keys `(band_id, parent_id)` referencing `(band_id, id)` on the parent, so a row cannot point to another band's data
 - [ ] An index (or unique constraint) whose first column is `band_id`
-- [ ] For append-only tables: `REVOKE UPDATE, DELETE ON ... FROM bandcore_app`
+- [ ] For append-only tables: `REVOKE UPDATE, DELETE, TRUNCATE ON ... FROM bandcore_app` (the schema guard accepts a missing policy only for a command the role cannot run)
 
 The schema guard test (`SchemaGuardIT`) fails the build when a table misses any of these. Global tables (no `band_id`) must be added to its allowlist with a reason.
 

@@ -89,7 +89,7 @@ Risk: **H** high, **M** medium, **L** low (likelihood × impact, before the miti
 |---|---|---|---|---|---|
 | T26 | E | **Runtime role can bypass RLS** (owner, superuser, `BYPASSRLS`) | H | Flyway runs as `bandcore_owner`; the API as `bandcore_app` (no superuser, no `BYPASSRLS`, owns nothing) | [M1-04](../roadmap/M01-project-foundation.md), [M2-05](https://github.com/Burst-Into-Fire/bandcore/issues/16): `DatabaseRolesIT`, `SchemaGuardIT` |
 | T27 | I | **Secrets or personal data in logs and error responses** | M | Problem Details without exception messages; tokens, passwords and full emails never logged (emails masked) | [M1-03](../roadmap/M01-project-foundation.md): `ProblemDetailsIT`; [M2-06](https://github.com/Burst-Into-Fire/bandcore/issues/17) |
-| T28 | R | **No trace of security events** (logins, token reuse) | M | Security and audit events in M3-03 | [M3-03](../roadmap/M03-security-hardening-delivery.md) |
+| T28 | R | **No trace of security events** (logins, token reuse) or of changes to band data | M | [Audit log](audit-log.md): `security_events` for account events, committed even when the request fails; `audit_events` per band, written in the business transaction; both append-only for `bandcore_app` (`UPDATE`, `DELETE`, `TRUNCATE` revoked) | [M3-03](https://github.com/Burst-Into-Fire/bandcore/issues/26): `AuditLogIT`, `SecurityEventsIT` |
 | T29 | D | **Brute force or flooding** of signup, login, resend, password reset and slug checks | M | [Rate limits](rate-limits.md) per client address and per email or account, 429 with `Retry-After`; the client address comes from `X-Forwarded-For` only behind a trusted proxy; email sending happens after commit and off the request thread | [M3-02](https://github.com/Burst-Into-Fire/bandcore/issues/25): `RateLimitIT`, `RateLimitBehindProxyIT`, `ClientAddressesTest` |
 
 ## Residual risks
@@ -111,6 +111,7 @@ Use it for every change that touches authentication, tenancy, a new table or a n
 - [ ] Use cases have `@PreAuthorize` with a named permission; ownership rules ("own only") are checked in the service
 - [ ] Another band's resources answer 404, and responses never contain other bands' IDs or names
 - [ ] Tenant data is accessed only inside transactions
+- [ ] Changes to money, stock, members or settings call `AuditRecorder` in the same transaction, without personal data in `changes`
 - [ ] No token, password, full email or secret in logs, error responses or URLs that reach the server
 - [ ] Generic errors where a specific one would reveal whether an account or resource exists
 - [ ] Cookies: `__Host-` prefix, `Secure`, `HttpOnly`, `SameSite=Strict`; unsafe cookie-authenticated requests require `X-Requested-With`

@@ -3,6 +3,8 @@ package com.burstintofire.bandcore.tenancy.band;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.ZoneId;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -10,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.burstintofire.bandcore.audit.AuditRecorder;
 import com.burstintofire.bandcore.shared.security.Permissions;
 import com.burstintofire.bandcore.shared.tenant.TenantContextHolder;
 import com.burstintofire.bandcore.shared.web.ApiException;
@@ -17,7 +20,8 @@ import com.burstintofire.bandcore.shared.web.ErrorCode;
 
 /**
  * The current band's own data. The band is always the one of the request host; there is no
- * way to address another band here. The settings page and audit arrive in M4-04.
+ * way to address another band here. Changes are recorded in the audit log; the settings page
+ * arrives in M4-04.
  */
 @Service
 public class BandSettings {
@@ -26,11 +30,14 @@ public class BandSettings {
 
 	private final BandDirectory directory;
 
+	private final AuditRecorder audit;
+
 	private final Clock clock;
 
-	BandSettings(BandRepository bands, BandDirectory directory, Clock clock) {
+	BandSettings(BandRepository bands, BandDirectory directory, AuditRecorder audit, Clock clock) {
 		this.bands = bands;
 		this.directory = directory;
+		this.audit = audit;
 		this.clock = clock;
 	}
 
@@ -51,6 +58,9 @@ public class BandSettings {
 	@Transactional
 	public Band update(String name, String timezone) {
 		Band band = currentBand();
+		Map<String, Object> changes = new LinkedHashMap<>();
+		String previousTimezone = band.getTimezone();
+		String previousName = band.getName();
 		if (timezone != null) {
 			try {
 				band.changeTimezone(ZoneId.of(timezone).getId(), clock.instant());
@@ -62,6 +72,15 @@ public class BandSettings {
 		}
 		if (name != null) {
 			band.rename(name.strip(), clock.instant());
+		}
+		if (!band.getName().equals(previousName)) {
+			changes.put("name", AuditRecorder.change(previousName, band.getName()));
+		}
+		if (!band.getTimezone().equals(previousTimezone)) {
+			changes.put("timezone", AuditRecorder.change(previousTimezone, band.getTimezone()));
+		}
+		if (!changes.isEmpty()) {
+			audit.record("band.updated", "band", band.getId(), changes);
 		}
 		bands.flush();
 		directory.evict(band.getSlug());

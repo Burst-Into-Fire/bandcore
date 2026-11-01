@@ -3,6 +3,7 @@ package com.burstintofire.bandcore.identity.session;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.burstintofire.bandcore.identity.BandAccess;
+import com.burstintofire.bandcore.identity.events.SecurityEventType;
+import com.burstintofire.bandcore.identity.events.SecurityEvents;
 import com.burstintofire.bandcore.identity.token.AccessTokenService;
 import com.burstintofire.bandcore.identity.token.AccessTokenService.AccessToken;
 import com.burstintofire.bandcore.identity.token.JwtProperties;
@@ -65,6 +68,8 @@ public class SessionService {
 
 	private final IdGenerator ids;
 
+	private final SecurityEvents securityEvents;
+
 	private final Clock clock;
 
 	/** Compared against when the email is unknown, so the response time does not reveal it. */
@@ -72,7 +77,7 @@ public class SessionService {
 
 	SessionService(UserRepository users, RefreshTokenRepository refreshTokens, BandAccess bandAccess,
 			AccessTokenService accessTokens, PasswordEncoder passwordEncoder, JwtProperties properties, IdGenerator ids,
-			Clock clock) {
+			SecurityEvents securityEvents, Clock clock) {
 		this.users = users;
 		this.refreshTokens = refreshTokens;
 		this.bandAccess = bandAccess;
@@ -80,6 +85,7 @@ public class SessionService {
 		this.passwordEncoder = passwordEncoder;
 		this.properties = properties;
 		this.ids = ids;
+		this.securityEvents = securityEvents;
 		this.clock = clock;
 		this.dummyHash = passwordEncoder.encode(SecretTokens.generate());
 	}
@@ -91,11 +97,14 @@ public class SessionService {
 		Optional<User> found = users.findByEmail(Emails.normalize(rawEmail));
 		if (found.isEmpty()) {
 			passwordEncoder.matches(password, dummyHash);
-			throw invalidCredentials();
+			throw loginFailed(null, "unknown_email");
 		}
 		User user = found.get();
-		if (!passwordEncoder.matches(password, user.getPasswordHash()) || !user.isActive()) {
-			throw invalidCredentials();
+		if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+			throw loginFailed(user.getId(), "wrong_password");
+		}
+		if (!user.isActive()) {
+			throw loginFailed(user.getId(), "account_disabled");
 		}
 		if (passwordEncoder.upgradeEncoding(user.getPasswordHash())) {
 			user.changePasswordHash(passwordEncoder.encode(password), clock.instant());
@@ -104,10 +113,13 @@ public class SessionService {
 		if (!scope.isCentral()) {
 			UUID bandId = scope.tenant().bandId();
 			if (!user.isEmailVerified()) {
-				throw invalidCredentials();
+				throw loginFailed(user.getId(), "email_not_verified");
 			}
-			role = bandAccess.find(bandId, user.getId()).orElseThrow(SessionService::invalidCredentials).role();
+			role = bandAccess.find(bandId, user.getId())
+				.orElseThrow(() -> loginFailed(user.getId(), "no_membership"))
+				.role();
 		}
+		securityEvents.record(SecurityEventType.LOGIN_SUCCEEDED, user.getId());
 		Instant now = clock.instant();
 		return newToken(user.getId(), scope, role, UUID.randomUUID(), now, now.plus(properties.refreshTokenAbsoluteLifetime()));
 	}
@@ -127,6 +139,8 @@ public class SessionService {
 		}
 		if (token.isRotated()) {
 			refreshTokens.revokeFamily(token.getFamilyId(), now);
+			securityEvents.record(SecurityEventType.REFRESH_TOKEN_REUSED, token.getUserId(),
+					Map.of("family_id", token.getFamilyId().toString()));
 			throw new RefreshRejected();
 		}
 		if (token.isExpired(now) || !token.getAudience().equals(scope.host())) {
@@ -152,6 +166,13 @@ public class SessionService {
 	public void logout(String rawToken) {
 		refreshTokens.findByTokenHash(SecretTokens.hash(rawToken))
 			.ifPresent(token -> refreshTokens.revokeFamily(token.getFamilyId(), clock.instant()));
+	}
+
+	/** "Log out everywhere", asked by the user. */
+	@Transactional
+	public void logoutAll(UUID userId) {
+		logoutEverywhere(userId);
+		securityEvents.record(SecurityEventType.LOGOUT_ALL, userId);
 	}
 
 	/**
@@ -182,6 +203,12 @@ public class SessionService {
 
 	private static Instant min(Instant a, Instant b) {
 		return a.isBefore(b) ? a : b;
+	}
+
+	/** Records why, then answers the same generic error for every reason. */
+	private ApiException loginFailed(UUID userId, String reason) {
+		securityEvents.record(SecurityEventType.LOGIN_FAILED, userId, Map.of("reason", reason));
+		return invalidCredentials();
 	}
 
 	private static ApiException invalidCredentials() {
