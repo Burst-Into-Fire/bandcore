@@ -99,7 +99,7 @@ The API reads these variables (docker-compose sets them from the ones above):
 | `MANAGEMENT_PORT` | Health endpoints port (never exposed publicly) | `8081` |
 | `SPRING_PROFILES_ACTIVE` | `prod` in staging and production | none |
 | `PUBLIC_URL_SCHEME`, `PUBLIC_URL_PORT` | Scheme and port of links in emails (`https` and none in production) | `http`, `3000` |
-| `TRUSTED_PROXIES` | Comma-separated addresses allowed to set `X-Forwarded-Host`; every other request is routed by its `Host` header | empty |
+| `TRUSTED_PROXIES` | Comma-separated addresses or CIDR ranges of the proxies in front of the API. Only they may set `X-Forwarded-Host` and `X-Forwarded-For`; every other request is routed by its `Host` header and rate limited by its own address ([rate limits](security/rate-limits.md)) | empty |
 | `JWT_KEY_ID` | `kid` header of access tokens, for key rotation | `k1` |
 
 With `SPRING_PROFILES_ACTIVE=prod` there are no defaults: the API refuses to start and lists every missing variable. Never commit `.env`; only `.env.example` goes to the repository.

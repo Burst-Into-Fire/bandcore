@@ -20,9 +20,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.burstintofire.bandcore.identity.user.Emails;
+import com.burstintofire.bandcore.shared.ratelimit.RateLimiter;
 import com.burstintofire.bandcore.shared.security.CurrentUser;
 import com.burstintofire.bandcore.shared.web.AnyHostEndpoint;
 import com.burstintofire.bandcore.shared.web.ApiException;
+import com.burstintofire.bandcore.shared.web.ClientAddresses;
 import com.burstintofire.bandcore.shared.web.ErrorCode;
 import com.burstintofire.bandcore.shared.web.PublicEndpoint;
 
@@ -41,17 +43,33 @@ class AuthController {
 
 	private final Clock clock;
 
-	AuthController(SessionService sessions, Clock clock) {
+	private final RateLimiter.RateLimit loginsPerIp;
+
+	private final RateLimiter.RateLimit loginFailuresPerAccount;
+
+	private final ClientAddresses clients;
+
+	AuthController(SessionService sessions, Clock clock, RateLimiter limiter, ClientAddresses clients) {
 		this.sessions = sessions;
 		this.clock = clock;
+		this.loginsPerIp = limiter.limit("login-ip");
+		this.loginFailuresPerAccount = limiter.limit("login-failures-account");
+		this.clients = clients;
 	}
 
 	@PostMapping("/login")
 	@PublicEndpoint("logging in is how a session starts")
 	@Operation(operationId = "login", summary = "Log in on this host and get an access token",
 			description = "Sets the refresh token cookie. Any failure answers the same 401 INVALID_CREDENTIALS.")
-	ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
-		return withSession(sessions.login(request.email(), request.password()));
+	ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
+		loginsPerIp.consume(clients.clientOf(http));
+		// Every attempt takes one from the account's bucket and a success gives it back, so only
+		// failures count, and parallel guesses cannot all slip past the check.
+		String account = Emails.normalize(request.email());
+		loginFailuresPerAccount.consume(account);
+		SessionService.Session session = sessions.login(request.email(), request.password());
+		loginFailuresPerAccount.refund(account);
+		return withSession(session);
 	}
 
 	@PostMapping("/refresh")

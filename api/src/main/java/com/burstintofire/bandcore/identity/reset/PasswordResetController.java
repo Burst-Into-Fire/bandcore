@@ -3,6 +3,7 @@ package com.burstintofire.bandcore.identity.reset;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -17,7 +18,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.burstintofire.bandcore.identity.user.Emails;
+import com.burstintofire.bandcore.shared.ratelimit.RateLimiter;
 import com.burstintofire.bandcore.shared.web.CentralEndpoint;
+import com.burstintofire.bandcore.shared.web.ClientAddresses;
 import com.burstintofire.bandcore.shared.web.PublicEndpoint;
 
 @RestController
@@ -29,15 +32,29 @@ class PasswordResetController {
 
 	private final PasswordResetService resets;
 
-	PasswordResetController(PasswordResetService resets) {
+	private final ClientAddresses clients;
+
+	private final RateLimiter.RateLimit requestsPerIp;
+
+	private final RateLimiter.RateLimit requestsPerEmail;
+
+	private final RateLimiter.RateLimit confirmationsPerIp;
+
+	PasswordResetController(PasswordResetService resets, ClientAddresses clients, RateLimiter limiter) {
 		this.resets = resets;
+		this.clients = clients;
+		this.requestsPerIp = limiter.limit("password-reset-ip");
+		this.requestsPerEmail = limiter.limit("password-reset-email");
+		this.confirmationsPerIp = limiter.limit("password-reset-confirm-ip");
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	@Operation(operationId = "requestPasswordReset", summary = "Send a password reset link",
 			description = "Always answers 202 for valid input, whether or not the email has an account.")
-	void request(@Valid @RequestBody PasswordResetRequest request) {
+	void request(@Valid @RequestBody PasswordResetRequest request, HttpServletRequest http) {
+		requestsPerIp.consume(clients.clientOf(http));
+		requestsPerEmail.consume(Emails.normalize(request.email()));
 		resets.request(request.email());
 	}
 
@@ -46,7 +63,8 @@ class PasswordResetController {
 	@Operation(operationId = "confirmPasswordReset",
 			summary = "Set a new password with the token from the reset link",
 			description = "Ends every session of the user, on every host.")
-	void confirm(@Valid @RequestBody PasswordResetConfirmation request) {
+	void confirm(@Valid @RequestBody PasswordResetConfirmation request, HttpServletRequest http) {
+		confirmationsPerIp.consume(clients.clientOf(http));
 		resets.reset(request.token(), request.password());
 	}
 

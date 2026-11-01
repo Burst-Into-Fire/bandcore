@@ -58,7 +58,7 @@ Risk: **H** high, **M** medium, **L** low (likelihood × impact, before the miti
 
 | ID | STRIDE | Threat | Risk | Mitigation | Issue and test |
 |---|---|---|---|---|---|
-| T13 | S | **Credential stuffing** and password guessing | H | Argon2id; 12+ character passwords; common passwords rejected; generic login error; rate limiting and progressive delay in M3-02 | [M2-06](https://github.com/Burst-Into-Fire/bandcore/issues/17): `PasswordPolicyTest`, `SignupIT`; [M3-02](../roadmap/M03-security-hardening-delivery.md) |
+| T13 | S | **Credential stuffing** and password guessing | H | Argon2id; 12+ character passwords; common passwords rejected; generic login error; [rate limits](rate-limits.md) per address (20 per 5 minutes) and a temporary lock per account after 5 failures, on every host | [M2-06](https://github.com/Burst-Into-Fire/bandcore/issues/17): `PasswordPolicyTest`, `SignupIT`; [M3-02](https://github.com/Burst-Into-Fire/bandcore/issues/25): `RateLimitIT`, `RateLimitBehindProxyIT` |
 | T14 | S, I | **Leaked verification token** (logs, email, history) | M | 256-bit random, only its SHA-256 hash is stored, single use, 24 h; tokens never logged; links point to the central host | [M2-06](https://github.com/Burst-Into-Fire/bandcore/issues/17): `SignupIT` (reused and expired tokens rejected) |
 | T15 | S | **Stolen refresh token** | H | `HttpOnly`, `Secure`, `SameSite=Strict`, `__Host-` cookie; stored hashed; rotated on every use; reuse of a rotated token revokes the whole family; sliding 14 days, absolute 30 days; logout-all | [M2-07](https://github.com/Burst-Into-Fire/bandcore/issues/18): `RefreshTokenIT` |
 | T16 | S | **Stolen access token** | M | 15-minute lifetime; kept only in memory, never in `localStorage`/`sessionStorage`; a password reset or logout-all refuses every token issued before it (`users.sessions_valid_after`) | [M2-07](https://github.com/Burst-Into-Fire/bandcore/issues/18): `AccessTokenServiceTest`; [M2-12](https://github.com/Burst-Into-Fire/bandcore/issues/23): `session.test.ts` (storage spies); [M3-01](https://github.com/Burst-Into-Fire/bandcore/issues/24): `PasswordResetIT`, `RefreshTokenIT` |
@@ -71,7 +71,7 @@ Risk: **H** high, **M** medium, **L** low (likelihood × impact, before the miti
 | ID | STRIDE | Threat | Risk | Mitigation | Issue and test |
 |---|---|---|---|---|---|
 | T19 | I | **Account enumeration** through signup, login, resend or password reset | M | Identical responses whether the email exists or not; the existing owner gets an email instead; the password encoder runs even for unknown emails; a reset request generates and hashes a token even for unknown emails; emails are sent after commit, off the request thread | [M2-06](https://github.com/Burst-Into-Fire/bandcore/issues/17), [M2-07](https://github.com/Burst-Into-Fire/bandcore/issues/18): `SignupIT`, `LoginIT` (encoder spy); [M3-01](https://github.com/Burst-Into-Fire/bandcore/issues/24): `PasswordResetIT` (generator spy) |
-| T20 | I | **Band slug enumeration** | L | Accepted: a slug is a public subdomain by design. Slug availability requires a central session; rate limiting in M3-02. Band hosts reveal only the band name before login | [M2-08](https://github.com/Burst-Into-Fire/bandcore/issues/19); [M3-02](../roadmap/M03-security-hardening-delivery.md) |
+| T20 | I | **Band slug enumeration** | L | Accepted: a slug is a public subdomain by design. Slug availability requires a central session and is rate limited per account and address. Band hosts reveal only the band name before login | [M2-08](https://github.com/Burst-Into-Fire/bandcore/issues/19); [M3-02](https://github.com/Burst-Into-Fire/bandcore/issues/25): `RateLimitIT` |
 | T21 | I | **Probing other bands' IDs** | M | UUIDv7 identifiers; other bands' resources answer 404, never 403 | [M2-11](https://github.com/Burst-Into-Fire/bandcore/issues/22): `TenantIsolationIT` |
 
 ### Browser
@@ -90,11 +90,12 @@ Risk: **H** high, **M** medium, **L** low (likelihood × impact, before the miti
 | T26 | E | **Runtime role can bypass RLS** (owner, superuser, `BYPASSRLS`) | H | Flyway runs as `bandcore_owner`; the API as `bandcore_app` (no superuser, no `BYPASSRLS`, owns nothing) | [M1-04](../roadmap/M01-project-foundation.md), [M2-05](https://github.com/Burst-Into-Fire/bandcore/issues/16): `DatabaseRolesIT`, `SchemaGuardIT` |
 | T27 | I | **Secrets or personal data in logs and error responses** | M | Problem Details without exception messages; tokens, passwords and full emails never logged (emails masked) | [M1-03](../roadmap/M01-project-foundation.md): `ProblemDetailsIT`; [M2-06](https://github.com/Burst-Into-Fire/bandcore/issues/17) |
 | T28 | R | **No trace of security events** (logins, token reuse) | M | Security and audit events in M3-03 | [M3-03](../roadmap/M03-security-hardening-delivery.md) |
-| T29 | D | **Brute force or flooding** of signup, login, resend and slug checks | M | Rate limiting in M3-02; email sending happens after commit and off the request thread | [M3-02](../roadmap/M03-security-hardening-delivery.md) |
+| T29 | D | **Brute force or flooding** of signup, login, resend, password reset and slug checks | M | [Rate limits](rate-limits.md) per client address and per email or account, 429 with `Retry-After`; the client address comes from `X-Forwarded-For` only behind a trusted proxy; email sending happens after commit and off the request thread | [M3-02](https://github.com/Burst-Into-Fire/bandcore/issues/25): `RateLimitIT`, `RateLimitBehindProxyIT`, `ClientAddressesTest` |
 
 ## Residual risks
 
-- Until M3-02, login, signup and resend have no rate limit. Do not expose the API publicly before M3-02 is done.
+- Rate limit buckets live in memory: a restart empties them, and with more than one API instance each one allows the full limit (see [rate limits](rate-limits.md#storage)).
+- An attacker who knows a user's email can keep the account locked by failing 5 logins every 15 minutes. The lock is temporary and the user can still reset the password; revisit if it happens in practice.
 - A single access token cannot be revoked during its 15 minutes, except by ending every session of the user (password reset or logout-all). Membership changes still take effect on the next request (T09). A token issued in the same second as a reset stays valid, because `iat` has second precision.
 - Two tabs of the same band refreshing at the same moment can trigger reuse detection and log the user out. The web app shares one refresh per tab; the cost is a new login, never a leak.
 - `JWT_SECRET` rotation needs a second key in the decoder; the `kid` header is already set.
@@ -106,6 +107,7 @@ Use it for every change that touches authentication, tenancy, a new table or a n
 - [ ] The band comes only from `TenantContextHolder` (the host), never from the body, query or a header
 - [ ] New tenant tables follow the [tenant table checklist](../DATABASE.md#tenant-table-checklist); `SchemaGuardIT` passes without adding the table to the global allowlist
 - [ ] New endpoints are `@PublicEndpoint` (with a reason), `@CentralEndpoint`, or registered in `AuthorizationMatrix` and `IsolationScenarios` ([guide](../endpoint-security.md))
+- [ ] Public endpoints, and any endpoint that sends email or checks a secret, have a [rate limit](rate-limits.md)
 - [ ] Use cases have `@PreAuthorize` with a named permission; ownership rules ("own only") are checked in the service
 - [ ] Another band's resources answer 404, and responses never contain other bands' IDs or names
 - [ ] Tenant data is accessed only inside transactions

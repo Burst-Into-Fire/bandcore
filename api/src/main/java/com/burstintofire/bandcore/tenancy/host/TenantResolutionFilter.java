@@ -18,6 +18,7 @@ import org.springframework.web.method.HandlerMethod;
 import com.burstintofire.bandcore.shared.config.PlatformProperties;
 import com.burstintofire.bandcore.shared.tenant.TenantContext;
 import com.burstintofire.bandcore.shared.tenant.TenantContextHolder;
+import com.burstintofire.bandcore.shared.web.ClientAddresses;
 import com.burstintofire.bandcore.shared.web.EndpointRegistry;
 import com.burstintofire.bandcore.shared.web.EndpointRegistry.Scope;
 import com.burstintofire.bandcore.tenancy.band.BandDirectory;
@@ -45,10 +46,14 @@ class TenantResolutionFilter extends OncePerRequestFilter {
 
 	private final EndpointRegistry endpoints;
 
-	TenantResolutionFilter(PlatformProperties platform, BandDirectory bands, EndpointRegistry endpoints) {
+	private final ClientAddresses clients;
+
+	TenantResolutionFilter(PlatformProperties platform, BandDirectory bands, EndpointRegistry endpoints,
+			ClientAddresses clients) {
 		this.platform = platform;
 		this.bands = bands;
 		this.endpoints = endpoints;
+		this.clients = clients;
 	}
 
 	@Override
@@ -100,7 +105,7 @@ class TenantResolutionFilter extends OncePerRequestFilter {
 
 	private String hostOf(HttpServletRequest request) {
 		String forwarded = request.getHeader(FORWARDED_HOST);
-		if (forwarded != null && platform.trustedProxies().contains(request.getRemoteAddr())) {
+		if (forwarded != null && clients.isTrustedProxy(request.getRemoteAddr())) {
 			String[] values = forwarded.split(",");
 			return values[values.length - 1].strip();
 		}
