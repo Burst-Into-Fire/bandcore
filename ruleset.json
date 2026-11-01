@@ -59,6 +59,9 @@
             "context": "docker"
           },
           {
+            "context": "e2e"
+          },
+          {
             "context": "gitleaks"
           },
           {
