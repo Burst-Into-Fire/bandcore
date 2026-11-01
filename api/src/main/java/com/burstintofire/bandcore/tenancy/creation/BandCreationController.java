@@ -6,6 +6,7 @@ import java.util.UUID;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,7 +20,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.burstintofire.bandcore.shared.ratelimit.RateLimiter;
+import com.burstintofire.bandcore.shared.security.CurrentUser;
 import com.burstintofire.bandcore.shared.web.CentralEndpoint;
+import com.burstintofire.bandcore.shared.web.ClientAddresses;
 import com.burstintofire.bandcore.shared.web.ErrorCode;
 import com.burstintofire.bandcore.tenancy.band.BandRegistry;
 
@@ -33,7 +37,17 @@ class BandCreationController {
 
 	private final BandRegistry registry;
 
-	BandCreationController(BandCreationService creation, BandRegistry registry) {
+	private final RateLimiter.RateLimit slugChecksPerAccount;
+
+	private final RateLimiter.RateLimit slugChecksPerIp;
+
+	private final ClientAddresses clients;
+
+	BandCreationController(BandCreationService creation, BandRegistry registry, RateLimiter limiter,
+			ClientAddresses clients) {
+		this.slugChecksPerAccount = limiter.limit("slug-availability-account");
+		this.slugChecksPerIp = limiter.limit("slug-availability-ip");
+		this.clients = clients;
 		this.creation = creation;
 		this.registry = registry;
 	}
@@ -50,7 +64,10 @@ class BandCreationController {
 
 	@GetMapping("/slug-availability")
 	@Operation(operationId = "checkSlugAvailability", summary = "Check whether a band address can be used")
-	SlugAvailabilityResponse slugAvailability(@RequestParam @NotNull @Size(max = 64) String slug) {
+	SlugAvailabilityResponse slugAvailability(@RequestParam @NotNull @Size(max = 64) String slug,
+			HttpServletRequest request) {
+		slugChecksPerIp.consume(clients.clientOf(request));
+		slugChecksPerAccount.consume(CurrentUser.require().userId().toString());
 		BandRegistry.Availability availability = registry.availability(slug);
 		return new SlugAvailabilityResponse(availability.slug(), availability.available(), availability.reason());
 	}

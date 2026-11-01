@@ -31,6 +31,7 @@
 		<jacoco.version>0.8.16</jacoco.version>
 		<bouncycastle.version>1.86</bouncycastle.version>
 		<greenmail.version>2.1.15</greenmail.version>
+		<bucket4j.version>8.21.0</bucket4j.version>
 	</properties>
 
 	<dependencyManagement>
@@ -74,6 +75,12 @@
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-oauth2-jose</artifactId>
+		</dependency>
+		<!-- Rate limiting (token buckets), in memory for now -->
+		<dependency>
+			<groupId>com.bucket4j</groupId>
+			<artifactId>bucket4j_jdk17-core</artifactId>
+			<version>${bucket4j.version}</version>
 		</dependency>
 		<!-- Argon2id for Spring Security's Argon2PasswordEncoder -->
 		<dependency>

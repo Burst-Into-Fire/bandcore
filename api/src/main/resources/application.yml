@@ -97,7 +97,8 @@ bandcore:
     # URLs sent to users (emails, redirects). Locally the web container listens on :3000.
     public-scheme: ${PUBLIC_URL_SCHEME:http}
     public-port: ${PUBLIC_URL_PORT:3000}
-    # Comma-separated remote addresses allowed to set X-Forwarded-Host.
+    # Comma-separated addresses or CIDR ranges of the proxies in front of the API. Only their
+    # X-Forwarded-Host and X-Forwarded-For headers are believed.
     trusted-proxies: ${TRUSTED_PROXIES:}
   tenancy:
     band-cache-ttl: 60s
@@ -118,3 +119,19 @@ bandcore:
       access-token-lifetime: 15m
       refresh-token-idle-lifetime: 14d
       refresh-token-absolute-lifetime: 30d
+  # Attempts per period, per key (docs/security/rate-limits.md). Enforced in every environment;
+  # a bucket refills completely at the end of its period.
+  rate-limit:
+    limits:
+      login-ip: { capacity: 20, period: 5m }
+      login-failures-account: { capacity: 5, period: 15m }
+      signup-ip: { capacity: 10, period: 1h }
+      signup-email: { capacity: 3, period: 1h }
+      verify-email-ip: { capacity: 30, period: 1h }
+      verification-resend-ip: { capacity: 10, period: 1h }
+      verification-resend-email: { capacity: 3, period: 1h }
+      password-reset-ip: { capacity: 10, period: 1h }
+      password-reset-email: { capacity: 3, period: 1h }
+      password-reset-confirm-ip: { capacity: 20, period: 1h }
+      slug-availability-ip: { capacity: 120, period: 1m }
+      slug-availability-account: { capacity: 60, period: 1m }
