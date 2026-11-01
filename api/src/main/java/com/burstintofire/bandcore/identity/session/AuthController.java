@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.burstintofire.bandcore.identity.events.SecurityEventType;
+import com.burstintofire.bandcore.identity.events.SecurityEvents;
 import com.burstintofire.bandcore.identity.user.Emails;
 import com.burstintofire.bandcore.shared.ratelimit.RateLimiter;
 import com.burstintofire.bandcore.shared.security.CurrentUser;
@@ -49,8 +51,12 @@ class AuthController {
 
 	private final ClientAddresses clients;
 
-	AuthController(SessionService sessions, Clock clock, RateLimiter limiter, ClientAddresses clients) {
+	private final SecurityEvents securityEvents;
+
+	AuthController(SessionService sessions, Clock clock, RateLimiter limiter, ClientAddresses clients,
+			SecurityEvents securityEvents) {
 		this.sessions = sessions;
+		this.securityEvents = securityEvents;
 		this.clock = clock;
 		this.loginsPerIp = limiter.limit("login-ip");
 		this.loginFailuresPerAccount = limiter.limit("login-failures-account");
@@ -62,11 +68,17 @@ class AuthController {
 	@Operation(operationId = "login", summary = "Log in on this host and get an access token",
 			description = "Sets the refresh token cookie. Any failure answers the same 401 INVALID_CREDENTIALS.")
 	ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
-		loginsPerIp.consume(clients.clientOf(http));
-		// Every attempt takes one from the account's bucket and a success gives it back, so only
-		// failures count, and parallel guesses cannot all slip past the check.
 		String account = Emails.normalize(request.email());
-		loginFailuresPerAccount.consume(account);
+		try {
+			loginsPerIp.consume(clients.clientOf(http));
+			// Every attempt takes one from the account's bucket and a success gives it back, so
+			// only failures count, and parallel guesses cannot all slip past the check.
+			loginFailuresPerAccount.consume(account);
+		}
+		catch (ApiException limited) {
+			securityEvents.record(SecurityEventType.LOGIN_RATE_LIMITED, null);
+			throw limited;
+		}
 		SessionService.Session session = sessions.login(request.email(), request.password());
 		loginFailuresPerAccount.refund(account);
 		return withSession(session);
@@ -96,7 +108,7 @@ class AuthController {
 	@PostMapping("/logout-all")
 	@Operation(operationId = "logoutAll", summary = "End every session of the user, on every host")
 	ResponseEntity<Void> logoutAll() {
-		sessions.logoutEverywhere(CurrentUser.require().userId());
+		sessions.logoutAll(CurrentUser.require().userId());
 		return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, RefreshCookie.cleared().toString()).build();
 	}
 

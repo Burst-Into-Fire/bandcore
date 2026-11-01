@@ -3,6 +3,7 @@ package com.burstintofire.bandcore.identity.signup;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -11,6 +12,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.burstintofire.bandcore.identity.events.SecurityEventType;
+import com.burstintofire.bandcore.identity.events.SecurityEvents;
 import com.burstintofire.bandcore.identity.password.PasswordPolicy;
 import com.burstintofire.bandcore.identity.user.Emails;
 import com.burstintofire.bandcore.identity.user.User;
@@ -43,16 +46,20 @@ public class SignupService {
 
 	private final IdGenerator ids;
 
+	private final SecurityEvents securityEvents;
+
 	private final Clock clock;
 
 	SignupService(UserRepository users, EmailVerificationTokenRepository tokens, PasswordPolicy passwordPolicy,
-			PasswordEncoder passwordEncoder, ApplicationEventPublisher events, IdGenerator ids, Clock clock) {
+			PasswordEncoder passwordEncoder, ApplicationEventPublisher events, IdGenerator ids,
+			SecurityEvents securityEvents, Clock clock) {
 		this.users = users;
 		this.tokens = tokens;
 		this.passwordPolicy = passwordPolicy;
 		this.passwordEncoder = passwordEncoder;
 		this.events = events;
 		this.ids = ids;
+		this.securityEvents = securityEvents;
 		this.clock = clock;
 	}
 
@@ -70,6 +77,7 @@ public class SignupService {
 		Optional<User> existing = users.findByEmail(email);
 		if (existing.isPresent()) {
 			User user = existing.get();
+			securityEvents.record(SecurityEventType.SIGNUP, user.getId(), Map.of("outcome", "existing_account"));
 			if (user.isEmailVerified()) {
 				events.publishEvent(new ExistingAccountSignupAttempted(user.getEmail(), user.getDisplayName()));
 			}
@@ -79,6 +87,7 @@ public class SignupService {
 			return;
 		}
 		User user = users.saveAndFlush(new User(ids.newId(), email, passwordHash, displayName.strip(), clock.instant()));
+		securityEvents.record(SecurityEventType.SIGNUP, user.getId(), Map.of("outcome", "created"));
 		issueVerification(user);
 	}
 
@@ -93,6 +102,7 @@ public class SignupService {
 		found.markUsed(now);
 		user.markEmailVerified(now);
 		tokens.deletePendingFor(user.getId());
+		securityEvents.record(SecurityEventType.EMAIL_VERIFIED, user.getId());
 	}
 
 	/** Sends a new link to an unverified account; does nothing (silently) otherwise. */

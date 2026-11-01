@@ -11,6 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.burstintofire.bandcore.identity.events.SecurityEventType;
+import com.burstintofire.bandcore.identity.events.SecurityEvents;
 import com.burstintofire.bandcore.identity.password.PasswordPolicy;
 import com.burstintofire.bandcore.identity.session.SessionService;
 import com.burstintofire.bandcore.identity.user.Emails;
@@ -46,11 +48,13 @@ public class PasswordResetService {
 
 	private final IdGenerator ids;
 
+	private final SecurityEvents securityEvents;
+
 	private final Clock clock;
 
 	PasswordResetService(UserRepository users, PasswordResetTokenRepository tokens, ResetTokenGenerator generator,
 			PasswordPolicy passwordPolicy, PasswordEncoder passwordEncoder, SessionService sessions,
-			ApplicationEventPublisher events, IdGenerator ids, Clock clock) {
+			ApplicationEventPublisher events, IdGenerator ids, SecurityEvents securityEvents, Clock clock) {
 		this.users = users;
 		this.tokens = tokens;
 		this.generator = generator;
@@ -59,6 +63,7 @@ public class PasswordResetService {
 		this.sessions = sessions;
 		this.events = events;
 		this.ids = ids;
+		this.securityEvents = securityEvents;
 		this.clock = clock;
 	}
 
@@ -71,6 +76,7 @@ public class PasswordResetService {
 	public void request(String rawEmail) {
 		ResetTokenGenerator.Generated generated = generator.generate();
 		Optional<User> found = users.findByEmail(Emails.normalize(rawEmail)).filter(User::isActive);
+		securityEvents.record(SecurityEventType.PASSWORD_RESET_REQUESTED, found.map(User::getId).orElse(null));
 		if (found.isEmpty()) {
 			return;
 		}
@@ -101,6 +107,7 @@ public class PasswordResetService {
 		user.markEmailVerified(now);
 		sessions.logoutEverywhere(user.getId());
 		events.publishEvent(new PasswordChanged(user.getEmail(), user.getDisplayName()));
+		securityEvents.record(SecurityEventType.PASSWORD_RESET_COMPLETED, user.getId());
 	}
 
 	private static ApiException invalidToken() {

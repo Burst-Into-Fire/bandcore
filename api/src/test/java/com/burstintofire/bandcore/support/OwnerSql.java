@@ -34,6 +34,21 @@ public final class OwnerSql {
 		}
 	}
 
+	/**
+	 * First column of the first row, read as the superuser, which bypasses row-level security:
+	 * for assertions on tenant tables across bands. Never used to set data up.
+	 */
+	public static String superuserQueryForString(String sql) {
+		try (Connection connection = PostgresTestDatabase.superuserConnection();
+				Statement statement = connection.createStatement();
+				ResultSet rs = statement.executeQuery(sql)) {
+			return rs.next() ? rs.getString(1) : null;
+		}
+		catch (SQLException ex) {
+			throw new IllegalStateException("Test query failed", ex);
+		}
+	}
+
 	/** Runs statements as the owner inside one band's RLS context. */
 	public static void inBand(UUID bandId, String... statements) {
 		try (Connection connection = PostgresTestDatabase.ownerConnection()) {

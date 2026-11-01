@@ -31,6 +31,7 @@ class SchemaGuardIT extends IntegrationTest {
 			"users", "global accounts (ADR-0003): one account across bands; only the identity module uses it",
 			"email_verification_tokens", "belongs to an account, used before any band is involved",
 			"password_reset_tokens", "belongs to an account, used before any band is involved",
+			"security_events", "account events, mostly before any band is known; no band data, only the host",
 			"refresh_tokens", "looked up by token hash before the band is known; logout-all spans every band");
 
 	@Autowired
@@ -75,6 +76,22 @@ class SchemaGuardIT extends IntegrationTest {
 						CREATE POLICY read_only ON bandcore.guard_read_policy FOR SELECT
 						    USING (band_id = NULLIF(current_setting('app.band_id', true), '')::uuid)
 						""");
+				// Append-only: no UPDATE or DELETE policy, because the app role may not run them.
+				ddl.execute("""
+						CREATE TABLE bandcore.guard_append_only (id uuid PRIMARY KEY, band_id uuid NOT NULL,
+						    UNIQUE (band_id, id))
+						""");
+				ddl.execute("ALTER TABLE bandcore.guard_append_only ENABLE ROW LEVEL SECURITY");
+				ddl.execute("ALTER TABLE bandcore.guard_append_only FORCE ROW LEVEL SECURITY");
+				ddl.execute("""
+						CREATE POLICY read ON bandcore.guard_append_only FOR SELECT
+						    USING (band_id = NULLIF(current_setting('app.band_id', true), '')::uuid)
+						""");
+				ddl.execute("""
+						CREATE POLICY write ON bandcore.guard_append_only FOR INSERT
+						    WITH CHECK (band_id = NULLIF(current_setting('app.band_id', true), '')::uuid)
+						""");
+				ddl.execute("REVOKE UPDATE, DELETE ON bandcore.guard_append_only FROM bandcore_app");
 				// Neither band_id nor in the allowlist.
 				ddl.execute("CREATE TABLE bandcore.guard_global (id uuid PRIMARY KEY)");
 
@@ -88,6 +105,7 @@ class SchemaGuardIT extends IntegrationTest {
 						"guard_no_policy: foreign key guard_no_policy_member_id_fkey to tenant table members must include band_id on both sides",
 						"guard_read_policy: no policy on app.band_id for DELETE, INSERT, UPDATE",
 						"guard_global: no band_id column; add it, or add the table to the global allowlist with a reason");
+				assertThat(violations).noneMatch(violation -> violation.startsWith("guard_append_only"));
 			}
 			finally {
 				connection.rollback();

@@ -18,7 +18,8 @@ import java.util.Set;
  * <ul>
  * <li>a {@code band_id NOT NULL} column;</li>
  * <li>row-level security enabled and forced;</li>
- * <li>policies on {@code app.band_id} covering SELECT, INSERT, UPDATE and DELETE;</li>
+ * <li>policies on {@code app.band_id} covering SELECT, INSERT, UPDATE and DELETE (a command
+ * that {@code bandcore_app} has no privilege for, as in append-only tables, needs none);</li>
  * <li>{@code band_id} in every foreign key to another tenant table;</li>
  * <li>an index (or constraint) whose first column is {@code band_id}.</li>
  * </ul>
@@ -103,11 +104,23 @@ final class SchemaGuard {
 				covered.add(command);
 			}
 		}
+		// Append-only tables: a command the runtime role may not run needs no policy.
+		for (String command : ALL_COMMANDS) {
+			if (!covered.contains(command) && !appRoleMay(connection, table, command)) {
+				covered.add(command);
+			}
+		}
 		if (!covered.containsAll(ALL_COMMANDS)) {
 			Set<String> missing = new HashSet<>(ALL_COMMANDS);
 			missing.removeAll(covered);
 			violations.add(table + ": no policy on app.band_id for " + String.join(", ", missing.stream().sorted().toList()));
 		}
+	}
+
+	private static boolean appRoleMay(Connection connection, String table, String command) throws SQLException {
+		List<String> granted = strings(connection, "SELECT has_table_privilege('bandcore_app', ?, ?)::text",
+				SCHEMA + "." + table, command);
+		return granted.getFirst().equals("true");
 	}
 
 	private static void checkBandIndex(Connection connection, String table, List<String> violations)

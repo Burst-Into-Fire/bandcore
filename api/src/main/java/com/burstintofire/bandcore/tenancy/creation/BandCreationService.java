@@ -2,6 +2,7 @@ package com.burstintofire.bandcore.tenancy.creation;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -9,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.burstintofire.bandcore.audit.AuditRecorder;
 import com.burstintofire.bandcore.identity.Accounts;
 import com.burstintofire.bandcore.shared.config.PlatformProperties;
 import com.burstintofire.bandcore.shared.id.IdGenerator;
@@ -48,6 +50,8 @@ public class BandCreationService {
 
 	private final ApplicationEventPublisher events;
 
+	private final AuditRecorder audit;
+
 	private final PlatformProperties platform;
 
 	private final IdGenerator ids;
@@ -57,7 +61,7 @@ public class BandCreationService {
 	private final int maxBandsPerUser;
 
 	BandCreationService(BandRegistry registry, MembershipRepository memberships, MemberRepository members,
-			Accounts accounts, RowLevelSecurity rowLevelSecurity, ApplicationEventPublisher events,
+			Accounts accounts, RowLevelSecurity rowLevelSecurity, ApplicationEventPublisher events, AuditRecorder audit,
 			PlatformProperties platform, IdGenerator ids, Clock clock,
 			@Value("${bandcore.tenancy.max-bands-per-user:5}") int maxBandsPerUser) {
 		this.registry = registry;
@@ -66,6 +70,7 @@ public class BandCreationService {
 		this.accounts = accounts;
 		this.rowLevelSecurity = rowLevelSecurity;
 		this.events = events;
+		this.audit = audit;
 		this.platform = platform;
 		this.ids = ids;
 		this.clock = clock;
@@ -91,9 +96,12 @@ public class BandCreationService {
 		// The rest of the transaction writes the new band's rows: switch the RLS context to it.
 		rowLevelSecurity.switchBand(band.getId(), user.userId());
 		Instant now = clock.instant();
-		memberships.save(new Membership(ids.newId(), band.getId(), user.userId(), Role.ADMIN, now));
+		Membership membership = memberships.save(new Membership(ids.newId(), band.getId(), user.userId(), Role.ADMIN, now));
 		members.save(new Member(ids.newId(), band.getId(), account.displayName(), user.userId(), now));
 		members.flush();
+		audit.record("band.created", "band", band.getId(), Map.of("slug", band.getSlug(), "name", band.getName()));
+		audit.record("membership.created", "membership", membership.getId(),
+				Map.of("user_id", user.userId().toString(), "role", Role.ADMIN.name()));
 		events.publishEvent(new BandCreated(band.getId(), band.getSlug(), user.userId()));
 		return new CreatedBand(band, platform.bandUrl(band.getSlug()));
 	}
