@@ -1,6 +1,7 @@
 package com.burstintofire.bandcore.security;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -60,35 +61,46 @@ final class IsolationHarness {
 	}
 
 	/**
+	 * Builds the snapshot inside PostgreSQL, so no SQL is assembled in Java: table names are
+	 * quoted with {@code format('%I')} and the band id is a bound parameter. The function lives
+	 * in {@code pg_temp}, so it disappears when the connection closes.
+	 */
+	private static final String SNAPSHOT_FUNCTION = """
+			CREATE FUNCTION pg_temp.band_snapshot(band uuid) RETURNS SETOF text
+			LANGUAGE plpgsql AS $$
+			DECLARE
+				tbl text;
+			BEGIN
+				FOR tbl IN
+					SELECT table_name FROM information_schema.columns
+					WHERE table_schema = 'bandcore' AND column_name = 'band_id' AND table_name <> 'refresh_tokens'
+				LOOP
+					RETURN QUERY EXECUTE format(
+						'SELECT %L || '' '' || row_to_json(t)::text FROM bandcore.%I t WHERE band_id = $1', tbl, tbl)
+						USING band;
+				END LOOP;
+				RETURN QUERY SELECT 'bands ' || row_to_json(b)::text FROM bandcore.bands b WHERE id = band;
+			END
+			$$
+			""";
+
+	/**
 	 * Every row of a band in every tenant table, plus the band itself, read as the superuser
 	 * (which bypasses RLS). Compared before and after an attack to prove nothing changed.
 	 */
 	static List<String> snapshot(UUID bandId) {
 		List<String> rows = new ArrayList<>();
-		try (Connection connection = PostgresTestDatabase.superuserConnection();
-				Statement statement = connection.createStatement()) {
-			List<String> tables = new ArrayList<>();
-			try (ResultSet rs = statement.executeQuery("""
-					SELECT table_name FROM information_schema.columns
-					WHERE table_schema = 'bandcore' AND column_name = 'band_id' AND table_name <> 'refresh_tokens'
-					ORDER BY table_name
-					""")) {
-				while (rs.next()) {
-					tables.add(rs.getString(1));
-				}
+		try (Connection connection = PostgresTestDatabase.superuserConnection()) {
+			try (Statement statement = connection.createStatement()) {
+				statement.execute(SNAPSHOT_FUNCTION);
 			}
-			for (String table : tables) {
-				try (ResultSet rs = statement.executeQuery("SELECT row_to_json(t)::text FROM bandcore." + table
-						+ " t WHERE band_id = '" + bandId + "' ORDER BY 1")) {
+			try (PreparedStatement query = connection
+				.prepareStatement("SELECT r FROM pg_temp.band_snapshot(?) AS r ORDER BY 1")) {
+				query.setObject(1, bandId);
+				try (ResultSet rs = query.executeQuery()) {
 					while (rs.next()) {
-						rows.add(table + " " + rs.getString(1));
+						rows.add(rs.getString(1));
 					}
-				}
-			}
-			try (ResultSet rs = statement
-				.executeQuery("SELECT row_to_json(b)::text FROM bandcore.bands b WHERE id = '" + bandId + "'")) {
-				while (rs.next()) {
-					rows.add("bands " + rs.getString(1));
 				}
 			}
 		}

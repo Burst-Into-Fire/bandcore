@@ -68,6 +68,10 @@ class TenantIsolationIT extends IntegrationTest {
 	void bandBStaysOutOfReach(String endpoint, Attack attack, IsolationScenarios.Probe probe) {
 		World world = World.create(this);
 		List<String> before = IsolationHarness.snapshot(world.bravo);
+		assertThat(before).as("snapshot must cover band B's data")
+			.anyMatch(row -> row.startsWith("bands "))
+			.anyMatch(row -> row.startsWith("memberships "))
+			.anyMatch(row -> row.startsWith("members "));
 
 		ResponseEntity<String> response = attack(world, attack, probe);
 
