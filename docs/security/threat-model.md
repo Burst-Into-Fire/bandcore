@@ -2,7 +2,7 @@
 
 - **Scope:** bands as tenants, tenant resolution, row-level security, accounts, sessions and roles ([M2](../roadmap/M02-multitenancy-auth-core.md)); offline data on phones ([M9](../roadmap/M09-offline-sales-pwa.md)) is listed so the mitigation is planned early.
 - **Method:** STRIDE per element of the data flow below.
-- **Last reviewed:** 2026-10-30 (M2-01). Reviewed again before launch in [M10-08](../roadmap/M10-production-readiness-lgpd.md).
+- **Last reviewed:** 2026-11-01 (M3: password reset, rate limits, audit log, HTTP hardening, E2E). Reviewed again before launch in [M10-08](../roadmap/M10-production-readiness-lgpd.md).
 - **Related:** [ADR-0002](../adr/0002-multi-tenancy-shared-schema-band-id-rls.md), [ADR-0003](../adr/0003-global-accounts-per-band-memberships.md), [ADR-0004](../adr/0004-authentication-jwt-and-rotating-refresh-cookie.md), [ADR-0005](../adr/0005-subdomain-per-band-same-origin-api.md), [permission matrix](permissions.md), [registering an endpoint](../endpoint-security.md).
 
 ## What we protect
@@ -81,7 +81,7 @@ Risk: **H** high, **M** medium, **L** low (likelihood × impact, before the miti
 | T22 | T | **CSRF** on cookie-based endpoints (refresh, logout) and login CSRF | H | Same-origin API, no CORS; `SameSite=Strict` cookie; unsafe requests without a bearer token must carry `X-Requested-With`, which a cross-site form cannot send without a CORS preflight | [M2-07](https://github.com/Burst-Into-Fire/bandcore/issues/18): `RefreshTokenIT` (refresh without the header → 403) |
 | T23 | I | **XSS stealing tokens** | H | Access token only in memory; refresh token `HttpOnly`; React escapes output; CSP `script-src 'self'` with no inline scripts, `object-src 'none'`, `base-uri 'self'` on nginx and API responses | [M2-12](https://github.com/Burst-Into-Fire/bandcore/issues/23); [M3-04](https://github.com/Burst-Into-Fire/bandcore/issues/27): `HttpHardeningIT`, compose smoke test |
 | T31 | T, I | **Clickjacking, MIME sniffing, cached responses, oversized requests** | M | `frame-ancestors 'none'` and `X-Frame-Options: DENY`; `nosniff`; `Referrer-Policy`; minimal `Permissions-Policy`; API responses `Cache-Control: no-store`; HSTS in production; no CORS (same origin only); JSON only (415 otherwise); request bodies capped at 1 MB on nginx and the API (413) | [M3-04](https://github.com/Burst-Into-Fire/bandcore/issues/27): `HttpHardeningIT`, `SecurityHeadersFilterTest`, `ProductionProfileTest`, compose smoke test |
-| T24 | I | **Session or storage shared between bands in the browser** | M | One origin per band: cookies, storage and IndexedDB are isolated by the browser; the refresh cookie has no `Domain` | ADR-0005; [M3-05](../roadmap/M03-security-hardening-delivery.md) E2E isolation journey |
+| T24 | I | **Session or storage shared between bands in the browser** | M | One origin per band: cookies, storage and IndexedDB are isolated by the browser; the refresh cookie has no `Domain` | ADR-0005; [M3-05](https://github.com/Burst-Into-Fire/bandcore/issues/28): `e2e/tests/isolation.spec.ts` (real browser) |
 | T25 | I | **Offline data left on a shared phone** (catalog, queued sales) | M | Data per band origin; logout clears memory, the query cache and (M9) the offline queue after it synced; nothing personal beyond what the sale needs | [M9](../roadmap/M09-offline-sales-pwa.md) |
 
 ### Infrastructure and operations

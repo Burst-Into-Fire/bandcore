@@ -129,6 +129,7 @@ Sessions work over plain HTTP locally: browsers treat `*.localhost` as a secure 
 | API unit and integration tests (needs Docker) | `cd api && ./mvnw verify` |
 | Web lint, types and tests | `cd web && npm ci && npm run lint && npm run typecheck && npm test` |
 | Whole stack smoke test | `scripts/compose-smoke-test.sh` |
+| End-to-end journeys (Playwright, needs only Docker) | `scripts/e2e.sh` |
 | Enable the commit and branch hooks | `git config core.hooksPath .githooks` |
 
 See [Testing](docs/TESTING.md) and [Contributing](docs/CONTRIBUTING.md) before opening a pull request.

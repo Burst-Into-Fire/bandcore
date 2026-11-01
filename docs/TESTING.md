@@ -32,7 +32,9 @@ npm run typecheck     # TypeScript
 npm run format:check  # Prettier
 ```
 
-**Whole stack** (from the root): `scripts/compose-smoke-test.sh` builds the images, starts docker-compose as a separate project and checks the app through the web proxy.
+**Whole stack** (from the root): `scripts/compose-smoke-test.sh` builds the images, starts docker-compose as a separate project and checks the app through the web proxy, including the security headers.
+
+**End to end** (from the root, needs only Docker): `scripts/e2e.sh` starts docker-compose as another project (web on `app.localhost:3200`, Mailpit on `:8225`) and runs the Playwright journeys in `e2e/` inside the official Playwright image. Pass Playwright arguments after it, for example `scripts/e2e.sh -g isolation`; `KEEP_STACK=1` leaves the stack running. On failure, traces and videos are in `e2e/test-results` (`npx playwright show-trace <trace.zip>`).
 
 ## Test layers
 
@@ -43,6 +45,7 @@ npm run format:check  # Prettier
 | Architecture | `*Test` | Surefire | Module boundaries (`ModularityTest`) and ArchUnit rules (`ArchitectureRulesTest`): no `float`/`double` in money packages, no field injection, controllers never use repositories, `bands` and `users` only reached through their modules, tenant repositories always name the band |
 | Security guards | `*IT` | Failsafe | `SchemaGuardIT` (every tenant table has forced RLS, policies, a `band_id` index and composite keys), `AuthorizationMatrixIT` (role × endpoint), `TenantIsolationIT` (six cross-tenant attacks per band endpoint). See [Securing a new endpoint](endpoint-security.md) |
 | Web | `*.test.ts(x)` | Vitest | Logic and components with React Testing Library; the API is mocked with MSW |
+| End to end | `e2e/tests/*.spec.ts` | Playwright (Chromium) | Critical journeys only, in a real browser against the compose stack: onboarding (sign up → verify → create band → band login → logout) and session isolation between band hosts. Emails are read from the Mailpit API; data is seeded through the API |
 
 ### Writing an integration test
 
@@ -101,5 +104,6 @@ The `CI` workflow runs on every pull request and on pushes to `main` and `develo
 | `frontend` | `npm ci`, format check, lint, typecheck, tests, build |
 | `api-contract` | Regenerates the typed API client from the OpenAPI document and fails if the committed one differs |
 | `docker` | Builds both images, runs the compose smoke test and scans the images with Trivy |
+| `e2e` | Builds the images, starts the stack and runs the Playwright journeys; uploads traces, videos and the HTML report on failure. Budget: under 10 minutes |
 
 A failing job blocks the merge (see `ruleset.json`). The `Security` workflow adds CodeQL, gitleaks and dependency review.
