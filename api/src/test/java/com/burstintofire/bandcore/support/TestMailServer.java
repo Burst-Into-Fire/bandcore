@@ -75,6 +75,22 @@ public final class TestMailServer {
 		throw new AssertionError("No email for " + to);
 	}
 
+	/**
+	 * Waits until an email for {@code to} with this subject arrives, and returns the latest one.
+	 * Safer than {@link #awaitEmail(String)} when a previous test may still be sending.
+	 */
+	public static Email awaitEmail(String to, String subject) {
+		Instant deadline = Instant.now().plus(Duration.ofSeconds(10));
+		while (Instant.now().isBefore(deadline)) {
+			List<Email> emails = emailsTo(to).stream().filter(email -> email.subject().equals(subject)).toList();
+			if (!emails.isEmpty()) {
+				return emails.getLast();
+			}
+			sleep(50);
+		}
+		throw new AssertionError("No email '" + subject + "' for " + to);
+	}
+
 	/** Every email received so far for {@code to}, oldest first. */
 	public static List<Email> emailsTo(String to) {
 		List<Email> emails = new ArrayList<>();

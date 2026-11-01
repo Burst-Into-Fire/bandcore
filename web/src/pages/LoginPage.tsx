@@ -15,7 +15,7 @@ import { primaryButton, textLink } from '../components/buttons';
 import { FormAlert } from '../components/FormAlert';
 import { TextField } from '../components/TextField';
 import { translateKey } from '../i18n/messages';
-import { useHost } from '../lib/host';
+import { centralUrl, useHost } from '../lib/host';
 import { safeRedirect } from '../lib/navigation';
 
 type LoginInput = z.input<typeof loginSchema>;
@@ -92,6 +92,15 @@ export function LoginPage() {
           {login.isPending ? t('login.submitting') : t('login.submit')}
         </button>
       </form>
+      {host.kind === 'central' ? (
+        <Link to="/forgot-password" className={textLink}>
+          {t('login.forgotPassword')}
+        </Link>
+      ) : (
+        <a href={centralUrl(host, '/forgot-password')} className={textLink}>
+          {t('login.forgotPassword')}
+        </a>
+      )}
       {host.kind === 'central' ? (
         <p className="text-muted">
           {t('login.noAccount')}{' '}

@@ -12,7 +12,7 @@
 | Band data (expenses, balances, sales, stock, members) | Financial data of a band; a leak to another band is the worst failure of the product |
 | Accounts (email, password hash, sessions) | Takeover gives access to every band of the user |
 | Refresh tokens | Long-lived (up to 30 days); whoever holds one can mint access tokens |
-| Verification tokens (later: reset, invitation, handoff) | Single-use secrets sent by email or URL |
+| Verification and password reset tokens (later: invitation, handoff) | Single-use secrets sent by email or URL; a reset token is enough to take over an account |
 | Signing key (`JWT_SECRET`) | Whoever has it can forge a token for any band and role |
 
 ## Data flow
@@ -61,15 +61,16 @@ Risk: **H** high, **M** medium, **L** low (likelihood × impact, before the miti
 | T13 | S | **Credential stuffing** and password guessing | H | Argon2id; 12+ character passwords; common passwords rejected; generic login error; rate limiting and progressive delay in M3-02 | [M2-06](https://github.com/Burst-Into-Fire/bandcore/issues/17): `PasswordPolicyTest`, `SignupIT`; [M3-02](../roadmap/M03-security-hardening-delivery.md) |
 | T14 | S, I | **Leaked verification token** (logs, email, history) | M | 256-bit random, only its SHA-256 hash is stored, single use, 24 h; tokens never logged; links point to the central host | [M2-06](https://github.com/Burst-Into-Fire/bandcore/issues/17): `SignupIT` (reused and expired tokens rejected) |
 | T15 | S | **Stolen refresh token** | H | `HttpOnly`, `Secure`, `SameSite=Strict`, `__Host-` cookie; stored hashed; rotated on every use; reuse of a rotated token revokes the whole family; sliding 14 days, absolute 30 days; logout-all | [M2-07](https://github.com/Burst-Into-Fire/bandcore/issues/18): `RefreshTokenIT` |
-| T16 | S | **Stolen access token** | M | 15-minute lifetime; kept only in memory, never in `localStorage`/`sessionStorage` | [M2-07](https://github.com/Burst-Into-Fire/bandcore/issues/18): `AccessTokenServiceTest`; [M2-12](https://github.com/Burst-Into-Fire/bandcore/issues/23): `session.test.ts` (storage spies) |
+| T16 | S | **Stolen access token** | M | 15-minute lifetime; kept only in memory, never in `localStorage`/`sessionStorage`; a password reset or logout-all refuses every token issued before it (`users.sessions_valid_after`) | [M2-07](https://github.com/Burst-Into-Fire/bandcore/issues/18): `AccessTokenServiceTest`; [M2-12](https://github.com/Burst-Into-Fire/bandcore/issues/23): `session.test.ts` (storage spies); [M3-01](https://github.com/Burst-Into-Fire/bandcore/issues/24): `PasswordResetIT`, `RefreshTokenIT` |
 | T17 | I | **Signing key leaked** | M | Only in the platform's secret store; required in production (startup fails without it); at least 256 bits; `kid` header prepares rotation | [M2-07](https://github.com/Burst-Into-Fire/bandcore/issues/18): `ProductionConfigurationTest`, `AccessTokenServiceTest` |
+| T30 | S | **Account takeover through password reset** (guessed, leaked or old reset link) | H | 256-bit random token, only its SHA-256 hash stored, single use, 30 minutes; a new request invalidates older links; reset only on the central host; the reset ends every session (refresh tokens revoked, older access tokens refused) and emails the owner | [M3-01](https://github.com/Burst-Into-Fire/bandcore/issues/24): `PasswordResetIT` |
 | T18 | S | **Unverified email used to act as someone else** | M | Unverified accounts cannot log in on band hosts, create bands or accept invitations | [M2-06](https://github.com/Burst-Into-Fire/bandcore/issues/17), [M2-08](https://github.com/Burst-Into-Fire/bandcore/issues/19): `LoginIT`, `BandCreationIT` |
 
 ### Enumeration
 
 | ID | STRIDE | Threat | Risk | Mitigation | Issue and test |
 |---|---|---|---|---|---|
-| T19 | I | **Account enumeration** through signup, login or resend | M | Identical responses whether the email exists or not; the existing owner gets an email instead; the password encoder runs even for unknown emails | [M2-06](https://github.com/Burst-Into-Fire/bandcore/issues/17), [M2-07](https://github.com/Burst-Into-Fire/bandcore/issues/18): `SignupIT`, `LoginIT` (encoder spy) |
+| T19 | I | **Account enumeration** through signup, login, resend or password reset | M | Identical responses whether the email exists or not; the existing owner gets an email instead; the password encoder runs even for unknown emails; a reset request generates and hashes a token even for unknown emails; emails are sent after commit, off the request thread | [M2-06](https://github.com/Burst-Into-Fire/bandcore/issues/17), [M2-07](https://github.com/Burst-Into-Fire/bandcore/issues/18): `SignupIT`, `LoginIT` (encoder spy); [M3-01](https://github.com/Burst-Into-Fire/bandcore/issues/24): `PasswordResetIT` (generator spy) |
 | T20 | I | **Band slug enumeration** | L | Accepted: a slug is a public subdomain by design. Slug availability requires a central session; rate limiting in M3-02. Band hosts reveal only the band name before login | [M2-08](https://github.com/Burst-Into-Fire/bandcore/issues/19); [M3-02](../roadmap/M03-security-hardening-delivery.md) |
 | T21 | I | **Probing other bands' IDs** | M | UUIDv7 identifiers; other bands' resources answer 404, never 403 | [M2-11](https://github.com/Burst-Into-Fire/bandcore/issues/22): `TenantIsolationIT` |
 
@@ -94,7 +95,7 @@ Risk: **H** high, **M** medium, **L** low (likelihood × impact, before the miti
 ## Residual risks
 
 - Until M3-02, login, signup and resend have no rate limit. Do not expose the API publicly before M3-02 is done.
-- Access tokens cannot be revoked during their 15 minutes; membership changes still take effect on the next request (T09).
+- A single access token cannot be revoked during its 15 minutes, except by ending every session of the user (password reset or logout-all). Membership changes still take effect on the next request (T09). A token issued in the same second as a reset stays valid, because `iat` has second precision.
 - Two tabs of the same band refreshing at the same moment can trigger reuse detection and log the user out. The web app shares one refresh per tab; the cost is a new login, never a leak.
 - `JWT_SECRET` rotation needs a second key in the decoder; the `kid` header is already set.
 

@@ -2,6 +2,7 @@ package com.burstintofire.bandcore.identity.session;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import java.util.UUID;
 
 import com.jayway.jsonpath.JsonPath;
@@ -135,6 +136,23 @@ class RefreshTokenIT extends IntegrationTest {
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 		assertUnauthorizedAndCleared(refresh(alpha, bandSession));
 		assertUnauthorizedAndCleared(refresh(api.central(), centralSession));
+	}
+
+	@Test
+	void logoutAllAlsoEndsAccessTokensAtOnce() {
+		String bandAccess = JsonPath.read(login(alpha).getBody(), "$.accessToken");
+		String centralAccess = JsonPath.read(login(api.central()).getBody(), "$.accessToken");
+		TestClockConfiguration.CLOCK.advance(Duration.ofSeconds(1));
+
+		alpha.postJson("/api/auth/logout-all", null, headers -> headers.setBearerAuth(bandAccess));
+
+		assertThat(alpha.get("/api/me", headers -> headers.setBearerAuth(bandAccess)).getStatusCode())
+			.isEqualTo(HttpStatus.UNAUTHORIZED);
+		assertThat(api.central().get("/api/me", headers -> headers.setBearerAuth(centralAccess)).getStatusCode())
+			.isEqualTo(HttpStatus.UNAUTHORIZED);
+		String fresh = JsonPath.read(login(alpha).getBody(), "$.accessToken");
+		assertThat(alpha.get("/api/me", headers -> headers.setBearerAuth(fresh)).getStatusCode())
+			.isEqualTo(HttpStatus.OK);
 	}
 
 	@Test

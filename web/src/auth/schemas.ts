@@ -41,6 +41,10 @@ export const loginSchema = z.object({
 
 export const resendSchema = z.object({ email: emailSchema });
 
+export const forgotPasswordSchema = z.object({ email: emailSchema });
+
+export const resetPasswordSchema = z.object({ password: newPasswordSchema });
+
 export const createBandSchema = z.object({
   name: nameSchema,
   slug: z.string().trim().toLowerCase().refine(isWellFormedSlug, 'validation.slugInvalid'),

@@ -30,6 +30,7 @@ class SchemaGuardIT extends IntegrationTest {
 			"bands", "the tenant itself; only the tenancy module reads or writes it",
 			"users", "global accounts (ADR-0003): one account across bands; only the identity module uses it",
 			"email_verification_tokens", "belongs to an account, used before any band is involved",
+			"password_reset_tokens", "belongs to an account, used before any band is involved",
 			"refresh_tokens", "looked up by token hash before the band is known; logout-all spans every band");
 
 	@Autowired

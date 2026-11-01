@@ -2,6 +2,7 @@ package com.burstintofire.bandcore.support;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
@@ -19,6 +20,18 @@ public final class OwnerSql {
 	/** Runs statements as the owner, with no band (global tables only). */
 	public static void global(String... statements) {
 		inBand(null, statements);
+	}
+
+	/** First column of the first row of a query on global tables, as the owner; null when empty. */
+	public static String queryForString(String sql) {
+		try (Connection connection = PostgresTestDatabase.ownerConnection();
+				Statement statement = connection.createStatement();
+				ResultSet rs = statement.executeQuery(sql)) {
+			return rs.next() ? rs.getString(1) : null;
+		}
+		catch (SQLException ex) {
+			throw new IllegalStateException("Test query failed", ex);
+		}
 	}
 
 	/** Runs statements as the owner inside one band's RLS context. */

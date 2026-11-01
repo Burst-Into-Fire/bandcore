@@ -69,6 +69,16 @@ describe('LoginPage', () => {
     expect(screen.getByLabelText('Senha')).toHaveValue('');
   });
 
+  it('links to password reset, on the central host even from a band host', async () => {
+    bandApi();
+    renderRoute('/login', { host: BAND });
+
+    expect(await screen.findByRole('link', { name: 'Esqueci minha senha' })).toHaveAttribute(
+      'href',
+      'http://app.localhost:3000/forgot-password',
+    );
+  });
+
   it('says so when the band host does not exist', async () => {
     server.use(http.get(apiUrl('/band/public-profile'), () => problem(404, 'NOT_FOUND')));
     renderRoute('/login', { host: BAND });
