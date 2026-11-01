@@ -1,0 +1,13 @@
+Subject: Confirme seu email no bandcore
+
+Olá, {{name}}!
+
+Para ativar sua conta no bandcore, confirme seu email abrindo o link abaixo:
+
+{{link}}
+
+O link vale por 24 horas e só pode ser usado uma vez.
+
+Se você não criou uma conta no bandcore, ignore este email.
+
+— bandcore

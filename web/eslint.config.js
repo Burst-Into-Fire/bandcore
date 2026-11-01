@@ -48,7 +48,42 @@ export default defineConfig([
     ignores: ['src/**/*.test.tsx', 'src/test/**'],
     extends: [i18next.configs['flat/recommended']],
     rules: {
-      'i18next/no-literal-string': ['error', { mode: 'jsx-only' }],
+      'i18next/no-literal-string': [
+        'error',
+        {
+          mode: 'jsx-only',
+          // Technical attribute values (routes, autofill hints) are not UI text.
+          'jsx-attributes': {
+            exclude: [
+              'className',
+              'styleName',
+              'style',
+              'type',
+              'key',
+              'id',
+              'width',
+              'height',
+              'to',
+              'href',
+              'autoComplete',
+              'autoCapitalize',
+              'inputMode',
+            ],
+          },
+          // Form field names passed to react-hook-form are not UI text either.
+          callees: {
+            exclude: [
+              'i18n(ext)?',
+              't',
+              'require',
+              'addEventListener',
+              'removeEventListener',
+              'register',
+              'setValue',
+            ],
+          },
+        },
+      ],
     },
   },
   {

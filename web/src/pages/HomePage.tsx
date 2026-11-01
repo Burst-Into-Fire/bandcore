@@ -1,10 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 
 import { api } from '../api/client';
+import { useSession } from '../auth/useSession';
+import { primaryButton, secondaryButton } from '../components/buttons';
 
+/** Landing page of the central host. */
 export function HomePage() {
   const { t } = useTranslation();
+  const session = useSession();
   const status = useQuery({
     queryKey: ['status'],
     queryFn: async () => {
@@ -31,6 +36,24 @@ export function HomePage() {
         <h1 className="text-title font-bold">{t('home.title')}</h1>
         <p className="text-muted">{t('app.tagline')}</p>
       </header>
+
+      <nav className="flex flex-col gap-2 sm:flex-row">
+        {session.status === 'authenticated' ? (
+          <Link to="/bands" className={`${primaryButton} text-center`}>
+            {t('home.myBands')}
+          </Link>
+        ) : null}
+        {session.status === 'anonymous' ? (
+          <>
+            <Link to="/login" className={`${primaryButton} text-center`}>
+              {t('home.signIn')}
+            </Link>
+            <Link to="/signup" className={`${secondaryButton} text-center`}>
+              {t('home.signUp')}
+            </Link>
+          </>
+        ) : null}
+      </nav>
 
       <section
         aria-labelledby="api-status-label"

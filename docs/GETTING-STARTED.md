@@ -68,6 +68,8 @@ Each band has its own subdomain. Locally that is `{slug}.localhost`, which Chrom
 
 - **WSL 2:** run Docker inside WSL or Docker Desktop, and open the URLs in the Windows browser. Ports published on `127.0.0.1` in WSL are forwarded to Windows (default `localhostForwarding=true`).
 - **Command line tools** do not always resolve `*.localhost`. Use the `Host` header instead: `curl -H 'Host: burst.localhost' http://127.0.0.1:3000/api/status`.
+- **Sessions work over plain HTTP.** The refresh token cookie is `Secure` and uses the `__Host-` prefix. Browsers treat `localhost` and `*.localhost` as secure contexts, so they store and send it over `http://` too. Other local host names (a LAN IP, a custom `/etc/hosts` entry) need HTTPS.
+- **Each subdomain is its own session.** Logging in on `app.localhost` does not log you in on `burst.localhost`: cookies are host-only, by design ([ADR-0005](adr/0005-subdomain-per-band-same-origin-api.md)).
 
 ## Environment variables
 
@@ -82,8 +84,8 @@ Set in `.env` for docker-compose. In staging and production they are set in the 
 | `DB_OWNER_PASSWORD` | db, API | Password of `bandcore_owner` (Flyway migrations) | dev value |
 | `DB_APP_PASSWORD` | db, API | Password of `bandcore_app` (runtime connection) | dev value |
 | `DB_PORT` | compose | PostgreSQL port on your machine | `5432` |
-| `JWT_SECRET` | API (from M2) | Token signing secret, at least 32 random characters | empty |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | API (from M2) | Outgoing email | Mailpit |
+| `JWT_SECRET` | API | Access token signing key, at least 32 bytes (`openssl rand -base64 48`). Empty locally means a random key per start, so sessions end when the API restarts; required in production | empty |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | API | Outgoing email (verification links). `SMTP_AUTH` and `SMTP_STARTTLS` default to `true` in production | Mailpit |
 | `MAILPIT_UI_PORT` | compose | Mailpit inbox port | `8025` |
 
 The API reads these variables (docker-compose sets them from the ones above):
@@ -96,6 +98,9 @@ The API reads these variables (docker-compose sets them from the ones above):
 | `PORT` | API port | `8080` |
 | `MANAGEMENT_PORT` | Health endpoints port (never exposed publicly) | `8081` |
 | `SPRING_PROFILES_ACTIVE` | `prod` in staging and production | none |
+| `PUBLIC_URL_SCHEME`, `PUBLIC_URL_PORT` | Scheme and port of links in emails (`https` and none in production) | `http`, `3000` |
+| `TRUSTED_PROXIES` | Comma-separated addresses allowed to set `X-Forwarded-Host`; every other request is routed by its `Host` header | empty |
+| `JWT_KEY_ID` | `kid` header of access tokens, for key rotation | `k1` |
 
 With `SPRING_PROFILES_ACTIVE=prod` there are no defaults: the API refuses to start and lists every missing variable. Never commit `.env`; only `.env.example` goes to the repository.
 

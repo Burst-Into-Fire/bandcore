@@ -41,14 +41,14 @@ class ProblemDetailsIT extends IntegrationTest {
 
 	@Test
 	void unknownRouteForAnonymousCallerIsUnauthorizedProblem() {
-		ResponseEntity<String> response = api.get("/api/does-not-exist");
+		ResponseEntity<String> response = api.central().get("/api/does-not-exist");
 
 		assertProblem(response, HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED");
 	}
 
 	@Test
 	void unknownPublicRouteIsNotFoundProblem() {
-		ResponseEntity<String> response = api.get("/api/test/does-not-exist");
+		ResponseEntity<String> response = api.central().get("/api/test/does-not-exist");
 
 		assertProblem(response, HttpStatus.NOT_FOUND, "NOT_FOUND");
 	}
@@ -93,6 +93,14 @@ class ProblemDetailsIT extends IntegrationTest {
 
 		assertThat(response.getHeaders().getFirst(RequestId.HEADER)).isEqualTo("abc-123");
 		assertThat(JsonPath.<String>read(response.getBody(), "$.requestId")).isEqualTo("abc-123");
+		assertThat(JsonPath.<String>read(response.getBody(), "$.instance")).isEqualTo("urn:bandcore:request:abc-123");
+	}
+
+	@Test
+	void problemsNeverEchoTheRequestPath() {
+		ResponseEntity<String> response = api.central().get("/api/does-not-exist/secret-value?token=secret-query");
+
+		assertThat(response.getBody()).doesNotContain("secret-value").doesNotContain("secret-query");
 	}
 
 	@Test
@@ -132,6 +140,7 @@ class ProblemDetailsIT extends IntegrationTest {
 	}
 
 	@RestController
+	@PlatformEndpoint
 	static class TestController {
 
 		@PostMapping("/test/validation")

@@ -66,6 +66,16 @@ class ProblemDetailsExceptionHandler extends ResponseEntityExceptionHandler {
 		return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
 	}
 
+	@ExceptionHandler(ApiException.class)
+	ResponseEntity<Object> handleApiException(ApiException ex, WebRequest request) {
+		ProblemDetail problem = Problems.of(ex.status(), ex.code(), ex.getMessage());
+		if (ex.field() != null) {
+			problem.setProperty("errors",
+					List.of(Map.of("field", ex.field(), "code", ex.code().name(), "message", ex.getMessage())));
+		}
+		return handleExceptionInternal(ex, problem, HttpHeaders.copyOf(ex.headers()), ex.status(), request);
+	}
+
 	/**
 	 * Last resort: log the full error with the request id and return a generic 500. Security
 	 * exceptions are rethrown so Spring Security can answer with 401 or 403.

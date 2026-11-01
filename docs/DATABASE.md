@@ -53,10 +53,51 @@ Flyway migrations live in [`api/src/main/resources/db/migration`](../api/src/mai
 Every table that holds band data must have, in the same migration:
 
 - [ ] `band_id uuid NOT NULL` referencing `bands`
+- [ ] `UNIQUE (band_id, id)`, so child tables can reference it with a composite key
 - [ ] `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` and `FORCE ROW LEVEL SECURITY`
-- [ ] Policies comparing `band_id` with `current_setting('app.band_id', true)::uuid`, for every command
+- [ ] A policy comparing `band_id` with `app.band_id` for every command (`USING` and `WITH CHECK`)
 - [ ] Composite foreign keys `(band_id, parent_id)` referencing `(band_id, id)` on the parent, so a row cannot point to another band's data
-- [ ] An index whose first column is `band_id`
+- [ ] An index (or unique constraint) whose first column is `band_id`
 - [ ] For append-only tables: `REVOKE UPDATE, DELETE ON ... FROM bandcore_app`
 
-The schema guard test (M2-05) fails the build when a table with `band_id` misses RLS or policies.
+The schema guard test (`SchemaGuardIT`) fails the build when a table misses any of these. Global tables (no `band_id`) must be added to its allowlist with a reason.
+
+Template:
+
+```sql
+CREATE TABLE expenses (
+    id          uuid        PRIMARY KEY,
+    band_id     uuid        NOT NULL REFERENCES bands (id),
+    member_id   uuid        NOT NULL,
+    -- ...
+    CONSTRAINT expenses_band_id_key UNIQUE (band_id, id),
+    CONSTRAINT expenses_member_fk FOREIGN KEY (band_id, member_id) REFERENCES members (band_id, id)
+);
+
+ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE expenses FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY expenses_band_isolation ON expenses
+    USING (band_id = NULLIF(current_setting('app.band_id', true), '')::uuid)
+    WITH CHECK (band_id = NULLIF(current_setting('app.band_id', true), '')::uuid);
+```
+
+`NULLIF(..., '')` makes an unset context compare with `NULL`, so the policy returns no rows and rejects every write instead of failing with a cast error.
+
+## Row-level security at runtime
+
+The API sets two settings at the start of **every** transaction (`TenantAwareTransactionManager`), always with `set_config(name, value, true)`, which is local to the transaction:
+
+| Setting | Value | Source |
+|---|---|---|
+| `app.band_id` | The band of the request | The host, resolved by `TenantResolutionFilter` (`TenantContextHolder`), never the request body, query or a header |
+| `app.user_id` | The authenticated user | The validated access token |
+
+Rules:
+
+- **Tenant data is only accessed inside transactions.** Outside one, no band is set and tenant tables look empty. Services are `@Transactional`; repositories of tenant tables extend `TenantRepository`, which has no `findById` or `findAll`, and every query names the band (`findByBandIdAndId`).
+- **Background jobs** that process several bands run one transaction per band, inside `TenantContextHolder.callAs(new TenantContext(bandId, slug), ...)`. There is no role that bypasses RLS.
+- **Creating a band** is the only flow that changes the band inside a transaction (`RowLevelSecurity.switchBand`), to write the band's first rows atomically.
+- `memberships` also lets a user read their own rows in every band (`app.user_id`), for the central "my bands" page. Writes always need the band.
+
+`RowLevelSecurityIT` and `RowLevelSecurityPoolIT` prove the behavior, including a pool of one connection shared by transactions of different bands.

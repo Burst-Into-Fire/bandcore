@@ -1,6 +1,6 @@
 # ADR-0003: Global user accounts with per-band memberships; members without login
 
-- **Status:** Proposed (multiple bands per user is *Next* in the requirements, RF06)
+- **Status:** Accepted (2026-10-30, before M2: the data model supports several bands per user from the start; the UI for it arrives in M4-05)
 - **Date:** 2026-10-29
 - **Related:** RF01, RF04, RF05, RF06, [M2-06](../roadmap/M02-multitenancy-auth-core.md), [M4-01, M4-05](../roadmap/M04-band-workspace.md)
 

@@ -120,7 +120,9 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Then open <http://app.localhost:3000>. Each band gets its own subdomain, such as <http://burst.localhost:3000>.
+Then open <http://app.localhost:3000>. Each band gets its own subdomain, such as <http://burst.localhost:3000>. Emails sent locally (verification links) land in Mailpit: <http://localhost:8025>.
+
+Sessions work over plain HTTP locally: browsers treat `*.localhost` as a secure context, so the `Secure`, `__Host-` refresh cookie is stored and sent. Each subdomain has its own session.
 
 | Task | Command |
 |---|---|

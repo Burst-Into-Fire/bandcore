@@ -1,0 +1,13 @@
+Subject: Tentativa de cadastro com seu email no bandcore
+
+Olá, {{name}}!
+
+Alguém tentou criar uma conta no bandcore usando este email, mas você já tem uma conta.
+
+Para entrar, acesse:
+
+{{link}}
+
+Se foi você, é só entrar com a sua senha. Se não foi, nenhuma ação é necessária: sua conta continua protegida.
+
+— bandcore

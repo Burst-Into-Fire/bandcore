@@ -7,10 +7,12 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 
-import { routes } from './routes';
+import { detectHost, HostContext } from './lib/host';
+import { createRoutes } from './routes';
 
+const host = detectHost(window.location.hostname);
 const queryClient = new QueryClient();
-const router = createBrowserRouter(routes);
+const router = createBrowserRouter(createRoutes(host));
 
 const root = document.getElementById('root');
 if (!root) {
@@ -19,8 +21,10 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <HostContext value={host}>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </HostContext>
   </StrictMode>,
 );

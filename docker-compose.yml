@@ -34,14 +34,19 @@ services:
       DB_OWNER_USER: bandcore_owner
       DB_OWNER_PASSWORD: ${DB_OWNER_PASSWORD}
       BASE_DOMAIN: ${BASE_DOMAIN:-localhost}
+      # Links in emails and redirects point to the web container: http://app.localhost:3000
+      PUBLIC_URL_SCHEME: http
+      PUBLIC_URL_PORT: ${WEB_PORT:-3000}
       JWT_SECRET: ${JWT_SECRET:-}
       SMTP_HOST: ${SMTP_HOST:-mailpit}
       SMTP_PORT: ${SMTP_PORT:-1025}
       SMTP_USERNAME: ${SMTP_USERNAME:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      MAIL_FROM: ${MAIL_FROM:-}
+      MAIL_FROM: ${MAIL_FROM:-bandcore <no-reply@localhost>}
     depends_on:
       db:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
     # No published ports: the API is reached only through the web proxy, and the management
     # port (8081) stays inside the network.
