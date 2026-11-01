@@ -49,6 +49,30 @@ headers=$(curl -fsS -D - -o /dev/null -H 'Host: burst.localhost' "${WEB}/expense
 [[ "${headers,,}" != *"server: nginx/"* ]] || fail "nginx must not reveal its version"
 pass "SPA served with history fallback, no cache on index.html, no server version"
 
+# One copy of each security header on pages, assets, API responses and nginx's own errors.
+check_security_headers() {
+  local what=$1 headers=${2,,} name count
+  for name in "content-security-policy: default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'" \
+    "x-content-type-options: nosniff" "x-frame-options: deny" "referrer-policy: strict-origin-when-cross-origin" \
+    "permissions-policy: camera=()"; do
+    [[ "$headers" == *"$name"* ]] || fail "${what}: missing '${name}'"
+    count=$(grep -c "^${name%%:*}:" <<<"$headers" || true)
+    [[ "$count" == "1" ]] || fail "${what}: ${name%%:*} sent ${count} times"
+  done
+  [[ "$headers" != *"strict-transport-security"* ]] || fail "${what}: HSTS must be off on plain HTTP"
+}
+check_security_headers "SPA page" "$(curl -sS -D - -o /dev/null -H 'Host: app.localhost' "${WEB}/login")"
+asset=$(curl -fsS -H 'Host: app.localhost' "${WEB}/" | grep -o '/assets/[^"]*\.js' | head -1)
+check_security_headers "asset" "$(curl -sS -D - -o /dev/null -H 'Host: app.localhost' "${WEB}${asset}")"
+check_security_headers "missing asset" "$(curl -sS -D - -o /dev/null -H 'Host: app.localhost' "${WEB}/assets/nope.js")"
+headers=$(curl -sS -D - -o /dev/null -H 'Host: app.localhost' "${WEB}/api/status")
+check_security_headers "API response" "$headers"
+[[ "${headers,,}" == *"cache-control: no-store"* ]] || fail "API responses must not be stored"
+status=$(head -c 1100000 /dev/zero | tr '\0' 'a' | curl -s -o /dev/null -w '%{http_code}' -H 'Host: app.localhost' \
+  -H 'Content-Type: application/json' -H 'X-Requested-With: XMLHttpRequest' --data-binary @- "${WEB}/api/auth/login")
+[[ "$status" == "413" ]] || fail "oversized body answered ${status}"
+pass "security headers on pages, assets, API responses and errors; oversized bodies refused"
+
 status=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: app.localhost' "${WEB}/api/actuator/health")
 [[ "$status" != "200" ]] || fail "actuator must not be reachable through the proxy"
 body=$(curl -s -H 'Host: app.localhost' "${WEB}/actuator/health")

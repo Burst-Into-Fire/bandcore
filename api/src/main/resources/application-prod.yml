@@ -20,6 +20,8 @@ springdoc:
     enabled: false
 
 bandcore:
+  http:
+    hsts: true
   platform:
     base-domain: ${BASE_DOMAIN}
     public-scheme: https

@@ -64,6 +64,8 @@ class SecurityConfiguration {
 			// Unsafe requests without a bearer token must send X-Requested-With (see CsrfHeader).
 			.csrf(csrf -> csrf.requireCsrfProtectionMatcher(CsrfHeader::requiresProtection)
 				.csrfTokenRepository(new CsrfHeader.NoTokenRepository()))
+			// Security headers are written for every response by SecurityHeadersFilter.
+			.headers(AbstractHttpConfigurer::disable)
 			.httpBasic(AbstractHttpConfigurer::disable)
 			.formLogin(AbstractHttpConfigurer::disable)
 			.logout(AbstractHttpConfigurer::disable)
