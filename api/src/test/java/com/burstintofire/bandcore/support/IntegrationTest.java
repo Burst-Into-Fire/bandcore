@@ -16,7 +16,7 @@ import com.burstintofire.bandcore.shared.cache.ResettableCache;
 
 /**
  * Base class for integration tests ({@code *IT}): the full application on a random port,
- * connected to the shared PostgreSQL container as the runtime role, with a fixed clock and an
+ * connected to the shared PostgreSQL container as the runtime role, with a test clock and an
  * in-process SMTP server ({@link TestMailServer}).
  * Tables and security caches are emptied after each test.
  *
@@ -58,6 +58,7 @@ public abstract class IntegrationTest {
 		DatabaseCleaner.truncateAll();
 		caches.forEach(ResettableCache::clear);
 		TestMailServer.purge();
+		TestClockConfiguration.CLOCK.reset();
 	}
 
 }

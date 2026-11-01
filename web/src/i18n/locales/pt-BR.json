@@ -32,7 +32,8 @@
     "password": "Senha",
     "displayName": "Seu nome",
     "bandName": "Nome da banda",
-    "slug": "Endereço da banda"
+    "slug": "Endereço da banda",
+    "newPassword": "Nova senha"
   },
   "validation": {
     "required": "Preencha este campo.",
@@ -89,7 +90,8 @@
     "submitting": "Entrando…",
     "noAccount": "Ainda não tem conta?",
     "signUp": "Criar conta",
-    "bandNotFound": "Esta banda não existe ou está indisponível."
+    "bandNotFound": "Esta banda não existe ou está indisponível.",
+    "forgotPassword": "Esqueci minha senha"
   },
   "bands": {
     "title": "Minhas bandas",
@@ -115,5 +117,24 @@
     "welcome": "Olá, {{name}}!",
     "role": "Seu papel nesta banda: {{role}}",
     "comingSoon": "Gastos, merch e integrantes chegam nas próximas versões."
+  },
+  "forgotPassword": {
+    "title": "Redefinir senha",
+    "intro": "Informe o email da sua conta. Se ela existir, enviaremos um link para você escolher uma nova senha.",
+    "submit": "Enviar link",
+    "submitting": "Enviando…",
+    "sentTitle": "Confira seu email",
+    "sentBody": "Se existir uma conta com {{email}}, enviamos um link para redefinir a senha. O link vale por 30 minutos.",
+    "backToLogin": "Voltar para o login"
+  },
+  "resetPassword": {
+    "title": "Escolha uma nova senha",
+    "intro": "Ao salvar a nova senha, você sai de todos os dispositivos.",
+    "missing": "O link de redefinição está incompleto. Abra o link do email novamente.",
+    "submit": "Salvar nova senha",
+    "submitting": "Salvando…",
+    "success": "Senha alterada! Entre com a nova senha.",
+    "login": "Entrar",
+    "requestNew": "Pedir um novo link"
   }
 }

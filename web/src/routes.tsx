@@ -4,10 +4,12 @@ import { RequireSession } from './auth/RequireSession';
 import type { Host } from './lib/host';
 import { BandHomePage } from './pages/BandHomePage';
 import { CreateBandPage } from './pages/CreateBandPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { MyBandsPage } from './pages/MyBandsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { SignupPage } from './pages/SignupPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
 
@@ -25,6 +27,8 @@ export function createRoutes(host: Host): RouteObject[] {
     { path: '/signup', element: <SignupPage /> },
     { path: '/verify-email', element: <VerifyEmailPage /> },
     { path: '/login', element: <LoginPage /> },
+    { path: '/forgot-password', element: <ForgotPasswordPage /> },
+    { path: '/reset-password', element: <ResetPasswordPage /> },
     {
       element: <RequireSession />,
       children: [

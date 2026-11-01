@@ -1,5 +1,6 @@
 package com.burstintofire.bandcore.identity.token;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -26,6 +27,7 @@ import com.burstintofire.bandcore.shared.tenant.TenantContextHolder;
  * <ul>
  * <li>{@code aud} must be the request host, so a token never works on another subdomain;</li>
  * <li>on a band host, {@code band_id} must be that band; on the central host it must be absent;</li>
+ * <li>the token must not predate the user's last password reset or "log out everywhere";</li>
  * <li>the account must still be active, and on a band host the email verified and the membership
  * active. The role comes from the database, never from the token.</li>
  * </ul>
@@ -51,6 +53,9 @@ class AccessTokenAuthenticator implements Converter<Jwt, AbstractAuthenticationT
 		UUID userId = uuid(jwt.getSubject()).orElseThrow(AccessTokenAuthenticator::rejected);
 		String bandClaim = jwt.getClaimAsString(TokenClaims.BAND_ID);
 		User user = users.findById(userId).filter(User::isActive).orElseThrow(AccessTokenAuthenticator::rejected);
+		if (issuedBeforeSessionsEnded(jwt, user)) {
+			throw rejected();
+		}
 
 		if (scope.isCentral()) {
 			if (bandClaim != null) {
@@ -68,6 +73,12 @@ class AccessTokenAuthenticator implements Converter<Jwt, AbstractAuthenticationT
 		var authorities = grant.permissions().stream().map(SimpleGrantedAuthority::new).toList();
 		return new BandcoreAuthentication(new AuthenticatedUser(userId, tenant.bandId(), grant.role(), true), jwt,
 				authorities);
+	}
+
+	/** After a password reset or "log out everywhere", older tokens stop working at once. */
+	private static boolean issuedBeforeSessionsEnded(Jwt jwt, User user) {
+		Instant validAfter = user.getSessionsValidAfter();
+		return validAfter != null && (jwt.getIssuedAt() == null || jwt.getIssuedAt().isBefore(validAfter));
 	}
 
 	private static Optional<UUID> uuid(String value) {

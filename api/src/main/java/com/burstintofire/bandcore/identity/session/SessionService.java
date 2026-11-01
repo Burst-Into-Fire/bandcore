@@ -154,10 +154,15 @@ public class SessionService {
 			.ifPresent(token -> refreshTokens.revokeFamily(token.getFamilyId(), clock.instant()));
 	}
 
-	/** Revokes every session of the user, on every host. */
+	/**
+	 * Ends every session of the user, on every host: refresh tokens are revoked and access
+	 * tokens issued until now are refused (see {@link User#endAllSessions}).
+	 */
 	@Transactional
 	public void logoutEverywhere(UUID userId) {
-		refreshTokens.revokeAllOfUser(userId, clock.instant());
+		Instant now = clock.instant();
+		refreshTokens.revokeAllOfUser(userId, now);
+		users.findById(userId).ifPresent(user -> user.endAllSessions(now));
 	}
 
 	private Session newToken(UUID userId, TenantContextHolder.Scope scope, String role, UUID familyId, Instant now,

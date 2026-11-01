@@ -1,6 +1,7 @@
 package com.burstintofire.bandcore.identity.user;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -36,6 +37,9 @@ public class User extends AssignedIdEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	private UserStatus status;
+
+	@Column(name = "sessions_valid_after")
+	private Instant sessionsValidAfter;
 
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
@@ -89,6 +93,20 @@ public class User extends AssignedIdEntity {
 			this.emailVerifiedAt = now;
 			this.updatedAt = now;
 		}
+	}
+
+	/** Access tokens issued before this instant are refused; null when no session was ever ended. */
+	public Instant getSessionsValidAfter() {
+		return sessionsValidAfter;
+	}
+
+	/**
+	 * Ends every session at once. Truncated to seconds because {@code iat} has second precision:
+	 * a token issued in the same second as this call stays valid.
+	 */
+	public void endAllSessions(Instant now) {
+		this.sessionsValidAfter = now.truncatedTo(ChronoUnit.SECONDS);
+		this.updatedAt = now;
 	}
 
 	public void changePasswordHash(String newHash, Instant now) {
