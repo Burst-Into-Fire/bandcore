@@ -22,7 +22,7 @@ Production containers run with `SPRING_PROFILES_ACTIVE=prod`. The roles and sche
 2. Create a managed PostgreSQL instance.
 3. Run the role bootstrap script on the new database (see [Database](DATABASE.md#bootstrap)).
 4. Create two services, one for `api/` and one for `web/`, each built from its own Dockerfile. Only the web service is public; it reaches the API over the private network (`API_UPSTREAM`).
-5. Set the environment variables listed in [Getting Started](GETTING-STARTED.md#environment-variables) in the platform settings. Use production values, never the local ones.
+5. Set the environment variables listed in [Getting Started](GETTING-STARTED.md#environment-variables) in the platform settings. Use production values, never the local ones. In particular, set `HSTS_HEADER` on the web service and `TRUSTED_PROXIES` on the API (the platform's proxy range).
 6. Enable automatic deploys from `main`.
 7. Check the regions available. Prefer one close to Brazil to reduce latency.
 8. Set up the backup routine below.

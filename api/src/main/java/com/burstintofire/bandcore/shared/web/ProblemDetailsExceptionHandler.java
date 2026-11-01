@@ -60,6 +60,11 @@ class ProblemDetailsExceptionHandler extends ResponseEntityExceptionHandler {
 	@Override
 	protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
 			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		if (causedByOversizedBody(ex)) {
+			ProblemDetail problem = Problems.of(HttpStatus.CONTENT_TOO_LARGE, ErrorCode.PAYLOAD_TOO_LARGE,
+					"The request body is too large.");
+			return handleExceptionInternal(ex, problem, headers, HttpStatus.CONTENT_TOO_LARGE, request);
+		}
 		// The default detail may echo parser internals; keep it generic.
 		ProblemDetail problem = Problems.of(HttpStatus.BAD_REQUEST, ErrorCode.MALFORMED_REQUEST,
 				"The request body is missing or malformed.");
@@ -106,6 +111,15 @@ class ProblemDetailsExceptionHandler extends ResponseEntityExceptionHandler {
 		String code = error.getCode() != null ? error.getCode() : "Invalid";
 		String message = error.getDefaultMessage() != null ? error.getDefaultMessage() : "is invalid";
 		return Map.of("field", error.getField(), "code", code, "message", message);
+	}
+
+	private static boolean causedByOversizedBody(Throwable ex) {
+		for (Throwable cause = ex; cause != null; cause = cause.getCause()) {
+			if (cause instanceof RequestBodyLimitFilter.RequestBodyTooLargeException) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

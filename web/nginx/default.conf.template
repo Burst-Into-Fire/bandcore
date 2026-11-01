@@ -1,6 +1,11 @@
 # Served for every host (app.localhost, {band}.localhost, {band}.bandcore.app, ...).
 server_tokens off;
 
+# Strict-Transport-Security value, from HSTS_HEADER (empty: header not sent).
+map "" $hsts_header {
+    default "${HSTS_HEADER}";
+}
+
 server {
     listen 8080;
     server_name _;
@@ -10,6 +15,16 @@ server {
 
     # Same-origin API: no CORS, and cookies stay scoped to the band's host.
     location /api/ {
+        # The API sends these headers too: keep one copy, and still send them when nginx itself
+        # answers (502 while the API restarts, 413).
+        proxy_hide_header Content-Security-Policy;
+        proxy_hide_header X-Content-Type-Options;
+        proxy_hide_header X-Frame-Options;
+        proxy_hide_header Referrer-Policy;
+        proxy_hide_header Permissions-Policy;
+        proxy_hide_header Strict-Transport-Security;
+        include /etc/nginx/snippets/security-headers.conf;
+
         proxy_pass http://${API_UPSTREAM};
         proxy_http_version 1.1;
         # The API resolves the band from the Host header.
@@ -19,11 +34,13 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header Connection "";
         proxy_read_timeout 60s;
-        client_max_body_size 10m;
+        # Same limit as the API (bandcore.http.max-request-body).
+        client_max_body_size 1m;
     }
 
     # Container healthcheck for nginx itself.
     location = /healthz {
+        include /etc/nginx/snippets/security-headers.conf;
         access_log off;
         default_type text/plain;
         return 200 "ok\n";
@@ -31,17 +48,20 @@ server {
 
     # Hashed build assets never change: cache them for a year.
     location /assets/ {
+        include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "public, max-age=31536000, immutable";
         try_files $uri =404;
     }
 
     # The SPA entry point must always be revalidated, so a deploy is picked up immediately.
     location = /index.html {
+        include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "no-cache";
     }
 
     # Client-side routes fall back to the SPA.
     location / {
+        include /etc/nginx/snippets/security-headers.conf;
         try_files $uri $uri/ /index.html;
     }
 }

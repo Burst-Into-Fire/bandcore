@@ -18,11 +18,15 @@ USER 101
 
 # Rendered by the image entrypoint with envsubst into /etc/nginx/conf.d/default.conf.
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # Where the API listens on the private network. The management port is never proxied.
+# HSTS_HEADER: Strict-Transport-Security value; empty (no header) until the site is HTTPS-only,
+# "max-age=31536000; includeSubDomains" in production.
 ENV API_UPSTREAM=api:8080 \
-    NGINX_ENVSUBST_FILTER=^API_
+    HSTS_HEADER="" \
+    NGINX_ENVSUBST_FILTER=^(API_|HSTS_)
 
 EXPOSE 8080
 

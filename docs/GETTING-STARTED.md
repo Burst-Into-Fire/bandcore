@@ -87,6 +87,7 @@ Set in `.env` for docker-compose. In staging and production they are set in the 
 | `JWT_SECRET` | API | Access token signing key, at least 32 bytes (`openssl rand -base64 48`). Empty locally means a random key per start, so sessions end when the API restarts; required in production | empty |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | API | Outgoing email (verification links). `SMTP_AUTH` and `SMTP_STARTTLS` default to `true` in production | Mailpit |
 | `MAILPIT_UI_PORT` | compose | Mailpit inbox port | `8025` |
+| `HSTS_HEADER` | web | `Strict-Transport-Security` value sent by nginx; empty sends no header. In production: `max-age=31536000; includeSubDomains` | empty |
 
 The API reads these variables (docker-compose sets them from the ones above):
 
@@ -101,6 +102,7 @@ The API reads these variables (docker-compose sets them from the ones above):
 | `PUBLIC_URL_SCHEME`, `PUBLIC_URL_PORT` | Scheme and port of links in emails (`https` and none in production) | `http`, `3000` |
 | `TRUSTED_PROXIES` | Comma-separated addresses or CIDR ranges of the proxies in front of the API. Only they may set `X-Forwarded-Host` and `X-Forwarded-For`; every other request is routed by its `Host` header and rate limited by its own address ([rate limits](security/rate-limits.md)) | empty |
 | `JWT_KEY_ID` | `kid` header of access tokens, for key rotation | `k1` |
+| `HSTS_ENABLED` | Send `Strict-Transport-Security` on API responses. The `prod` profile turns it on | `false` |
 
 With `SPRING_PROFILES_ACTIVE=prod` there are no defaults: the API refuses to start and lists every missing variable. Never commit `.env`; only `.env.example` goes to the repository.
 
