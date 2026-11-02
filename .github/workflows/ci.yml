@@ -149,6 +149,14 @@ jobs:
         run: scripts/e2e.sh
         env:
           CI: 'true'
+      - name: Upload the workspace screenshots (360, 768 and 1280 px) for visual review
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: screenshots
+          path: e2e/screenshots
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Upload traces, videos and the HTML report
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

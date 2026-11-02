@@ -47,6 +47,7 @@ test('sign up, verify, create a band, log in on its host and log out', async ({ 
   });
 
   await test.step('log out', async () => {
+    await page.getByRole('button', { name: /Ana/ }).click();
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`^${hostUrl(slug)}/login`));
     await expect(page.getByRole('heading', { name: 'Entrar em Banda E2E' })).toBeVisible();
