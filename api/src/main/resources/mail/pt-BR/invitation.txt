@@ -1,0 +1,15 @@
+Subject: Convite para a banda {{band}} no bandcore
+
+Olá!
+
+{{inviter}} convidou você para participar da banda "{{band}}" no bandcore, com o papel de {{role}}.
+
+Para aceitar, abra o link abaixo. Se ainda não tiver conta, você poderá criar uma com este mesmo email:
+
+{{link}}
+
+O convite vale por 7 dias e só pode ser usado uma vez.
+
+Se você não esperava este convite, ignore este email.
+
+— bandcore

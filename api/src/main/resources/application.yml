@@ -143,3 +143,6 @@ bandcore:
       password-reset-confirm-ip: { capacity: 20, period: 1h }
       slug-availability-ip: { capacity: 120, period: 1m }
       slug-availability-account: { capacity: 60, period: 1m }
+      invitations-band: { capacity: 30, period: 24h }
+      invitation-preview-ip: { capacity: 30, period: 1h }
+      invitation-accept-ip: { capacity: 20, period: 1h }

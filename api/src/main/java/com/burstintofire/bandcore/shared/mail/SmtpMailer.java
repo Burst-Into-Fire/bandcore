@@ -1,4 +1,4 @@
-package com.burstintofire.bandcore.identity.mail;
+package com.burstintofire.bandcore.shared.mail;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;

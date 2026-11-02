@@ -1,4 +1,4 @@
-package com.burstintofire.bandcore.identity.mail;
+package com.burstintofire.bandcore.shared.mail;
 
 /** Sends transactional emails. The SMTP adapter is the only implementation for now. */
 public interface Mailer {

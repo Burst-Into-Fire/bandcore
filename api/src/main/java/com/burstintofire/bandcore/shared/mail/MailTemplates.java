@@ -1,4 +1,4 @@
-package com.burstintofire.bandcore.identity.mail;
+package com.burstintofire.bandcore.shared.mail;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -26,10 +26,19 @@ public class MailTemplates {
 		String subject = template.substring(SUBJECT_PREFIX.length(), firstLineEnd).strip();
 		String body = template.substring(firstLineEnd + 1).stripLeading();
 		for (Map.Entry<String, String> value : values.entrySet()) {
-			subject = subject.replace("{{" + value.getKey() + "}}", value.getValue());
-			body = body.replace("{{" + value.getKey() + "}}", value.getValue());
+			String safe = singleLine(value.getValue());
+			subject = subject.replace("{{" + value.getKey() + "}}", safe);
+			body = body.replace("{{" + value.getKey() + "}}", safe);
 		}
 		return new Mailer.OutgoingEmail(to, subject, body);
+	}
+
+	/**
+	 * Values come from users (names, band names): control characters such as line breaks become
+	 * spaces, so a value can neither break the subject header nor fake extra lines in the body.
+	 */
+	static String singleLine(String value) {
+		return value == null ? "" : value.replaceAll("\\p{Cntrl}", " ").strip();
 	}
 
 	private static String load(String name) {

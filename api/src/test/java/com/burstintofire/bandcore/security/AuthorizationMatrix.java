@@ -44,13 +44,20 @@ final class AuthorizationMatrix {
 			rule(HttpMethod.DELETE, "/members/{memberId}", ADMIN_ONLY),
 			rule(HttpMethod.PUT, "/members/{memberId}/account", ADMIN_ONLY,
 					fixture -> "{\"userId\": \"%s\"}".formatted(fixture.pathVariables().get("userId"))),
-			rule(HttpMethod.DELETE, "/members/{memberId}/account", ADMIN_ONLY));
+			rule(HttpMethod.DELETE, "/members/{memberId}/account", ADMIN_ONLY),
+			rule(HttpMethod.GET, "/invitations", ADMIN_ONLY),
+			rule(HttpMethod.POST, "/invitations", ADMIN_ONLY,
+					fixture -> "{\"email\": \"new@example.com\", \"role\": \"MEMBER\"}"),
+			rule(HttpMethod.POST, "/invitations/{invitationId}/resend", ADMIN_ONLY),
+			rule(HttpMethod.DELETE, "/invitations/{invitationId}", ADMIN_ONLY));
 
 	/** Endpoints on the central host: any authenticated account, no role. */
 	static final List<Rule> CENTRAL = List.of(
 			rule(HttpMethod.GET, "/me/bands", EVERY_ROLE),
 			rule(HttpMethod.GET, "/bands/slug-availability", EVERY_ROLE, fixture -> null, "?slug=free-slug"),
-			rule(HttpMethod.POST, "/bands", EVERY_ROLE, fixture -> "{\"name\": \"New\", \"slug\": \"brand-new\"}"));
+			rule(HttpMethod.POST, "/bands", EVERY_ROLE, fixture -> "{\"name\": \"New\", \"slug\": \"brand-new\"}"),
+			rule(HttpMethod.POST, "/invitations/accept", EVERY_ROLE,
+					fixture -> "{\"token\": \"%s\"}".formatted(fixture.pathVariables().get("invitationToken"))));
 
 	/** What a test case knows about the band it runs in. */
 	record Fixture(Map<String, String> pathVariables) {
