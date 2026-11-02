@@ -25,13 +25,15 @@ test('the band workspace at 360, 768 and 1280 px', async ({ page }, testInfo) =>
 
   for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: width < 768 ? 780 : 800 });
-    for (const [name, path, heading] of [
-      ['summary', '/', 'Resumo'],
-      ['members', '/members', 'Integrantes'],
-      ['settings', '/settings', 'Configurações'],
+    // The last item is content that loads last, so the screenshot shows the full page.
+    for (const [name, path, heading, loaded] of [
+      ['summary', '/', 'Resumo', 'Acerto entre integrantes'],
+      ['members', '/members', 'Integrantes', 'Acessos'],
+      ['settings', '/settings', 'Configurações', 'Fuso horário'],
     ] as const) {
       await page.goto(`${hostUrl(slug)}${path}`);
       await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();
+      await expect(page.getByText(loaded, { exact: true })).toBeVisible();
       await expect(page.getByRole('navigation', { name: 'Seções da banda' })).toBeVisible();
       // Nothing may overflow sideways, down to 360 px.
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);

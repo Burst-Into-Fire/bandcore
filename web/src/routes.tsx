@@ -2,6 +2,7 @@ import type { RouteObject } from 'react-router';
 
 import { RequireSession } from './auth/RequireSession';
 import type { Host } from './lib/host';
+import { AcceptInvitationPage } from './pages/AcceptInvitationPage';
 import { BandSettingsPage } from './pages/BandSettingsPage';
 import { ComingSoonPage } from './pages/ComingSoonPage';
 import { CreateBandPage } from './pages/CreateBandPage';
@@ -9,7 +10,7 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { HandoffPage } from './pages/HandoffPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
-import { MembersPage } from './pages/MembersPage';
+import { MembersPage } from './pages/members/MembersPage';
 import { MyBandsPage } from './pages/MyBandsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
@@ -50,6 +51,7 @@ export function createRoutes(host: Host): RouteObject[] {
     { path: '/auth/handoff', element: <HandoffPage /> },
     { path: '/forgot-password', element: <ForgotPasswordPage /> },
     { path: '/reset-password', element: <ResetPasswordPage /> },
+    { path: '/invitations/accept', element: <AcceptInvitationPage /> },
     {
       element: <RequireSession />,
       children: [

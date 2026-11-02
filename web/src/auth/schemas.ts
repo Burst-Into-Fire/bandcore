@@ -45,6 +45,17 @@ export const forgotPasswordSchema = z.object({ email: emailSchema });
 
 export const resetPasswordSchema = z.object({ password: newPasswordSchema });
 
+export const memberSchema = z.object({
+  displayName: nameSchema,
+  instrument: z.string().trim().max(40, 'validation.instrumentTooLong'),
+});
+
+export const invitationSchema = z.object({
+  email: emailSchema,
+  role: z.enum(['ADMIN', 'MEMBER', 'READ_ONLY']),
+  memberId: z.string(),
+});
+
 export const bandSettingsSchema = z.object({
   name: nameSchema,
   timezone: z.string().min(1, 'validation.required'),

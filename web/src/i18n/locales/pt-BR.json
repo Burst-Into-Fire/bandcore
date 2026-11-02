@@ -37,7 +37,11 @@
     "bandName": "Nome da banda",
     "slug": "Endereço da banda",
     "newPassword": "Nova senha",
-    "timezone": "Fuso horário"
+    "timezone": "Fuso horário",
+    "instrument": "Instrumento ou função",
+    "role": "Papel",
+    "linkedMember": "Vincular a um integrante (opcional)",
+    "memberName": "Nome"
   },
   "validation": {
     "required": "Preencha este campo.",
@@ -45,7 +49,8 @@
     "passwordTooShort": "Use pelo menos 12 caracteres.",
     "passwordTooLong": "Use no máximo 128 caracteres.",
     "nameTooLong": "Use no máximo 80 caracteres.",
-    "slugInvalid": "Use de 3 a 32 letras minúsculas, números e hifens simples, sem hífen no começo ou no fim."
+    "slugInvalid": "Use de 3 a 32 letras minúsculas, números e hifens simples, sem hífen no começo ou no fim.",
+    "instrumentTooLong": "Use no máximo 40 caracteres."
   },
   "errors": {
     "generic": "Algo deu errado. Tente de novo em instantes.",
@@ -58,10 +63,19 @@
     "SLUG_INVALID": "Use de 3 a 32 letras minúsculas, números e hifens simples.",
     "SLUG_RESERVED": "Este endereço é reservado. Escolha outro.",
     "SLUG_TAKEN": "Este endereço já está em uso. Escolha outro.",
-    "EMAIL_NOT_VERIFIED": "Confirme seu email antes de criar uma banda.",
+    "EMAIL_NOT_VERIFIED": "Confirme seu email antes de continuar. Use o link que enviamos para você.",
     "BAND_LIMIT_REACHED": "Você atingiu o limite de bandas criadas por conta.",
     "TOO_MANY_REQUESTS": "Muitas tentativas. Aguarde um pouco e tente de novo.",
-    "TIMEZONE_INVALID": "Escolha um fuso horário da lista."
+    "TIMEZONE_INVALID": "Escolha um fuso horário da lista.",
+    "MEMBER_HAS_HISTORY": "Este integrante já tem histórico na banda. Desative em vez de excluir.",
+    "USER_NOT_IN_BAND": "Só é possível vincular contas que têm acesso a esta banda.",
+    "ACCOUNT_ALREADY_LINKED": "Esta conta já está vinculada a outro integrante.",
+    "MEMBER_ALREADY_LINKED": "Este integrante já está vinculado a uma conta.",
+    "ALREADY_A_MEMBER": "Este email já tem acesso à banda.",
+    "INVITATION_PENDING": "Já existe um convite pendente para este email. Reenvie o convite em vez de criar outro.",
+    "INVITATION_EMAIL_MISMATCH": "Este convite foi enviado para outro email. Saia e entre com o email convidado.",
+    "LAST_ADMIN": "A banda precisa de pelo menos um administrador. Torne outra pessoa administradora antes.",
+    "NOT_FOUND": "Não encontramos este item. Ele pode ter sido removido."
   },
   "session": {
     "loading": "Carregando sua sessão…"
@@ -85,7 +99,8 @@
     "missing": "O link de confirmação está incompleto. Abra o link do email novamente.",
     "login": "Entrar",
     "resendTitle": "Receber um novo link",
-    "resend": "Enviar novo link"
+    "resend": "Enviar novo link",
+    "continueInvitation": "Continuar para o convite"
   },
   "login": {
     "titleCentral": "Entrar no bandcore",
@@ -206,6 +221,72 @@
     "subtitle": "Quem toca na banda e divide gastos, vendas e acertos.",
     "empty": "Nenhum integrante ainda.",
     "active": "Ativo",
-    "inactive": "Inativo"
+    "inactive": "Inativo",
+    "add": "Novo integrante",
+    "addTitle": "Novo integrante",
+    "editTitle": "Editar {{name}}",
+    "save": "Salvar",
+    "saving": "Salvando…",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "deactivate": "Desativar",
+    "activate": "Reativar",
+    "delete": "Excluir",
+    "confirmDelete": "Excluir {{name}}? Só é possível quando não há histórico.",
+    "confirmDeactivate": "Desativar {{name}}? O histórico e os saldos continuam.",
+    "confirm": "Confirmar",
+    "linkedTo": "Conta: {{name}}",
+    "noAccount": "Sem conta",
+    "link": "Vincular conta",
+    "unlink": "Desvincular conta",
+    "chooseAccount": "Conta com acesso à banda",
+    "noAccountsToLink": "Todas as contas com acesso já estão vinculadas. Convide alguém primeiro.",
+    "instrumentPlaceholder": "Ex.: Vocal, Baixo, Produção",
+    "leave": "Sair da banda",
+    "confirmLeave": "Sair desta banda? Você perde o acesso na hora; seu histórico continua.",
+    "left": "Você saiu da banda.",
+    "hasAccount": "Tem conta"
+  },
+  "access": {
+    "title": "Acessos",
+    "subtitle": "Contas que entram nesta banda e o que cada uma pode fazer.",
+    "you": "você",
+    "changeRole": "Mudar papel de {{name}}",
+    "remove": "Remover acesso",
+    "confirmRemove": "Remover o acesso de {{name}}? A pessoa sai da banda na hora; o histórico continua.",
+    "confirmRole": "Mudar o papel de {{name}} para {{role}}?"
+  },
+  "invitations": {
+    "title": "Convites",
+    "subtitle": "Convide pessoas por email. O convite vale por 7 dias.",
+    "invite": "Convidar",
+    "inviting": "Enviando…",
+    "sent": "Convite enviado para {{email}}.",
+    "empty": "Nenhum convite enviado.",
+    "resend": "Reenviar",
+    "revoke": "Revogar",
+    "confirmRevoke": "Revogar o convite para {{email}}? O link deixa de funcionar.",
+    "expires": "Vence em {{date}}",
+    "noMember": "Nenhum",
+    "status": {
+      "PENDING": "Pendente",
+      "ACCEPTED": "Aceito",
+      "EXPIRED": "Expirado",
+      "REVOKED": "Revogado"
+    }
+  },
+  "acceptInvitation": {
+    "title": "Convite para {{band}}",
+    "loading": "Carregando o convite…",
+    "invalidTitle": "Convite indisponível",
+    "missing": "O link do convite está incompleto. Abra o link do email novamente.",
+    "details": "O convite é para {{email}}, com o papel de {{role}}.",
+    "loginOrSignUp": "Para aceitar, entre ou crie uma conta com este email.",
+    "login": "Entrar",
+    "signUp": "Criar conta",
+    "accept": "Aceitar convite",
+    "accepting": "Entrando na banda…",
+    "loggedInAs": "Você está conectado como {{email}}.",
+    "switchAccount": "Entrar com outra conta"
   }
 }
