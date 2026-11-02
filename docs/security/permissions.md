@@ -49,6 +49,8 @@ Roles are per band: the same person can be `ADMIN` in one band and `READ_ONLY` i
 | Endpoint | Host | Who |
 |---|---|---|
 | `GET /api/me`, `POST /api/auth/logout-all` | any | Any authenticated user |
+| `POST /api/auth/handoff` | any | Any authenticated user; a band target also needs a verified email and active access to it |
+| `POST /api/auth/handoff/exchange` | any | Public (the one-time code is the credential) |
 | `GET /api/band` | band | `band:read` |
 | `PATCH /api/band` | band | `band:manage` |
 | `GET /api/members`, `GET /api/members/{id}` | band | `member:read` |

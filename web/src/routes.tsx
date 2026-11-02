@@ -6,6 +6,7 @@ import { BandHomePage } from './pages/BandHomePage';
 import { BandSettingsPage } from './pages/BandSettingsPage';
 import { CreateBandPage } from './pages/CreateBandPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { HandoffPage } from './pages/HandoffPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { MyBandsPage } from './pages/MyBandsPage';
@@ -19,6 +20,7 @@ export function createRoutes(host: Host): RouteObject[] {
   if (host.kind === 'band') {
     return [
       { path: '/login', element: <LoginPage /> },
+      { path: '/auth/handoff', element: <HandoffPage /> },
       {
         element: <RequireSession />,
         children: [
@@ -41,6 +43,7 @@ export function createRoutes(host: Host): RouteObject[] {
     { path: '/signup', element: <SignupPage /> },
     { path: '/verify-email', element: <VerifyEmailPage /> },
     { path: '/login', element: <LoginPage /> },
+    { path: '/auth/handoff', element: <HandoffPage /> },
     { path: '/forgot-password', element: <ForgotPasswordPage /> },
     { path: '/reset-password', element: <ResetPasswordPage /> },
     {

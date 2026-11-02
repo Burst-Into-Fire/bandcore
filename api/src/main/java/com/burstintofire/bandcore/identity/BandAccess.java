@@ -13,6 +13,9 @@ public interface BandAccess {
 	/** The user's active access to the band, or empty when there is none. */
 	Optional<Grant> find(UUID bandId, UUID userId);
 
+	/** The id of the active band with this slug, or empty when there is none. */
+	Optional<UUID> activeBandId(String slug);
+
 	/**
 	 * @param role the membership role ({@code ADMIN}, {@code MEMBER}, {@code READ_ONLY})
 	 * @param permissions named permissions granted by the role ({@code expense:write}, ...)

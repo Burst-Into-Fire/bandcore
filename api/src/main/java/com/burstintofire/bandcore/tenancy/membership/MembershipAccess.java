@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.burstintofire.bandcore.identity.BandAccess;
 import com.burstintofire.bandcore.shared.cache.ExpiringCache;
 import com.burstintofire.bandcore.shared.cache.ResettableCache;
+import com.burstintofire.bandcore.tenancy.band.BandDirectory;
 
 /**
  * Answers the identity module's band access questions from the memberships table, on every
@@ -29,12 +30,15 @@ public class MembershipAccess implements BandAccess, ResettableCache {
 
 	private final ExpiringCache<Key, Grant> cache;
 
-	MembershipAccess(MembershipRepository memberships, Clock clock,
+	private final BandDirectory bands;
+
+	MembershipAccess(MembershipRepository memberships, BandDirectory bands, Clock clock,
 			@Value("${bandcore.tenancy.membership-cache-ttl:60s}") Duration timeToLive) {
 		if (timeToLive.compareTo(Duration.ofSeconds(60)) > 0) {
 			throw new IllegalStateException("The membership cache must not keep entries for more than 60 seconds");
 		}
 		this.memberships = memberships;
+		this.bands = bands;
 		this.cache = new ExpiringCache<>(timeToLive, 50_000, clock);
 	}
 
@@ -45,6 +49,11 @@ public class MembershipAccess implements BandAccess, ResettableCache {
 				key -> memberships.findByBandIdAndUserId(key.bandId(), key.userId())
 					.filter(Membership::isActive)
 					.map(membership -> new Grant(membership.getRole().name(), membership.getRole().permissions())));
+	}
+
+	@Override
+	public Optional<UUID> activeBandId(String slug) {
+		return bands.findBySlug(slug).filter(BandDirectory.BandSnapshot::isActive).map(BandDirectory.BandSnapshot::id);
 	}
 
 	/** Call after any change to a membership. */

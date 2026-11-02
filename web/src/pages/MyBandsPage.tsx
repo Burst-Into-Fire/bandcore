@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 
 import { api } from '../api/client';
 import { unwrap } from '../api/problem';
+import { useHandoff } from '../auth/useHandoff';
 import { useLogout } from '../auth/useLogout';
 import { AuthLayout } from '../components/AuthLayout';
 import { primaryButton, secondaryButton, textLink } from '../components/buttons';
@@ -13,11 +14,12 @@ import { roleLabel } from './roles';
 
 /**
  * The user's bands on the central host. Each band is another origin with its own session, so
- * opening one goes to its login page (a seamless handoff arrives in M4-05).
+ * opening one hands the session over with a one-time link instead of asking for the password.
  */
 export function MyBandsPage() {
   const { t } = useTranslation();
   const logout = useLogout();
+  const handoff = useHandoff();
   const bands = useQuery({
     queryKey: ['my-bands'],
     queryFn: async () => unwrap(await api.GET('/me/bands')),
@@ -26,6 +28,7 @@ export function MyBandsPage() {
   return (
     <AuthLayout title={t('bands.title')}>
       {bands.isError ? <FormAlert message={errorMessage(t, bands.error)} /> : null}
+      {handoff.isError ? <FormAlert message={errorMessage(t, handoff.error)} /> : null}
       {bands.data?.length === 0 ? <p className="text-muted">{t('bands.empty')}</p> : null}
       {bands.data && bands.data.length > 0 ? (
         <ul className="flex flex-col gap-2">
@@ -38,9 +41,16 @@ export function MyBandsPage() {
                 <span className="truncate font-semibold">{band.name}</span>
                 <span className="text-caption text-muted">{roleLabel(t, band.role)}</span>
               </div>
-              <a href={`${band.url}/login`} className={textLink}>
-                {t('bands.open')}
-              </a>
+              <button
+                type="button"
+                className={textLink}
+                disabled={handoff.isPending}
+                onClick={() => handoff.mutate(band.slug)}
+              >
+                {handoff.isPending && handoff.variables === band.slug
+                  ? t('bands.opening')
+                  : t('bands.open')}
+              </button>
             </li>
           ))}
         </ul>
