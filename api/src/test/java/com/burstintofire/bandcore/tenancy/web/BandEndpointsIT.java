@@ -70,6 +70,20 @@ class BandEndpointsIT extends IntegrationTest {
 	}
 
 	@Test
+	void onlyIanaRegionNamesAreAcceptedAsTimezones() {
+		for (String offset : new String[] { "+03:00", "UTC+3", "GMT-03:00", "Z" }) {
+			ResponseEntity<String> response = host.patchJson("/api/band", "{\"timezone\": \"%s\"}".formatted(offset),
+					headers -> headers.setBearerAuth(token));
+			assertThat(response.getStatusCode()).as(offset).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+			assertThat(JsonPath.<String>read(response.getBody(), "$.errors[0].field")).isEqualTo("timezone");
+		}
+		ResponseEntity<String> lisbon = host.patchJson("/api/band", "{\"timezone\": \"Europe/Lisbon\"}",
+				headers -> headers.setBearerAuth(token));
+		assertThat(JsonPath.<String>read(lisbon.getBody(), "$.timezone")).isEqualTo("Europe/Lisbon");
+		assertThat(JsonPath.<String>read(lisbon.getBody(), "$.currency")).isEqualTo("BRL");
+	}
+
+	@Test
 	void publicProfileShowsOnlyTheNameAndSlugWithoutLogin() {
 		ResponseEntity<String> response = host.get("/api/band/public-profile");
 

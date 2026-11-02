@@ -70,7 +70,7 @@ export default defineConfig([
               'inputMode',
             ],
           },
-          // Form field names passed to react-hook-form are not UI text either.
+          // Form field names passed to react-hook-form and permission names are not UI text either.
           callees: {
             exclude: [
               'i18n(ext)?',
@@ -80,6 +80,7 @@ export default defineConfig([
               'removeEventListener',
               'register',
               'setValue',
+              'can',
             ],
           },
         },

@@ -1,10 +1,12 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 
 import { api } from '../api/client';
 import { unwrap } from '../api/problem';
+import { useBandAccess } from '../auth/useBandAccess';
 import { useLogout } from '../auth/useLogout';
-import { secondaryButton } from '../components/buttons';
+import { secondaryButton, textLink } from '../components/buttons';
 import { FormAlert } from '../components/FormAlert';
 import { errorMessage } from './errorMessage';
 import { roleLabel } from './roles';
@@ -13,7 +15,7 @@ import { roleLabel } from './roles';
 export function BandHomePage() {
   const { t } = useTranslation();
   const logout = useLogout();
-  const me = useQuery({ queryKey: ['me'], queryFn: async () => unwrap(await api.GET('/me')) });
+  const { me, can } = useBandAccess();
   const band = useQuery({
     queryKey: ['band'],
     queryFn: async () => unwrap(await api.GET('/band')),
@@ -43,6 +45,11 @@ export function BandHomePage() {
         </section>
       ) : null}
       <p className="text-muted">{t('bandHome.comingSoon')}</p>
+      {can('band:manage') ? (
+        <Link to="/settings" className={textLink}>
+          {t('settings.title')}
+        </Link>
+      ) : null}
       <div className="flex flex-col gap-2 sm:flex-row">
         <button type="button" className={secondaryButton} onClick={() => void logout()}>
           {t('common.logout')}

@@ -19,6 +19,7 @@ const ERROR_CODES = [
   'EMAIL_NOT_VERIFIED',
   'BAND_LIMIT_REACHED',
   'TOO_MANY_REQUESTS',
+  'TIMEZONE_INVALID',
 ] as const;
 
 /** Bean Validation codes in `errors[].code` of a VALIDATION_FAILED problem. */

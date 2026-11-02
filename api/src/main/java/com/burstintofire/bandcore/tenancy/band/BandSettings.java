@@ -1,7 +1,6 @@
 package com.burstintofire.bandcore.tenancy.band;
 
 import java.time.Clock;
-import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -20,8 +19,8 @@ import com.burstintofire.bandcore.shared.web.ErrorCode;
 
 /**
  * The current band's own data. The band is always the one of the request host; there is no
- * way to address another band here. Changes are recorded in the audit log; the settings page
- * arrives in M4-04.
+ * way to address another band here. Changes are recorded in the audit log. The currency is
+ * fixed to BRL and the slug cannot change in v1 (it is the band's address).
  */
 @Service
 public class BandSettings {
@@ -62,13 +61,13 @@ public class BandSettings {
 		String previousTimezone = band.getTimezone();
 		String previousName = band.getName();
 		if (timezone != null) {
-			try {
-				band.changeTimezone(ZoneId.of(timezone).getId(), clock.instant());
-			}
-			catch (DateTimeException ex) {
+			// Region names from the IANA database only: fixed offsets such as "+03:00" or "UTC+3"
+			// would ignore daylight saving changes when months are computed in the band's time zone.
+			if (!ZoneId.getAvailableZoneIds().contains(timezone)) {
 				throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, ErrorCode.TIMEZONE_INVALID,
 						"Use an IANA time zone such as America/Sao_Paulo.", "timezone");
 			}
+			band.changeTimezone(timezone, clock.instant());
 		}
 		if (name != null) {
 			band.rename(name.strip(), clock.instant());
