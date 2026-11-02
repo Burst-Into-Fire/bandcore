@@ -227,7 +227,7 @@ Every pull request proves it keeps the rules intact. Details and examples in [Te
 - **Never mock the database** and never use an in-memory database.
 - **Money is integer cents** in Java, SQL and TypeScript.
 - **Run locally before pushing:** `./mvnw verify` in `api/`; `npm run lint && npm run typecheck && npm test` in `web/`. If you changed the API, run `npm run api:generate` in `web/` and commit `src/api/schema.ts`.
-- **Required checks** (see `ruleset.json`): `validate`, `backend`, `frontend`, `api-contract`, `docker`, `gitleaks` and `dependency-review`. A pull request with a failing check cannot be merged.
+- **Required checks** (see `ruleset.json`): `validate`, `backend`, `frontend`, `api-contract`, `docker`, `e2e`, `gitleaks` and `dependency-review`. A pull request with a failing check cannot be merged.
 - The pull request template contains the [Definition of Done](roadmap.md#definition-of-done). Tick what applies and explain anything left unchecked.
 
 ---
