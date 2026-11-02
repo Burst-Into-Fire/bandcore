@@ -49,7 +49,11 @@ final class AuthorizationMatrix {
 			rule(HttpMethod.POST, "/invitations", ADMIN_ONLY,
 					fixture -> "{\"email\": \"new@example.com\", \"role\": \"MEMBER\"}"),
 			rule(HttpMethod.POST, "/invitations/{invitationId}/resend", ADMIN_ONLY),
-			rule(HttpMethod.DELETE, "/invitations/{invitationId}", ADMIN_ONLY));
+			rule(HttpMethod.DELETE, "/invitations/{invitationId}", ADMIN_ONLY),
+			rule(HttpMethod.GET, "/memberships", ADMIN_ONLY),
+			rule(HttpMethod.PATCH, "/memberships/{membershipId}", ADMIN_ONLY, fixture -> "{\"role\": \"MEMBER\"}"),
+			rule(HttpMethod.DELETE, "/memberships/{membershipId}", ADMIN_ONLY),
+			rule(HttpMethod.POST, "/memberships/leave", EVERY_ROLE));
 
 	/** Endpoints on the central host: any authenticated account, no role. */
 	static final List<Rule> CENTRAL = List.of(

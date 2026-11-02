@@ -1,5 +1,7 @@
 package com.burstintofire.bandcore.identity;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -7,6 +9,9 @@ import java.util.UUID;
 public interface Accounts {
 
 	Optional<Account> find(UUID userId);
+
+	/** The accounts that exist among these ids, in no particular order. */
+	List<Account> findAll(Collection<UUID> userIds);
 
 	/** The account with this email, compared after {@link #normalizeEmail normalization}. */
 	Optional<Account> findByEmail(String email);

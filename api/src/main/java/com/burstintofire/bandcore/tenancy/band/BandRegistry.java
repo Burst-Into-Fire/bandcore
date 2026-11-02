@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.burstintofire.bandcore.shared.id.IdGenerator;
@@ -86,6 +87,15 @@ public class BandRegistry {
 	@Transactional(readOnly = true)
 	public long countCreatedBy(UUID userId) {
 		return bands.countByCreatedBy(userId);
+	}
+
+	/**
+	 * Locks the band for the rest of the transaction, so concurrent changes to its memberships
+	 * run one after the other (for example the last-admin rule).
+	 */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void lock(UUID bandId) {
+		bands.lockById(bandId).orElseThrow(ApiException::notFound);
 	}
 
 	@Transactional(readOnly = true)

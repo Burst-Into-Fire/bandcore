@@ -56,10 +56,12 @@ class AuthorizationMatrixIT extends IntegrationTest {
 		UUID unlinked = fixtures.verifiedUser("unlinked@example.com");
 		fixtures.membershipOnly(band, unlinked, "MEMBER");
 		UUID invitation = fixtures.invitation(band, "invited@example.com", "MEMBER", user).id();
+		// A second admin, so an admin under test may leave, and whose role and access are changed.
+		UUID otherAdmin = fixtures.membership(band, fixtures.verifiedUser("other.admin@example.com"), "ADMIN");
 		ApiClient host = api.forBand("alpha");
 		String token = fixtures.login(host, "user@example.com");
 		var fixture = new AuthorizationMatrix.Fixture(Map.of("memberId", member.toString(), "userId", unlinked.toString(),
-				"invitationId", invitation.toString()));
+				"invitationId", invitation.toString(), "membershipId", otherAdmin.toString()));
 
 		ResponseEntity<String> response = host.send(rule.method(), rule.url(fixture), rule.body().apply(fixture),
 				headers -> headers.setBearerAuth(token));
@@ -103,7 +105,8 @@ class AuthorizationMatrixIT extends IntegrationTest {
 	@Test
 	void readOnlyCannotPerformAnyWrite() {
 		assertThat(AuthorizationMatrix.BAND).filteredOn(AuthorizationMatrix.Rule::isWrite)
-			.filteredOn(rule -> !rule.path().startsWith("/auth/"))
+			// Self-service writes about one's own session or access, open to every role.
+			.filteredOn(rule -> !rule.path().startsWith("/auth/") && !rule.path().equals("/memberships/leave"))
 			.allSatisfy(rule -> assertThat(rule.allowed()).doesNotContain(Role.READ_ONLY));
 	}
 

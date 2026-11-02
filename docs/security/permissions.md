@@ -54,6 +54,8 @@ Roles are per band: the same person can be `ADMIN` in one band and `READ_ONLY` i
 | `GET /api/members`, `GET /api/members/{id}` | band | `member:read` |
 | `POST /api/members`, `PATCH`/`DELETE /api/members/{id}`, `POST /api/members/{id}/deactivate`, `/activate`, `PUT`/`DELETE /api/members/{id}/account` | band | `member:manage` |
 | `GET`/`POST /api/invitations`, `POST /api/invitations/{id}/resend`, `DELETE /api/invitations/{id}` | band | `member:manage` |
+| `GET /api/memberships`, `PATCH`/`DELETE /api/memberships/{id}` | band | `member:manage`; the last active admin cannot be demoted or removed (409 `LAST_ADMIN`) |
+| `POST /api/memberships/leave` | band | Any role, except the last admin |
 | `POST /api/invitations/accept` | central | Any authenticated account whose verified email is the invited one |
 | `POST /api/invitations/preview` | central | Public (the token is the credential) |
 | `GET /api/me/bands`, `GET /api/bands/slug-availability`, `POST /api/bands` | central | Any authenticated account (creating a band also needs a verified email) |

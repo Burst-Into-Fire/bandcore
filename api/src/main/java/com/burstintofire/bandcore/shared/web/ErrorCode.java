@@ -56,7 +56,9 @@ public enum ErrorCode {
 	/** There is a pending invitation for this email: send it again instead. */
 	INVITATION_PENDING,
 	/** The invitation was sent to another email than the logged-in account's. */
-	INVITATION_EMAIL_MISMATCH;
+	INVITATION_EMAIL_MISMATCH,
+	/** The change would leave the band without an active admin. */
+	LAST_ADMIN;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {
