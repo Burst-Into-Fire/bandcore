@@ -52,9 +52,12 @@ class AuthorizationMatrixIT extends IntegrationTest {
 		UUID user = fixtures.verifiedUser("user@example.com");
 		fixtures.membership(band, user, role.name());
 		UUID member = fixtures.member(band, "Bia");
+		// An account with access to the band and no member record, for linking.
+		UUID unlinked = fixtures.verifiedUser("unlinked@example.com");
+		fixtures.membershipOnly(band, unlinked, "MEMBER");
 		ApiClient host = api.forBand("alpha");
 		String token = fixtures.login(host, "user@example.com");
-		var fixture = new AuthorizationMatrix.Fixture(Map.of("memberId", member.toString()));
+		var fixture = new AuthorizationMatrix.Fixture(Map.of("memberId", member.toString(), "userId", unlinked.toString()));
 
 		ResponseEntity<String> response = host.send(rule.method(), rule.url(fixture), rule.body().apply(fixture),
 				headers -> headers.setBearerAuth(token));

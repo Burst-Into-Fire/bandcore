@@ -285,7 +285,8 @@ export interface paths {
         /** Members of the current band */
         get: operations["listMembers"];
         put?: never;
-        post?: never;
+        /** Add a member (admins) */
+        post: operations["createMember"];
         delete?: never;
         options?: never;
         head?: never;
@@ -303,6 +304,66 @@ export interface paths {
         get: operations["getMember"];
         put?: never;
         post?: never;
+        /**
+         * Delete a member without history (admins)
+         * @description A member with expenses, splits or sales answers 409 MEMBER_HAS_HISTORY: deactivate instead.
+         */
+        delete: operations["deleteMember"];
+        options?: never;
+        head?: never;
+        /**
+         * Change a member's name or instrument (admins)
+         * @description Omitted fields are left unchanged; an empty instrument clears it.
+         */
+        patch: operations["updateMember"];
+        trace?: never;
+    };
+    "/members/{memberId}/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Link a member to an account with access to this band (admins) */
+        put: operations["linkMemberAccount"];
+        post?: never;
+        /** Unlink a member from its account (admins) */
+        delete: operations["unlinkMemberAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/members/{memberId}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bring a member back (admins) */
+        post: operations["activateMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/members/{memberId}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark a member as having left the band (admins); history and balances are kept */
+        post: operations["deactivateMember"];
         delete?: never;
         options?: never;
         head?: never;
@@ -357,6 +418,11 @@ export interface components {
             /** @example the-burst */
             slug: string;
         };
+        CreateMemberRequest: {
+            displayName: string;
+            /** @example Vocal */
+            instrument?: string;
+        };
         CreatedBandResponse: {
             /** Format: uuid */
             id: string;
@@ -364,6 +430,10 @@ export interface components {
             slug: string;
             /** @example https://the-burst.bandcore.app */
             url: string;
+        };
+        LinkAccountRequest: {
+            /** Format: uuid */
+            userId: string;
         };
         LoginRequest: {
             email: string;
@@ -389,6 +459,11 @@ export interface components {
             linkedToAccount: boolean;
             /** @enum {string} */
             status: "ACTIVE" | "INACTIVE";
+            /**
+             * Format: uuid
+             * @description The linked account, when there is one
+             */
+            userId?: string;
         };
         MyBandResponse: {
             /** Format: uuid */
@@ -444,6 +519,10 @@ export interface components {
         UpdateBandRequest: {
             name?: string;
             timezone?: string;
+        };
+        UpdateMemberRequest: {
+            displayName?: string;
+            instrument?: string;
         };
         VerifyEmailRequest: {
             token: string;
@@ -817,7 +896,169 @@ export interface operations {
             };
         };
     };
+    createMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MemberResponse"];
+                };
+            };
+        };
+    };
     getMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MemberResponse"];
+                };
+            };
+        };
+    };
+    deleteMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MemberResponse"];
+                };
+            };
+        };
+    };
+    linkMemberAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MemberResponse"];
+                };
+            };
+        };
+    };
+    unlinkMemberAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MemberResponse"];
+                };
+            };
+        };
+    };
+    activateMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MemberResponse"];
+                };
+            };
+        };
+    };
+    deactivateMember: {
         parameters: {
             query?: never;
             header?: never;

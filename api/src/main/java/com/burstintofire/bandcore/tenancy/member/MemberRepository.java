@@ -16,4 +16,6 @@ public interface MemberRepository extends TenantRepository<Member, UUID> {
 
 	List<Member> findByBandIdOrderByDisplayNameAsc(UUID bandId);
 
+	Optional<Member> findByBandIdAndUserId(UUID bandId, UUID userId);
+
 }

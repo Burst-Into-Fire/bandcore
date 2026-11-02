@@ -58,6 +58,8 @@ public final class Permissions {
 
 	public static final String CAN_READ_MEMBERS = HAS + MEMBER_READ + END;
 
+	public static final String CAN_MANAGE_MEMBERS = HAS + MEMBER_MANAGE + END;
+
 	private Permissions() {
 	}
 

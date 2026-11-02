@@ -52,6 +52,7 @@ Roles are per band: the same person can be `ADMIN` in one band and `READ_ONLY` i
 | `GET /api/band` | band | `band:read` |
 | `PATCH /api/band` | band | `band:manage` |
 | `GET /api/members`, `GET /api/members/{id}` | band | `member:read` |
+| `POST /api/members`, `PATCH`/`DELETE /api/members/{id}`, `POST /api/members/{id}/deactivate`, `/activate`, `PUT`/`DELETE /api/members/{id}/account` | band | `member:manage` |
 | `GET /api/me/bands`, `GET /api/bands/slug-availability`, `POST /api/bands` | central | Any authenticated account (creating a band also needs a verified email) |
 | `POST /api/auth/signup`, `/verify-email`, `/resend-verification` | central | Public |
 | `POST /api/auth/login`, `/refresh`, `/logout` | any | Public (refresh and logout use the refresh cookie) |

@@ -135,7 +135,7 @@ class TenantIsolationIT extends IntegrationTest {
 		if (probe.addressesResource()) {
 			return List.of(404);
 		}
-		return List.of(200, 204, 403);
+		return List.of(200, 201, 204, 403);
 	}
 
 	private static ResponseEntity<String> call(ApiClient host, IsolationScenarios.Probe probe,
@@ -156,6 +156,8 @@ class TenantIsolationIT extends IntegrationTest {
 
 		UUID bravoAdmin;
 
+		UUID alphaAdmin;
+
 		UUID alphaMember;
 
 		UUID bravoMember;
@@ -175,6 +177,7 @@ class TenantIsolationIT extends IntegrationTest {
 			world.bravo = fixtures.band("bravo-secret", "Bravo Secret Band");
 
 			UUID alphaAdmin = fixtures.verifiedUser("alpha.admin@example.com");
+			world.alphaAdmin = alphaAdmin;
 			fixtures.membership(world.alpha, alphaAdmin, "ADMIN");
 			fixtures.membership(world.alpha, fixtures.verifiedUser("alpha.member@example.com"), "MEMBER");
 			fixtures.membership(world.alpha, fixtures.verifiedUser("alpha.reader@example.com"), "READ_ONLY");
@@ -196,11 +199,12 @@ class TenantIsolationIT extends IntegrationTest {
 
 		IsolationScenarios.Target bravoTarget() {
 			return new IsolationScenarios.Target(bravo.toString(), "bravo-secret",
-					Map.of("memberId", bravoMember.toString()));
+					Map.of("memberId", bravoMember.toString(), "userId", bravoAdmin.toString()));
 		}
 
 		IsolationScenarios.Target alphaTarget() {
-			return new IsolationScenarios.Target(alpha.toString(), "alpha", Map.of("memberId", alphaMember.toString()));
+			return new IsolationScenarios.Target(alpha.toString(), "alpha",
+					Map.of("memberId", alphaMember.toString(), "userId", alphaAdmin.toString()));
 		}
 
 		/** Strings that must never appear in a response to band A's requests. */

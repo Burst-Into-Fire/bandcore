@@ -11,7 +11,7 @@ import com.burstintofire.bandcore.shared.security.Permissions;
 import com.burstintofire.bandcore.shared.tenant.TenantContextHolder;
 import com.burstintofire.bandcore.shared.web.ApiException;
 
-/** Reads the current band's members. Writes arrive in M4-01. */
+/** Reads the current band's members; {@link MemberAdministration} changes them. */
 @Service
 public class MemberQueries {
 

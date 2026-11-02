@@ -55,15 +55,24 @@ public class TestFixtures {
 		return id;
 	}
 
-	/** Active membership with a role, plus the linked member (integrante). */
-	public void membership(UUID bandId, UUID userId, String role) {
+	/** Active membership with a role, plus the linked member (integrante). Returns the membership id. */
+	public UUID membership(UUID bandId, UUID userId, String role) {
+		UUID id = membershipOnly(bandId, userId, role);
 		OwnerSql.inBand(bandId, """
-				INSERT INTO bandcore.memberships (id, band_id, user_id, role, created_at, updated_at)
-				VALUES (gen_random_uuid(), '%s', '%s', '%s', now(), now())
-				""".formatted(bandId, userId, role), """
 				INSERT INTO bandcore.members (id, band_id, display_name, user_id, joined_at, created_at, updated_at)
 				SELECT gen_random_uuid(), '%s', display_name, id, now(), now(), now() FROM bandcore.users WHERE id = '%s'
 				""".formatted(bandId, userId));
+		return id;
+	}
+
+	/** Active membership with a role and no member record. Returns the membership id. */
+	public UUID membershipOnly(UUID bandId, UUID userId, String role) {
+		UUID id = UUID.randomUUID();
+		OwnerSql.inBand(bandId, """
+				INSERT INTO bandcore.memberships (id, band_id, user_id, role, created_at, updated_at)
+				VALUES ('%s', '%s', '%s', '%s', now(), now())
+				""".formatted(id, bandId, userId, role));
+		return id;
 	}
 
 	public UUID member(UUID bandId, String name) {

@@ -40,7 +40,15 @@ public enum ErrorCode {
 	INVALID_CREDENTIALS,
 	/** The action needs a verified email (creating a band, accepting an invitation). */
 	EMAIL_NOT_VERIFIED,
-	BAND_LIMIT_REACHED;
+	BAND_LIMIT_REACHED,
+
+	// Band workspace
+	/** The member appears in expenses, splits or sales: deactivate instead of deleting. */
+	MEMBER_HAS_HISTORY,
+	/** A member can only be linked to an account with access to the same band. */
+	USER_NOT_IN_BAND,
+	/** The account is already linked to another member of the band. */
+	ACCOUNT_ALREADY_LINKED;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {

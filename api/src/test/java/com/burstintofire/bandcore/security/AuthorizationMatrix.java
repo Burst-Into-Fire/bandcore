@@ -27,6 +27,8 @@ final class AuthorizationMatrix {
 
 	static final Set<Role> EVERY_ROLE = EnumSet.allOf(Role.class);
 
+	static final Set<Role> ADMIN_ONLY = EnumSet.of(ADMIN);
+
 	/** Endpoints on band hosts (and any-host endpoints, checked on a band host). */
 	static final List<Rule> BAND = List.of(
 			rule(HttpMethod.GET, "/me", EVERY_ROLE),
@@ -34,7 +36,15 @@ final class AuthorizationMatrix {
 			rule(HttpMethod.GET, "/band", EVERY_ROLE),
 			rule(HttpMethod.PATCH, "/band", EnumSet.of(ADMIN), fixture -> "{\"name\": \"Renamed\"}"),
 			rule(HttpMethod.GET, "/members", EVERY_ROLE),
-			rule(HttpMethod.GET, "/members/{memberId}", EVERY_ROLE));
+			rule(HttpMethod.GET, "/members/{memberId}", EVERY_ROLE),
+			rule(HttpMethod.POST, "/members", ADMIN_ONLY, fixture -> "{\"displayName\": \"New member\"}"),
+			rule(HttpMethod.PATCH, "/members/{memberId}", ADMIN_ONLY, fixture -> "{\"instrument\": \"Baixo\"}"),
+			rule(HttpMethod.POST, "/members/{memberId}/deactivate", ADMIN_ONLY),
+			rule(HttpMethod.POST, "/members/{memberId}/activate", ADMIN_ONLY),
+			rule(HttpMethod.DELETE, "/members/{memberId}", ADMIN_ONLY),
+			rule(HttpMethod.PUT, "/members/{memberId}/account", ADMIN_ONLY,
+					fixture -> "{\"userId\": \"%s\"}".formatted(fixture.pathVariables().get("userId"))),
+			rule(HttpMethod.DELETE, "/members/{memberId}/account", ADMIN_ONLY));
 
 	/** Endpoints on the central host: any authenticated account, no role. */
 	static final List<Rule> CENTRAL = List.of(
