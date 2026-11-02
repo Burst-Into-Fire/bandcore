@@ -20,8 +20,9 @@ Each limit is a token bucket per key. A request takes one token. When the bucket
 | `POST /api/auth/password-reset/confirm` | `password-reset-confirm-ip` | client address | 20 per hour |
 | `GET /api/bands/slug-availability` | `slug-availability-ip` | client address | 120 per minute |
 | | `slug-availability-account` | user id | 60 per minute |
-
-Invitations get their limits in M4-02.
+| `POST /api/invitations`, `POST /api/invitations/{id}/resend` | `invitations-band` | band | 30 per day |
+| `POST /api/invitations/preview` | `invitation-preview-ip` | client address | 30 per hour |
+| `POST /api/invitations/accept` | `invitation-accept-ip` | client address | 20 per hour |
 
 ## How the limits behave
 

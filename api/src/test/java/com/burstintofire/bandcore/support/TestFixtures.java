@@ -75,6 +75,23 @@ public class TestFixtures {
 		return id;
 	}
 
+	/** A pending invitation valid for 7 days, and its raw token. */
+	public record CreatedInvitation(UUID id, String token) {
+	}
+
+	public CreatedInvitation invitation(UUID bandId, String email, String role, UUID invitedBy) {
+		UUID id = UUID.randomUUID();
+		String token = UUID.randomUUID().toString().replace("-", "") + "abcdefghijk";
+		OwnerSql.inBand(bandId, """
+				INSERT INTO bandcore.invitations (id, band_id, email, role, expires_at, invited_by, created_at, updated_at)
+				VALUES ('%s', '%s', '%s', '%s', now() + interval '7 days', '%s', now(), now())
+				""".formatted(id, bandId, email, role, invitedBy), """
+				INSERT INTO bandcore.invitation_tokens (invitation_id, band_id, token_hash, expires_at)
+				VALUES ('%s', '%s', sha256(convert_to('%s', 'UTF8')), now() + interval '7 days')
+				""".formatted(id, bandId, token));
+		return new CreatedInvitation(id, token);
+	}
+
 	public UUID member(UUID bandId, String name) {
 		UUID id = UUID.randomUUID();
 		OwnerSql.inBand(bandId, """

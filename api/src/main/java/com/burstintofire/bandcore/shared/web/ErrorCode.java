@@ -48,7 +48,15 @@ public enum ErrorCode {
 	/** A member can only be linked to an account with access to the same band. */
 	USER_NOT_IN_BAND,
 	/** The account is already linked to another member of the band. */
-	ACCOUNT_ALREADY_LINKED;
+	ACCOUNT_ALREADY_LINKED,
+	/** The member is already linked to an account. */
+	MEMBER_ALREADY_LINKED,
+	/** The email already has access to the band. */
+	ALREADY_A_MEMBER,
+	/** There is a pending invitation for this email: send it again instead. */
+	INVITATION_PENDING,
+	/** The invitation was sent to another email than the logged-in account's. */
+	INVITATION_EMAIL_MISMATCH;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {

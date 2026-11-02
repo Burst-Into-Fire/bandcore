@@ -55,9 +55,11 @@ class AuthorizationMatrixIT extends IntegrationTest {
 		// An account with access to the band and no member record, for linking.
 		UUID unlinked = fixtures.verifiedUser("unlinked@example.com");
 		fixtures.membershipOnly(band, unlinked, "MEMBER");
+		UUID invitation = fixtures.invitation(band, "invited@example.com", "MEMBER", user).id();
 		ApiClient host = api.forBand("alpha");
 		String token = fixtures.login(host, "user@example.com");
-		var fixture = new AuthorizationMatrix.Fixture(Map.of("memberId", member.toString(), "userId", unlinked.toString()));
+		var fixture = new AuthorizationMatrix.Fixture(Map.of("memberId", member.toString(), "userId", unlinked.toString(),
+				"invitationId", invitation.toString()));
 
 		ResponseEntity<String> response = host.send(rule.method(), rule.url(fixture), rule.body().apply(fixture),
 				headers -> headers.setBearerAuth(token));
@@ -79,9 +81,14 @@ class AuthorizationMatrixIT extends IntegrationTest {
 	@ParameterizedTest(name = "{0}")
 	@MethodSource("centralCases")
 	void centralEndpointsNeedAnAccountButNoRole(AuthorizationMatrix.Rule rule) {
-		fixtures.verifiedUser("user@example.com");
+		UUID user = fixtures.verifiedUser("user@example.com");
+		// An invitation for this account, for the acceptance endpoint.
+		UUID band = fixtures.band("inviting");
+		UUID inviter = fixtures.verifiedUser("inviter@example.com");
+		fixtures.membership(band, inviter, "ADMIN");
+		String invitationToken = fixtures.invitation(band, "user@example.com", "MEMBER", inviter).token();
 		String token = fixtures.login(api.central(), "user@example.com");
-		var fixture = new AuthorizationMatrix.Fixture(Map.of());
+		var fixture = new AuthorizationMatrix.Fixture(Map.of("invitationToken", invitationToken));
 
 		ResponseEntity<String> anonymous = api.central().send(rule.method(), rule.url(fixture), rule.body().apply(fixture),
 				headers -> {

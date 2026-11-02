@@ -25,6 +25,12 @@ class AccountService implements Accounts {
 		return users.findById(userId).map(AccountService::toAccount);
 	}
 
+	@Override
+	@Transactional(readOnly = true)
+	public Optional<Account> findByEmail(String email) {
+		return users.findByEmail(Accounts.normalizeEmail(email)).map(AccountService::toAccount);
+	}
+
 	static Account toAccount(User user) {
 		return new Account(user.getId(), user.getEmail(), user.getDisplayName(), user.isEmailVerified(), user.isActive());
 	}

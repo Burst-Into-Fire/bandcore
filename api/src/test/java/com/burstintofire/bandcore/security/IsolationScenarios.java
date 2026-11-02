@@ -33,7 +33,13 @@ final class IsolationScenarios {
 			probe(HttpMethod.DELETE, "/members/{memberId}"),
 			probe(HttpMethod.PUT, "/members/{memberId}/account",
 					target -> "{\"userId\": \"%s\"}".formatted(target.resources().get("userId"))),
-			probe(HttpMethod.DELETE, "/members/{memberId}/account"));
+			probe(HttpMethod.DELETE, "/members/{memberId}/account"),
+			probe(HttpMethod.GET, "/invitations"),
+			probe(HttpMethod.POST, "/invitations",
+					target -> "{\"email\": \"intruder@example.com\", \"role\": \"ADMIN\", \"memberId\": \"%s\"}"
+						.formatted(target.resources().get("memberId"))),
+			probe(HttpMethod.POST, "/invitations/{invitationId}/resend"),
+			probe(HttpMethod.DELETE, "/invitations/{invitationId}"));
 
 	/** The band an attack aims at, and its resources by path variable name. */
 	record Target(String bandId, String slug, Map<String, String> resources) {

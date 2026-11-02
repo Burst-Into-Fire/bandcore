@@ -75,6 +75,13 @@ public class Membership extends AssignedIdEntity {
 		this.updatedAt = now;
 	}
 
+	/** Access given again, after removal, with a new role. */
+	public void reactivate(Role newRole, Instant now) {
+		this.role = newRole;
+		this.status = MembershipStatus.ACTIVE;
+		this.updatedAt = now;
+	}
+
 	void remove(Instant now) {
 		this.status = MembershipStatus.REMOVED;
 		this.updatedAt = now;

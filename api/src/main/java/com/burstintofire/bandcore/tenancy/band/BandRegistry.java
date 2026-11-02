@@ -89,6 +89,11 @@ public class BandRegistry {
 	}
 
 	@Transactional(readOnly = true)
+	public Optional<Band> find(UUID id) {
+		return bands.findById(id);
+	}
+
+	@Transactional(readOnly = true)
 	public List<Band> findAll(Collection<UUID> ids) {
 		return bands.findByIdIn(ids);
 	}

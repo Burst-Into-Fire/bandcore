@@ -241,6 +241,104 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Invitations of the current band, newest first (admins) */
+        get: operations["listInvitations"];
+        put?: never;
+        /**
+         * Invite an email to the band with a role (admins)
+         * @description Sends the invitation email. 409 ALREADY_A_MEMBER when the email already has access, 409 INVITATION_PENDING when a pending invitation exists (send it again instead).
+         */
+        post: operations["createInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invitations/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Join the band of an invitation with the logged-in account
+         * @description The account's verified email must be the invited one (403 INVITATION_EMAIL_MISMATCH).
+         */
+        post: operations["acceptInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invitations/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Band, email and role of an invitation link
+         * @description Unknown, used, revoked and expired tokens answer 400 TOKEN_INVALID.
+         */
+        post: operations["previewInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invitations/{invitationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a pending invitation (admins) */
+        delete: operations["revokeInvitation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invitations/{invitationId}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a pending or expired invitation again with a new link (admins)
+         * @description The previous link stops working and the invitation is valid for 7 more days.
+         */
+        post: operations["resendInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me": {
         parameters: {
             query?: never;
@@ -391,6 +489,12 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AcceptedResponse: {
+            bandSlug: string;
+            bandUrl: string;
+            /** @enum {string} */
+            role: "ADMIN" | "MEMBER" | "READ_ONLY";
+        };
         BandPublicProfile: {
             name: string;
             slug: string;
@@ -418,6 +522,17 @@ export interface components {
             /** @example the-burst */
             slug: string;
         };
+        CreateInvitationRequest: {
+            /** Format: email */
+            email: string;
+            /**
+             * Format: uuid
+             * @description The member (integrante) to link to the account that accepts
+             */
+            memberId?: string;
+            /** @enum {string} */
+            role: "ADMIN" | "MEMBER" | "READ_ONLY";
+        };
         CreateMemberRequest: {
             displayName: string;
             /** @example Vocal */
@@ -430,6 +545,21 @@ export interface components {
             slug: string;
             /** @example https://the-burst.bandcore.app */
             url: string;
+        };
+        InvitationResponse: {
+            /** Format: date-time */
+            createdAt: string;
+            email: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            memberId?: string;
+            /** @enum {string} */
+            role: "ADMIN" | "MEMBER" | "READ_ONLY";
+            /** @enum {string} */
+            status: "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED";
         };
         LinkAccountRequest: {
             /** Format: uuid */
@@ -482,6 +612,13 @@ export interface components {
             /** Format: email */
             email: string;
         };
+        PreviewResponse: {
+            bandName: string;
+            bandSlug: string;
+            email: string;
+            /** @enum {string} */
+            role: "ADMIN" | "MEMBER" | "READ_ONLY";
+        };
         ResendVerificationRequest: {
             /** Format: email */
             email: string;
@@ -505,6 +642,9 @@ export interface components {
         StatusResponse: {
             /** @example UP */
             status: string;
+        };
+        TokenRequest: {
+            token: string;
         };
         TokenResponse: {
             accessToken: string;
@@ -832,6 +972,140 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SlugAvailabilityResponse"];
+                };
+            };
+        };
+    };
+    listInvitations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InvitationResponse"][];
+                };
+            };
+        };
+    };
+    createInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInvitationRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InvitationResponse"];
+                };
+            };
+        };
+    };
+    acceptInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AcceptedResponse"];
+                };
+            };
+        };
+    };
+    previewInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PreviewResponse"];
+                };
+            };
+        };
+    };
+    revokeInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    resendInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InvitationResponse"];
                 };
             };
         };

@@ -135,7 +135,8 @@ class TenantIsolationIT extends IntegrationTest {
 		if (probe.addressesResource()) {
 			return List.of(404);
 		}
-		return List.of(200, 201, 204, 403);
+		// 404: the body named one of band B's resources (for example a member), refused as unknown.
+		return List.of(200, 201, 204, 403, 404);
 	}
 
 	private static ResponseEntity<String> call(ApiClient host, IsolationScenarios.Probe probe,
@@ -157,6 +158,10 @@ class TenantIsolationIT extends IntegrationTest {
 		UUID bravoAdmin;
 
 		UUID alphaAdmin;
+
+		UUID alphaInvitation;
+
+		UUID bravoInvitation;
 
 		UUID alphaMember;
 
@@ -189,6 +194,9 @@ class TenantIsolationIT extends IntegrationTest {
 
 			world.alphaMember = fixtures.member(world.alpha, "Alice Alpha");
 			world.bravoMember = fixtures.member(world.bravo, "Bruno Bravo Secreto");
+			world.alphaInvitation = fixtures.invitation(world.alpha, "alpha.invited@example.com", "MEMBER", alphaAdmin).id();
+			world.bravoInvitation = fixtures.invitation(world.bravo, "bravo.invited.secret@example.com", "ADMIN",
+					world.bravoAdmin).id();
 
 			world.alphaHost = test.api.forBand("alpha");
 			world.bravoHost = test.api.forBand("bravo-secret");
@@ -199,18 +207,21 @@ class TenantIsolationIT extends IntegrationTest {
 
 		IsolationScenarios.Target bravoTarget() {
 			return new IsolationScenarios.Target(bravo.toString(), "bravo-secret",
-					Map.of("memberId", bravoMember.toString(), "userId", bravoAdmin.toString()));
+					Map.of("memberId", bravoMember.toString(), "userId", bravoAdmin.toString(), "invitationId",
+							bravoInvitation.toString()));
 		}
 
 		IsolationScenarios.Target alphaTarget() {
 			return new IsolationScenarios.Target(alpha.toString(), "alpha",
-					Map.of("memberId", alphaMember.toString(), "userId", alphaAdmin.toString()));
+					Map.of("memberId", alphaMember.toString(), "userId", alphaAdmin.toString(), "invitationId",
+							alphaInvitation.toString()));
 		}
 
 		/** Strings that must never appear in a response to band A's requests. */
 		List<String> bravoSecrets() {
 			return List.of(bravo.toString(), "Bravo Secret Band", bravoMember.toString(), "Bruno Bravo Secreto",
-					bravoAdmin.toString(), "bravo.admin@example.com");
+					bravoAdmin.toString(), "bravo.admin@example.com", bravoInvitation.toString(),
+					"bravo.invited.secret@example.com");
 		}
 
 	}

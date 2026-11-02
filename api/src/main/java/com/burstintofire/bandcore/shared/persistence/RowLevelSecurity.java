@@ -32,9 +32,9 @@ public class RowLevelSecurity {
 	}
 
 	/**
-	 * Switches the band of the current transaction. Only for flows that create a band and
-	 * must write its first rows in the same transaction; everything else gets its band from
-	 * the request host.
+	 * Switches the band of the current transaction. Only for the two central-host flows whose band
+	 * does not come from the host: creating a band (its first rows) and accepting an invitation
+	 * (the band comes from the token). Everything else gets its band from the request host.
 	 */
 	public void switchBand(UUID bandId, UUID userId) {
 		if (!TransactionSynchronizationManager.isActualTransactionActive()) {

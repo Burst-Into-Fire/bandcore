@@ -8,8 +8,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.burstintofire.bandcore.identity.mail.MailTemplates;
-import com.burstintofire.bandcore.identity.mail.Mailer;
+import com.burstintofire.bandcore.shared.mail.MailTemplates;
+import com.burstintofire.bandcore.shared.mail.Mailer;
 import com.burstintofire.bandcore.shared.config.PlatformProperties;
 import com.burstintofire.bandcore.shared.logging.LogMasking;
 
