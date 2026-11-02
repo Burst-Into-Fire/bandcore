@@ -227,7 +227,7 @@ Every pull request proves it keeps the rules intact. Details and examples in [Te
 - **Never mock the database** and never use an in-memory database.
 - **Money is integer cents** in Java, SQL and TypeScript.
 - **Run locally before pushing:** `./mvnw verify` in `api/`; `npm run lint && npm run typecheck && npm test` in `web/`. If you changed the API, run `npm run api:generate` in `web/` and commit `src/api/schema.ts`.
-- **Required checks** (see `ruleset.json`): `validate`, `backend`, `frontend`, `api-contract`, `docker`, `e2e`, `gitleaks` and `dependency-review`. A pull request with a failing check cannot be merged.
+- **Required checks** (see `.github/rulesets/`): `validate`, `backend`, `frontend`, `api-contract`, `docker`, `e2e`, `gitleaks` and `dependency-review`. A pull request with a failing check cannot be merged.
 - The pull request template contains the [Definition of Done](roadmap.md#definition-of-done). Tick what applies and explain anything left unchecked.
 
 ---
@@ -272,7 +272,7 @@ Every pull request proves it keeps the rules intact. Details and examples in [Te
 | `pre-push` hook | Local | `git push` | Yes, with `--no-verify` |
 | `post-checkout` hook | Local | `git checkout` | Warning only |
 | `validate-standards` workflow | GitHub | Pull request | No, when set as a required check |
-| Branch ruleset | GitHub | Merge into `main` | No |
+| Branch rulesets | GitHub | Merge into `development` or `main` | Only admins, only on `development` |
 
 ### Files
 
@@ -291,17 +291,29 @@ Every pull request proves it keeps the rules intact. Details and examples in [Te
 
 The hooks and the workflow share the same two scripts in `.githooks/lib/`, so the local and remote rules can never drift apart.
 
-### Branch ruleset
+### Branch rulesets
 
-Configure it in GitHub, Settings, Rules, Rulesets (the repository keeps its export in `ruleset.json`). Recommended rules for `main`:
+The rulesets live in `.github/rulesets/` and are applied with `scripts/apply-rulesets.sh` (needs `gh` as a repository admin; it backs up the current rulesets first). Change the JSON files and run the script; never edit the rules only in the GitHub settings, or the files drift.
 
-- Require a pull request before merging (no direct push)
-- Require status checks to pass: `Validate standards / validate` and the CI tests
-- Block force pushes and branch deletion
-- Allow only squash merge
-- Do not allow bypass, not even for admins
+Both branches require:
 
-Check that `ruleset.json` matches this list. The `validate-standards` check only appears in the list of required checks after it has run once.
+- a pull request (no direct push), with one approval from a code owner (`.github/CODEOWNERS`) who is not the author, and approval of the last push;
+- every conversation resolved;
+- the required checks, with the branch up to date: `validate`, `backend`, `frontend`, `api-contract`, `docker`, `e2e`, `gitleaks` and `dependency-review`;
+- no force push and no deletion.
+
+They differ in how pull requests are merged and in bypass:
+
+| | `development` | `main` (production) |
+|---|---|---|
+| Merge method | **Rebase and merge** only: one commit per issue, linear history | **Create a merge commit** only: the promotion keeps the exact commits of `development` |
+| Bypass | Repository admins, for emergencies (for example GitHub Actions down) | **None**, not even admins |
+
+Why `main` takes merge commits: GitHub's rebase merge always rewrites the commits. Rebasing `development` into `main` would give both branches the same changes with different hashes, and every later promotion would bring back old commits and conflicts.
+
+**Release:** open a pull request from `development` to `main` and merge it with "Create a merge commit". **Hotfix:** branch `hotfix/<issue>-...` from `development`, merge it there, then promote; never commit to `main` directly.
+
+Branches are not deleted automatically after a merge, because a promotion's head branch is `development` itself. Delete feature branches with the button on the merged pull request.
 
 ### Dependabot
 

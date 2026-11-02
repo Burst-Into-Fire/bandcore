@@ -17,6 +17,7 @@ The web app talks only to the API. All business rules live in the Java backend. 
 bandcore/
 ├── .github/
 │   ├── workflows/            CI, security scans, commit and branch standards
+│   ├── rulesets/             Branch rulesets for main and development (scripts/apply-rulesets.sh)
 │   ├── ISSUE_TEMPLATE/       Feature, bug, chore and security templates
 │   ├── pull_request_template.md   Definition of Done checklist
 │   ├── CODEOWNERS, SECURITY.md, dependabot.yml
@@ -37,10 +38,9 @@ bandcore/
 │   ├── nginx/                nginx config: SPA and /api reverse proxy
 │   └── Dockerfile
 ├── docs/                     Documentation, ADRs (docs/adr), security notes (docs/security), roadmap
-├── scripts/                  Compose smoke test and repository checks
+├── scripts/                  Compose smoke test, E2E runner, ruleset sync and repository checks
 ├── docker-compose.yml        db, api, web and mailpit for local development
 ├── .env.example              Template for environment variables
-├── ruleset.json              GitHub ruleset
 └── README.md
 ```
 

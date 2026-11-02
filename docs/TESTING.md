@@ -106,4 +106,4 @@ The `CI` workflow runs on every pull request and on pushes to `main` and `develo
 | `docker` | Builds both images, runs the compose smoke test and scans the images with Trivy |
 | `e2e` | Builds the images, starts the stack and runs the Playwright journeys; uploads traces, videos and the HTML report on failure. Budget: under 10 minutes |
 
-A failing job blocks the merge (see `ruleset.json`). The `Security` workflow adds CodeQL, gitleaks and dependency review.
+A failing job blocks the merge (see `.github/rulesets/`). The `Security` workflow adds CodeQL, gitleaks and dependency review.
