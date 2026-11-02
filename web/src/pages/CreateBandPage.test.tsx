@@ -87,7 +87,7 @@ describe('CreateBandPage', () => {
     await user.click(screen.getByRole('button', { name: 'Criar banda' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Confirme seu email antes de criar uma banda.',
+      'Confirme seu email antes de continuar.',
     );
   });
 });

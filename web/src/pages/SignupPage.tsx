@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import type { z } from 'zod';
 
 import { api } from '../api/client';
@@ -23,9 +23,11 @@ type SignupValues = z.output<typeof signupSchema>;
 export function SignupPage() {
   const { t } = useTranslation();
   const [sentTo, setSentTo] = useState<string | null>(null);
+  // An invitation link sends the invitee here with the invited email filled in.
+  const [searchParams] = useSearchParams();
   const form = useForm<SignupInput, unknown, SignupValues>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { displayName: '', email: '', password: '' },
+    defaultValues: { displayName: '', email: searchParams.get('email') ?? '', password: '' },
   });
   const signup = useMutation({
     mutationFn: async (values: SignupValues) =>

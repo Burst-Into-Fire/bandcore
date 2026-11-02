@@ -14,6 +14,7 @@ import { primaryButton } from '../components/buttons';
 import { FormAlert } from '../components/FormAlert';
 import { TextField } from '../components/TextField';
 import { translateKey } from '../i18n/messages';
+import { pendingInvitation } from '../lib/pendingInvitation';
 import { errorMessage } from './errorMessage';
 import { ResendVerification } from './ResendVerification';
 
@@ -55,9 +56,15 @@ export function VerifyEmailPage() {
       {verify.isSuccess ? (
         <>
           <p role="status">{t('verify.success')}</p>
-          <Link to="/login" className={primaryButton + ' text-center'}>
-            {t('verify.login')}
-          </Link>
+          {pendingInvitation() ? (
+            <Link to="/invitations/accept" className={primaryButton + ' text-center'}>
+              {t('verify.continueInvitation')}
+            </Link>
+          ) : (
+            <Link to="/login" className={primaryButton + ' text-center'}>
+              {t('verify.login')}
+            </Link>
+          )}
         </>
       ) : null}
       {verify.isError ? <FormAlert message={errorMessage(t, verify.error)} /> : null}
