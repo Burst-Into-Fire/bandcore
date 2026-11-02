@@ -25,3 +25,6 @@ Thumbs.db
 # Logs
 *.log
 .githooks/pre-commit*
+
+# Backups written by scripts/apply-rulesets.sh
+rulesets-backup-*.json
