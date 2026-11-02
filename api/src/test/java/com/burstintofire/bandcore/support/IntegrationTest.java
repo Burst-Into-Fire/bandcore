@@ -1,6 +1,7 @@
 package com.burstintofire.bandcore.support;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalManagementPort;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
@@ -53,12 +55,32 @@ public abstract class IntegrationTest {
 	@Autowired
 	private List<ResettableCache> caches;
 
+	/** Runs the @Async work (emails sent after commit). */
+	@Autowired
+	private ThreadPoolTaskExecutor applicationTaskExecutor;
+
 	@AfterEach
 	void cleanDatabase() {
+		// Let emails of this test finish sending, so none arrives during the next test.
+		awaitIdle(applicationTaskExecutor);
 		DatabaseCleaner.truncateAll();
 		caches.forEach(ResettableCache::clear);
 		TestMailServer.purge();
 		TestClockConfiguration.CLOCK.reset();
+	}
+
+	private static void awaitIdle(ThreadPoolTaskExecutor executor) {
+		long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+		while ((executor.getActiveCount() > 0 || !executor.getThreadPoolExecutor().getQueue().isEmpty())
+				&& System.nanoTime() < deadline) {
+			try {
+				Thread.sleep(10);
+			}
+			catch (InterruptedException ex) {
+				Thread.currentThread().interrupt();
+				return;
+			}
+		}
 	}
 
 }
