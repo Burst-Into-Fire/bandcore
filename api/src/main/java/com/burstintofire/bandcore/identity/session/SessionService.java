@@ -97,14 +97,14 @@ public class SessionService {
 		Optional<User> found = users.findByEmail(Emails.normalize(rawEmail));
 		if (found.isEmpty()) {
 			passwordEncoder.matches(password, dummyHash);
-			throw loginFailed(null, "unknown_email");
+			throw denied(null, "unknown_email");
 		}
 		User user = found.get();
 		if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-			throw loginFailed(user.getId(), "wrong_password");
+			throw denied(user.getId(), "wrong_password");
 		}
 		if (!user.isActive()) {
-			throw loginFailed(user.getId(), "account_disabled");
+			throw denied(user.getId(), "account_disabled");
 		}
 		if (passwordEncoder.upgradeEncoding(user.getPasswordHash())) {
 			user.changePasswordHash(passwordEncoder.encode(password), clock.instant());
@@ -113,10 +113,10 @@ public class SessionService {
 		if (!scope.isCentral()) {
 			UUID bandId = scope.tenant().bandId();
 			if (!user.isEmailVerified()) {
-				throw loginFailed(user.getId(), "email_not_verified");
+				throw denied(user.getId(), "email_not_verified");
 			}
 			role = bandAccess.find(bandId, user.getId())
-				.orElseThrow(() -> loginFailed(user.getId(), "no_membership"))
+				.orElseThrow(() -> denied(user.getId(), "no_membership"))
 				.role();
 		}
 		securityEvents.record(SecurityEventType.LOGIN_SUCCEEDED, user.getId());
@@ -205,8 +205,8 @@ public class SessionService {
 		return a.isBefore(b) ? a : b;
 	}
 
-	/** Records why, then answers the same generic error for every reason. */
-	private ApiException loginFailed(UUID userId, String reason) {
+	/** A refused login: records why (LOGIN_FAILED), then answers the same generic error for every reason. */
+	private ApiException denied(UUID userId, String reason) {
 		securityEvents.record(SecurityEventType.LOGIN_FAILED, userId, Map.of("reason", reason));
 		return invalidCredentials();
 	}
