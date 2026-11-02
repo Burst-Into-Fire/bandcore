@@ -39,7 +39,11 @@ final class IsolationScenarios {
 					target -> "{\"email\": \"intruder@example.com\", \"role\": \"ADMIN\", \"memberId\": \"%s\"}"
 						.formatted(target.resources().get("memberId"))),
 			probe(HttpMethod.POST, "/invitations/{invitationId}/resend"),
-			probe(HttpMethod.DELETE, "/invitations/{invitationId}"));
+			probe(HttpMethod.DELETE, "/invitations/{invitationId}"),
+			probe(HttpMethod.GET, "/memberships"),
+			probe(HttpMethod.PATCH, "/memberships/{membershipId}", target -> "{\"role\": \"READ_ONLY\"}"),
+			probe(HttpMethod.DELETE, "/memberships/{membershipId}"),
+			probe(HttpMethod.POST, "/memberships/leave"));
 
 	/** The band an attack aims at, and its resources by path variable name. */
 	record Target(String bandId, String slug, Map<String, String> resources) {

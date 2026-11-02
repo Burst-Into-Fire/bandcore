@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import javax.crypto.spec.SecretKeySpec;
 
@@ -16,20 +18,18 @@ import com.nimbusds.jose.proc.SecurityContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
-import com.burstintofire.bandcore.shared.tenant.TenantContext;
-import com.burstintofire.bandcore.shared.tenant.TenantContextHolder;
 import com.burstintofire.bandcore.support.ApiClient;
 import com.burstintofire.bandcore.support.IntegrationTest;
 import com.burstintofire.bandcore.support.OwnerSql;
 import com.burstintofire.bandcore.support.TestClockConfiguration;
 import com.burstintofire.bandcore.support.TestTokens;
-import com.burstintofire.bandcore.tenancy.Role;
-import com.burstintofire.bandcore.tenancy.membership.MembershipAdministration;
 
 /**
  * A valid signature is not enough: the token must belong to the host's band, and the account
@@ -40,9 +40,6 @@ class TokenValidationIT extends IntegrationTest {
 	@Autowired
 	JwtEncoder encoder;
 
-	@Autowired
-	MembershipAdministration memberships;
-
 	TestTokens tokens;
 
 	UUID alpha;
@@ -50,6 +47,8 @@ class TokenValidationIT extends IntegrationTest {
 	UUID beta;
 
 	UUID ana;
+
+	UUID anaMembership;
 
 	ApiClient alphaHost;
 
@@ -59,7 +58,7 @@ class TokenValidationIT extends IntegrationTest {
 		alpha = fixtures.band("alpha");
 		beta = fixtures.band("beta");
 		ana = fixtures.verifiedUser("ana@example.com");
-		fixtures.membership(alpha, ana, "ADMIN");
+		anaMembership = fixtures.membership(alpha, ana, "ADMIN");
 		alphaHost = api.forBand("alpha");
 	}
 
@@ -144,7 +143,7 @@ class TokenValidationIT extends IntegrationTest {
 		String token = fixtures.login(alphaHost, "ana@example.com");
 		assertThat(me(alphaHost, token).getStatusCode()).isEqualTo(HttpStatus.OK);
 
-		inAlpha(() -> memberships.remove(ana));
+		asAnotherAdmin(admin -> alphaHost.send(HttpMethod.DELETE, "/api/memberships/" + anaMembership, null, admin));
 
 		assertUnauthorized(me(alphaHost, token));
 	}
@@ -154,7 +153,7 @@ class TokenValidationIT extends IntegrationTest {
 		String token = fixtures.login(alphaHost, "ana@example.com");
 		assertThat(JsonPath.<String>read(me(alphaHost, token).getBody(), "$.band.role")).isEqualTo("ADMIN");
 
-		inAlpha(() -> memberships.changeRole(ana, Role.READ_ONLY));
+		asAnotherAdmin(admin -> alphaHost.patchJson("/api/memberships/" + anaMembership, "{\"role\": \"READ_ONLY\"}", admin));
 
 		assertThat(JsonPath.<String>read(me(alphaHost, token).getBody(), "$.band.role")).isEqualTo("READ_ONLY");
 	}
@@ -174,11 +173,12 @@ class TokenValidationIT extends IntegrationTest {
 		assertUnauthorized(me(alphaHost, "a.b.c"));
 	}
 
-	private void inAlpha(Runnable action) {
-		TenantContextHolder.callAs(new TenantContext(alpha, "alpha"), () -> {
-			action.run();
-			return null;
-		});
+	/** Changes ana's membership through the API, as a second admin of alpha. */
+	private void asAnotherAdmin(Function<Consumer<HttpHeaders>, ResponseEntity<String>> change) {
+		fixtures.membership(alpha, fixtures.verifiedUser("bob@example.com"), "ADMIN");
+		String bob = fixtures.login(alphaHost, "bob@example.com");
+		ResponseEntity<String> response = change.apply(headers -> headers.setBearerAuth(bob));
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 	}
 
 	private static ResponseEntity<String> me(ApiClient client, String token) {

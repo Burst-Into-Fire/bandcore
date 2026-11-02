@@ -161,6 +161,10 @@ class TenantIsolationIT extends IntegrationTest {
 
 		UUID alphaInvitation;
 
+		UUID alphaAdminMembership;
+
+		UUID bravoAdminMembership;
+
 		UUID bravoInvitation;
 
 		UUID alphaMember;
@@ -183,11 +187,11 @@ class TenantIsolationIT extends IntegrationTest {
 
 			UUID alphaAdmin = fixtures.verifiedUser("alpha.admin@example.com");
 			world.alphaAdmin = alphaAdmin;
-			fixtures.membership(world.alpha, alphaAdmin, "ADMIN");
+			world.alphaAdminMembership = fixtures.membership(world.alpha, alphaAdmin, "ADMIN");
 			fixtures.membership(world.alpha, fixtures.verifiedUser("alpha.member@example.com"), "MEMBER");
 			fixtures.membership(world.alpha, fixtures.verifiedUser("alpha.reader@example.com"), "READ_ONLY");
 			world.bravoAdmin = fixtures.verifiedUser("bravo.admin@example.com");
-			fixtures.membership(world.bravo, world.bravoAdmin, "ADMIN");
+			world.bravoAdminMembership = fixtures.membership(world.bravo, world.bravoAdmin, "ADMIN");
 			UUID both = fixtures.verifiedUser("both.bands@example.com");
 			fixtures.membership(world.alpha, both, "ADMIN");
 			fixtures.membership(world.bravo, both, "ADMIN");
@@ -208,13 +212,13 @@ class TenantIsolationIT extends IntegrationTest {
 		IsolationScenarios.Target bravoTarget() {
 			return new IsolationScenarios.Target(bravo.toString(), "bravo-secret",
 					Map.of("memberId", bravoMember.toString(), "userId", bravoAdmin.toString(), "invitationId",
-							bravoInvitation.toString()));
+							bravoInvitation.toString(), "membershipId", bravoAdminMembership.toString()));
 		}
 
 		IsolationScenarios.Target alphaTarget() {
 			return new IsolationScenarios.Target(alpha.toString(), "alpha",
 					Map.of("memberId", alphaMember.toString(), "userId", alphaAdmin.toString(), "invitationId",
-							alphaInvitation.toString()));
+							alphaInvitation.toString(), "membershipId", alphaAdminMembership.toString()));
 		}
 
 		/** Strings that must never appear in a response to band A's requests. */

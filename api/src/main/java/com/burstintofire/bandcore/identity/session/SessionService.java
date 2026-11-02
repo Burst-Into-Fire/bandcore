@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.burstintofire.bandcore.identity.BandAccess;
+import com.burstintofire.bandcore.identity.BandSessions;
 import com.burstintofire.bandcore.identity.events.SecurityEventType;
 import com.burstintofire.bandcore.identity.events.SecurityEvents;
 import com.burstintofire.bandcore.identity.token.AccessTokenService;
@@ -33,7 +34,7 @@ import com.burstintofire.bandcore.shared.web.ErrorCode;
  * (no band), limited to "my bands" and band creation.
  */
 @Service
-public class SessionService {
+public class SessionService implements BandSessions {
 
 	/** Tokens of a successful login or refresh; the refresh token goes only into the cookie. */
 	public record Session(AccessToken accessToken, String refreshToken, Duration refreshTokenMaxAge) {
@@ -166,6 +167,12 @@ public class SessionService {
 	public void logout(String rawToken) {
 		refreshTokens.findByTokenHash(SecretTokens.hash(rawToken))
 			.ifPresent(token -> refreshTokens.revokeFamily(token.getFamilyId(), clock.instant()));
+	}
+
+	@Override
+	@Transactional
+	public void endSessionsInBand(UUID userId, UUID bandId) {
+		refreshTokens.revokeAllOfUserInBand(userId, bandId, clock.instant());
 	}
 
 	/** "Log out everywhere", asked by the user. */

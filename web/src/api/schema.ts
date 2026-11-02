@@ -468,6 +468,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/memberships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Accounts with access to the current band (admins) */
+        get: operations["listMemberships"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/memberships/leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Leave the current band
+         * @description Ends the caller's sessions in this band. 409 LAST_ADMIN for the last admin.
+         */
+        post: operations["leaveBand"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/memberships/{membershipId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove someone's access to the band (admins)
+         * @description Their sessions in this band end at once; their member record and history stay. 409 LAST_ADMIN for the last admin.
+         */
+        delete: operations["removeMembership"];
+        options?: never;
+        head?: never;
+        /**
+         * Change someone's role (admins)
+         * @description 409 LAST_ADMIN when it would leave the band without an admin.
+         */
+        patch: operations["changeMembershipRole"];
+        trace?: never;
+    };
     "/status": {
         parameters: {
             query?: never;
@@ -516,6 +577,10 @@ export interface components {
             /** @enum {string} */
             role: "ADMIN" | "MEMBER" | "READ_ONLY";
             slug: string;
+        };
+        ChangeRoleRequest: {
+            /** @enum {string} */
+            role: "ADMIN" | "MEMBER" | "READ_ONLY";
         };
         CreateBandRequest: {
             name: string;
@@ -594,6 +659,21 @@ export interface components {
              * @description The linked account, when there is one
              */
             userId?: string;
+        };
+        MembershipResponse: {
+            displayName: string;
+            email: string;
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: uuid
+             * @description The member (integrante) linked to this account, if any
+             */
+            memberId?: string;
+            /** @enum {string} */
+            role: "ADMIN" | "MEMBER" | "READ_ONLY";
+            /** Format: uuid */
+            userId: string;
         };
         MyBandResponse: {
             /** Format: uuid */
@@ -1351,6 +1431,88 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["MemberResponse"];
                 };
+            };
+        };
+    };
+    listMemberships: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MembershipResponse"][];
+                };
+            };
+        };
+    };
+    leaveBand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    removeMembership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                membershipId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    changeMembershipRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                membershipId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

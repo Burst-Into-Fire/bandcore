@@ -1,5 +1,7 @@
 package com.burstintofire.bandcore.identity.account;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,6 +25,12 @@ class AccountService implements Accounts {
 	@Transactional(readOnly = true)
 	public Optional<Account> find(UUID userId) {
 		return users.findById(userId).map(AccountService::toAccount);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<Account> findAll(Collection<UUID> userIds) {
+		return users.findAllById(userIds).stream().map(AccountService::toAccount).toList();
 	}
 
 	@Override
