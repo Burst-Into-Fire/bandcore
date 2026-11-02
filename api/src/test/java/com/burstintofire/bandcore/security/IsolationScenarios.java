@@ -22,6 +22,7 @@ final class IsolationScenarios {
 	static final List<Probe> PROBES = List.of(
 			probe(HttpMethod.GET, "/me"),
 			probe(HttpMethod.POST, "/auth/logout-all"),
+			probe(HttpMethod.POST, "/auth/handoff", target -> "{\"slug\": \"%s\"}".formatted(target.slug())),
 			probe(HttpMethod.GET, "/band"),
 			probe(HttpMethod.PATCH, "/band", target -> "{\"name\": \"Taken over\"}"),
 			probe(HttpMethod.GET, "/members"),

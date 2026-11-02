@@ -53,9 +53,15 @@ class AuthController {
 
 	private final SecurityEvents securityEvents;
 
-	AuthController(SessionService sessions, Clock clock, RateLimiter limiter, ClientAddresses clients,
-			SecurityEvents securityEvents) {
+	private final HandoffService handoffs;
+
+	private final RateLimiter.RateLimit handoffExchangesPerIp;
+
+	AuthController(SessionService sessions, HandoffService handoffs, Clock clock, RateLimiter limiter,
+			ClientAddresses clients, SecurityEvents securityEvents) {
 		this.sessions = sessions;
+		this.handoffs = handoffs;
+		this.handoffExchangesPerIp = limiter.limit("handoff-exchange-ip");
 		this.securityEvents = securityEvents;
 		this.clock = clock;
 		this.loginsPerIp = limiter.limit("login-ip");
@@ -82,6 +88,25 @@ class AuthController {
 		SessionService.Session session = sessions.login(request.email(), request.password());
 		loginFailuresPerAccount.refund(account);
 		return withSession(session);
+	}
+
+	@PostMapping("/handoff")
+	@Operation(operationId = "issueHandoff",
+			summary = "A one-time link that opens a session on another host without the password",
+			description = "With a slug, the link opens that band (403 without access); without one, the central host. "
+					+ "The link is valid for 60 seconds and carries the code in its fragment.")
+	HandoffResponse issueHandoff(@Valid @RequestBody HandoffRequest request) {
+		return new HandoffResponse(handoffs.issue(request.slug()));
+	}
+
+	@PostMapping("/handoff/exchange")
+	@PublicEndpoint("the handoff code is the credential; the target host has no session yet")
+	@Operation(operationId = "exchangeHandoff", summary = "Exchange a handoff code for a session on this host",
+			description = "Sets the refresh token cookie. Any failure answers 401.")
+	ResponseEntity<TokenResponse> exchangeHandoff(@Valid @RequestBody HandoffExchangeRequest request,
+			HttpServletRequest http) {
+		handoffExchangesPerIp.consume(clients.clientOf(http));
+		return withSession(handoffs.exchange(request.code()));
 	}
 
 	@PostMapping("/refresh")
@@ -133,6 +158,29 @@ class AuthController {
 		@Override
 		public String toString() {
 			return "LoginRequest[]";
+		}
+
+	}
+
+	record HandoffRequest(
+			@Schema(description = "The band to open; omit it for the central host", example = "the-burst") @Size(max = 64) String slug) {
+	}
+
+	record HandoffResponse(@Schema(requiredMode = Schema.RequiredMode.REQUIRED,
+			example = "https://the-burst.bandcore.app/auth/handoff#code=...") String url) {
+
+		@Override
+		public String toString() {
+			return "HandoffResponse[]";
+		}
+
+	}
+
+	record HandoffExchangeRequest(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) @NotBlank @Size(max = 64) String code) {
+
+		@Override
+		public String toString() {
+			return "HandoffExchangeRequest[]";
 		}
 
 	}

@@ -116,10 +116,7 @@ describe('LoginPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Minhas bandas' })).toBeInTheDocument();
     expect(await screen.findByText('The Burst')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Abrir' })).toHaveAttribute(
-      'href',
-      'http://burst.localhost:3000/login',
-    );
+    expect(screen.getByRole('button', { name: 'Abrir' })).toBeEnabled();
   });
 
   it('logout revokes the cookie, forgets the session and returns to login', async () => {

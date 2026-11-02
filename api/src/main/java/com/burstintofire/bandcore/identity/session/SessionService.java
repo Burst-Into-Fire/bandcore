@@ -126,6 +126,33 @@ public class SessionService implements BandSessions {
 	}
 
 	/**
+	 * A new session on the current host for a user already proven by another means (a handoff
+	 * code), with the same account, email and membership checks as a login. Empty when any fails.
+	 */
+	@Transactional
+	Optional<Session> openWithoutPassword(UUID userId) {
+		TenantContextHolder.Scope scope = requireScope();
+		User user = users.findById(userId).filter(User::isActive).orElse(null);
+		if (user == null) {
+			return Optional.empty();
+		}
+		String role = null;
+		if (!scope.isCentral()) {
+			if (!user.isEmailVerified()) {
+				return Optional.empty();
+			}
+			Optional<BandAccess.Grant> grant = bandAccess.find(scope.tenant().bandId(), userId);
+			if (grant.isEmpty()) {
+				return Optional.empty();
+			}
+			role = grant.get().role();
+		}
+		Instant now = clock.instant();
+		return Optional.of(newToken(userId, scope, role, UUID.randomUUID(), now,
+				now.plus(properties.refreshTokenAbsoluteLifetime())));
+	}
+
+	/**
 	 * Rotates the refresh token. Reusing a token that was already rotated means it was copied:
 	 * the whole family is revoked, so both the thief's and the user's tokens stop working.
 	 */

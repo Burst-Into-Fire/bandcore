@@ -25,4 +25,4 @@ The browser keeps cookies, `localStorage` and IndexedDB per origin. Offline sale
 
 - Browser storage and cookies are isolated per band for free.
 - Hosting must support wildcard custom domains with automatic TLS and private networking; the spike M1-10 validates this before M2.
-- Switching bands is a navigation to another origin, so it needs a secure handoff (M4-05).
+- Switching bands is a navigation to another origin, so it needs a secure handoff (M4-05). The current host issues a one-time code for one target host (60 seconds, single use, in the URL fragment) and the target host exchanges it for its own session. The handoff works in both directions: from the central host to a band, from a band to another band, and from a band back to the central host ("my bands"), so a user never types the password again while their session lasts.

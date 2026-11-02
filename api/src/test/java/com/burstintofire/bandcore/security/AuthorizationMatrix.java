@@ -33,6 +33,7 @@ final class AuthorizationMatrix {
 	static final List<Rule> BAND = List.of(
 			rule(HttpMethod.GET, "/me", EVERY_ROLE),
 			rule(HttpMethod.POST, "/auth/logout-all", EVERY_ROLE),
+			rule(HttpMethod.POST, "/auth/handoff", EVERY_ROLE, fixture -> "{}"),
 			rule(HttpMethod.GET, "/band", EVERY_ROLE),
 			rule(HttpMethod.PATCH, "/band", EnumSet.of(ADMIN), fixture -> "{\"name\": \"Renamed\"}"),
 			rule(HttpMethod.GET, "/members", EVERY_ROLE),

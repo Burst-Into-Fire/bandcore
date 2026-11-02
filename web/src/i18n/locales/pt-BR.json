@@ -105,7 +105,8 @@
       "ADMIN": "Administrador",
       "MEMBER": "Integrante",
       "READ_ONLY": "Somente leitura"
-    }
+    },
+    "opening": "Abrindo…"
   },
   "createBand": {
     "title": "Criar banda",
@@ -151,5 +152,12 @@
     "save": "Salvar alterações",
     "saving": "Salvando…",
     "saved": "Alterações salvas."
+  },
+  "handoff": {
+    "title": "Abrindo…",
+    "opening": "Entrando com a sua sessão…",
+    "failedTitle": "Não foi possível abrir",
+    "failed": "Este link expirou ou já foi usado. Escolha a banda de novo ou entre com sua senha.",
+    "login": "Entrar"
   }
 }

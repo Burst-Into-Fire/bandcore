@@ -23,6 +23,7 @@ Each limit is a token bucket per key. A request takes one token. When the bucket
 | `POST /api/invitations`, `POST /api/invitations/{id}/resend` | `invitations-band` | band | 30 per day |
 | `POST /api/invitations/preview` | `invitation-preview-ip` | client address | 30 per hour |
 | `POST /api/invitations/accept` | `invitation-accept-ip` | client address | 20 per hour |
+| `POST /api/auth/handoff/exchange` | `handoff-exchange-ip` | client address | 60 per 10 minutes |
 
 ## How the limits behave
 

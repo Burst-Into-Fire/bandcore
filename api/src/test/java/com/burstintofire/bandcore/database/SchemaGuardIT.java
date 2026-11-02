@@ -33,7 +33,8 @@ class SchemaGuardIT extends IntegrationTest {
 			"password_reset_tokens", "belongs to an account, used before any band is involved",
 			"security_events", "account events, mostly before any band is known; no band data, only the host",
 			"refresh_tokens", "looked up by token hash before the band is known; logout-all spans every band",
-			"invitation_tokens", "token hash to band, read on the central host before the band is known; no band data");
+			"invitation_tokens", "token hash to band, read on the central host before the band is known; no band data",
+			"handoff_codes", "one-time codes that move a user's session between hosts; owned by identity");
 
 	@Autowired
 	JdbcTemplate jdbc;

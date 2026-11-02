@@ -146,3 +146,4 @@ bandcore:
       invitations-band: { capacity: 30, period: 24h }
       invitation-preview-ip: { capacity: 30, period: 1h }
       invitation-accept-ip: { capacity: 20, period: 1h }
+      handoff-exchange-ip: { capacity: 60, period: 10m }
