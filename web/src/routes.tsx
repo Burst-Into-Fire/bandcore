@@ -2,18 +2,21 @@ import type { RouteObject } from 'react-router';
 
 import { RequireSession } from './auth/RequireSession';
 import type { Host } from './lib/host';
-import { BandHomePage } from './pages/BandHomePage';
 import { BandSettingsPage } from './pages/BandSettingsPage';
+import { ComingSoonPage } from './pages/ComingSoonPage';
 import { CreateBandPage } from './pages/CreateBandPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { HandoffPage } from './pages/HandoffPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
+import { MembersPage } from './pages/MembersPage';
 import { MyBandsPage } from './pages/MyBandsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { SignupPage } from './pages/SignupPage';
+import { SummaryPage } from './pages/SummaryPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
+import { AppShell } from './shell/AppShell';
 
 /** The central host and band hosts serve the same SPA with different routes. */
 export function createRoutes(host: Host): RouteObject[] {
@@ -24,14 +27,15 @@ export function createRoutes(host: Host): RouteObject[] {
       {
         element: <RequireSession />,
         children: [
-          { path: '/', element: <BandHomePage /> },
           {
-            path: '/settings',
-            element: (
-              <main className="mx-auto w-full max-w-3xl px-4 py-10">
-                <BandSettingsPage />
-              </main>
-            ),
+            element: <AppShell />,
+            children: [
+              { path: '/', element: <SummaryPage /> },
+              { path: '/expenses', element: <ComingSoonPage section="expenses" /> },
+              { path: '/merch', element: <ComingSoonPage section="merch" /> },
+              { path: '/members', element: <MembersPage /> },
+              { path: '/settings', element: <BandSettingsPage /> },
+            ],
           },
         ],
       },

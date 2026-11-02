@@ -6,11 +6,15 @@ import { afterAll, afterEach, beforeAll } from 'vitest';
 
 import { resetSessionState } from '../auth/session';
 import { server } from './server';
+import { matchMedia, resetViewport } from './viewport';
+
+window.matchMedia = matchMedia;
 
 beforeAll(() => server.listen({ onUnhandledFrame: 'error' }));
 afterEach(() => {
   cleanup();
   server.resetHandlers();
   resetSessionState();
+  resetViewport();
 });
 afterAll(() => server.close());

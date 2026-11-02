@@ -26,7 +26,9 @@
     "logout": "Sair",
     "logoutEverywhere": "Sair de todos os dispositivos",
     "back": "Voltar",
-    "loading": "Carregando…"
+    "loading": "Carregando…",
+    "retry": "Tentar de novo",
+    "comingSoon": "Em breve"
   },
   "fields": {
     "email": "Email",
@@ -119,8 +121,7 @@
   },
   "bandHome": {
     "welcome": "Olá, {{name}}!",
-    "role": "Seu papel nesta banda: {{role}}",
-    "comingSoon": "Gastos, merch e integrantes chegam nas próximas versões."
+    "role": "Seu papel nesta banda: {{role}}"
   },
   "forgotPassword": {
     "title": "Redefinir senha",
@@ -159,5 +160,52 @@
     "failedTitle": "Não foi possível abrir",
     "failed": "Este link expirou ou já foi usado. Escolha a banda de novo ou entre com sua senha.",
     "login": "Entrar"
+  },
+  "nav": {
+    "summary": "Resumo",
+    "expenses": "Gastos",
+    "merch": "Merch",
+    "members": "Integrantes",
+    "settings": "Configurações",
+    "settingsShort": "Ajustes"
+  },
+  "shell": {
+    "skipToContent": "Pular para o conteúdo",
+    "navigation": "Seções da banda",
+    "userMenu": "Menu de {{name}}",
+    "switchBand": "Trocar de banda"
+  },
+  "summary": {
+    "title": "Resumo",
+    "monthExpenses": "Gastos do mês",
+    "merchSales": "Vendas de merch",
+    "merchProfit": "Lucro do merch",
+    "soon": "Disponível em breve",
+    "settlement": "Acerto entre integrantes",
+    "settlementEmpty": "Nenhum acerto ainda",
+    "settlementHint": "Quando houver gastos divididos, aqui aparece quem deve para quem.",
+    "stock": "Estoque",
+    "stockEmpty": "Nenhum produto ainda",
+    "stockHint": "Os produtos de merch e os avisos de estoque baixo aparecem aqui.",
+    "latestExpenses": "Últimos gastos",
+    "latestExpensesEmpty": "Nenhum gasto registrado",
+    "latestExpensesHint": "Os gastos pagos e planejados da banda aparecem aqui."
+  },
+  "expenses": {
+    "title": "Gastos",
+    "subtitle": "O que a banda pagou e como foi dividido.",
+    "comingSoon": "Em breve você vai registrar e dividir os gastos da banda aqui."
+  },
+  "merch": {
+    "title": "Merch",
+    "subtitle": "Produtos, estoque e vendas.",
+    "comingSoon": "Em breve você vai cadastrar produtos, controlar o estoque e registrar vendas aqui."
+  },
+  "members": {
+    "title": "Integrantes",
+    "subtitle": "Quem toca na banda e divide gastos, vendas e acertos.",
+    "empty": "Nenhum integrante ainda.",
+    "active": "Ativo",
+    "inactive": "Inativo"
   }
 }

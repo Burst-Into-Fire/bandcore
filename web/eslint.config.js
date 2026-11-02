@@ -68,6 +68,10 @@ export default defineConfig([
               'autoComplete',
               'autoCapitalize',
               'inputMode',
+              // Component variants: layout and tone names, not UI text.
+              'placement',
+              'section',
+              'tone',
             ],
           },
           // Form field names passed to react-hook-form and permission names are not UI text either.

@@ -133,7 +133,8 @@ describe('LoginPage', () => {
     );
     const { router, queryClient } = renderRoute('/', { host: BAND });
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Sair' }));
+    await userEvent.click(await screen.findByRole('button', { name: /Ana/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Sair' }));
 
     expect(await screen.findByRole('heading', { name: 'Entrar em The Burst' })).toBeInTheDocument();
     expect(loggedOut).toBe(true);

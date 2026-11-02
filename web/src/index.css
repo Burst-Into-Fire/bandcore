@@ -42,4 +42,10 @@
     @apply bg-background text-foreground font-sans antialiased;
     min-width: 360px;
   }
+
+  /* Visible focus for keyboard users on every interactive element. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
 }
