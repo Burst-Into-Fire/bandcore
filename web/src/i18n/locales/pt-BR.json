@@ -25,7 +25,8 @@
   "common": {
     "logout": "Sair",
     "logoutEverywhere": "Sair de todos os dispositivos",
-    "back": "Voltar"
+    "back": "Voltar",
+    "loading": "Carregando…"
   },
   "fields": {
     "email": "Email",
@@ -33,7 +34,8 @@
     "displayName": "Seu nome",
     "bandName": "Nome da banda",
     "slug": "Endereço da banda",
-    "newPassword": "Nova senha"
+    "newPassword": "Nova senha",
+    "timezone": "Fuso horário"
   },
   "validation": {
     "required": "Preencha este campo.",
@@ -56,7 +58,8 @@
     "SLUG_TAKEN": "Este endereço já está em uso. Escolha outro.",
     "EMAIL_NOT_VERIFIED": "Confirme seu email antes de criar uma banda.",
     "BAND_LIMIT_REACHED": "Você atingiu o limite de bandas criadas por conta.",
-    "TOO_MANY_REQUESTS": "Muitas tentativas. Aguarde um pouco e tente de novo."
+    "TOO_MANY_REQUESTS": "Muitas tentativas. Aguarde um pouco e tente de novo.",
+    "TIMEZONE_INVALID": "Escolha um fuso horário da lista."
   },
   "session": {
     "loading": "Carregando sua sessão…"
@@ -136,5 +139,17 @@
     "success": "Senha alterada! Entre com a nova senha.",
     "login": "Entrar",
     "requestNew": "Pedir um novo link"
+  },
+  "settings": {
+    "title": "Configurações",
+    "subtitle": "Dados básicos da banda.",
+    "adminsOnly": "Somente administradores podem alterar as configurações da banda.",
+    "timezoneHint": "Os meses do resumo e dos relatórios são contados neste fuso.",
+    "currency": "Moeda",
+    "currencyValue": "Real brasileiro (BRL)",
+    "addressFixed": "O endereço da banda não pode ser alterado nesta versão.",
+    "save": "Salvar alterações",
+    "saving": "Salvando…",
+    "saved": "Alterações salvas."
   }
 }

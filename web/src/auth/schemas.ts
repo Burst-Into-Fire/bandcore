@@ -45,6 +45,11 @@ export const forgotPasswordSchema = z.object({ email: emailSchema });
 
 export const resetPasswordSchema = z.object({ password: newPasswordSchema });
 
+export const bandSettingsSchema = z.object({
+  name: nameSchema,
+  timezone: z.string().min(1, 'validation.required'),
+});
+
 export const createBandSchema = z.object({
   name: nameSchema,
   slug: z.string().trim().toLowerCase().refine(isWellFormedSlug, 'validation.slugInvalid'),
