@@ -88,4 +88,36 @@ public class Member extends AssignedIdEntity {
 		return leftAt;
 	}
 
+	public boolean isActive() {
+		return status == MemberStatus.ACTIVE;
+	}
+
+	void rename(String newDisplayName, Instant now) {
+		this.displayName = newDisplayName;
+		this.updatedAt = now;
+	}
+
+	void changeInstrument(String newInstrument, Instant now) {
+		this.instrument = newInstrument;
+		this.updatedAt = now;
+	}
+
+	/** Left the band: excluded from new splits, kept in balances and history. */
+	void deactivate(Instant now) {
+		this.status = MemberStatus.INACTIVE;
+		this.leftAt = now;
+		this.updatedAt = now;
+	}
+
+	void activate(Instant now) {
+		this.status = MemberStatus.ACTIVE;
+		this.leftAt = null;
+		this.updatedAt = now;
+	}
+
+	void linkTo(UUID newUserId, Instant now) {
+		this.userId = newUserId;
+		this.updatedAt = now;
+	}
+
 }

@@ -60,6 +60,8 @@ Every table that holds band data must have, in the same migration:
 - [ ] An index (or unique constraint) whose first column is `band_id`
 - [ ] For append-only tables: `REVOKE UPDATE, DELETE, TRUNCATE ON ... FROM bandcore_app` (the schema guard accepts a missing policy only for a command the role cannot run)
 
+**Rows that point to members.** Expenses, splits, sales and anything else that refers to a member must use a composite foreign key `(band_id, member_id) REFERENCES members (band_id, id)` with the default `ON DELETE NO ACTION`. Deleting a member with history then fails in the database, and the API answers 409 `MEMBER_HAS_HISTORY` so the admin deactivates the member instead (M4-01). Never use `ON DELETE CASCADE` or `SET NULL` there.
+
 The schema guard test (`SchemaGuardIT`) fails the build when a table misses any of these. Global tables (no `band_id`) must be added to its allowlist with a reason.
 
 Template:

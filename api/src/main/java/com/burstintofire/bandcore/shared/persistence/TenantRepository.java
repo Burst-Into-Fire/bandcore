@@ -17,4 +17,7 @@ public interface TenantRepository<T, ID> extends Repository<T, ID> {
 
 	void flush();
 
+	/** Deletes an entity loaded through a band-filtered query; there is no delete by id alone. */
+	void delete(T entity);
+
 }
