@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 
 import com.burstintofire.bandcore.support.ApiClient;
 import com.burstintofire.bandcore.support.IntegrationTest;
+import com.burstintofire.bandcore.support.OwnerSql;
 
 class BandEndpointsIT extends IntegrationTest {
 
@@ -54,6 +55,31 @@ class BandEndpointsIT extends IntegrationTest {
 		assertThat(JsonPath.<String>read(response.getBody(), "$.timezone")).isEqualTo("America/Manaus");
 		assertThat(JsonPath.<String>read(host.get("/api/band/public-profile").getBody(), "$.name"))
 			.isEqualTo("Alpha Renamed");
+	}
+
+	@Test
+	void adminChangesTheDefaultCurrencyAndTheChangeIsAudited() {
+		ResponseEntity<String> response = host.patchJson("/api/band", "{\"currency\": \"USD\"}",
+				headers -> headers.setBearerAuth(token));
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(JsonPath.<String>read(response.getBody(), "$.currency")).isEqualTo("USD");
+		assertThat(OwnerSql.superuserQueryForString(
+				"SELECT changes::text FROM bandcore.audit_events WHERE action = 'band.updated'"))
+			.contains("\"currency\"")
+			.contains("\"BRL\"")
+			.contains("\"USD\"");
+	}
+
+	@Test
+	void onlyBrlAndUsdAreAccepted() {
+		ResponseEntity<String> response = host.patchJson("/api/band", "{\"currency\": \"EUR\"}",
+				headers -> headers.setBearerAuth(token));
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(JsonPath.<String>read(host.get("/api/band", headers -> headers.setBearerAuth(token)).getBody(),
+				"$.currency"))
+			.isEqualTo("BRL");
 	}
 
 	@Test

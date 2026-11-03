@@ -35,7 +35,7 @@ function api(role: 'ADMIN' | 'MEMBER') {
 }
 
 describe('BandSettingsPage', () => {
-  it('lets an admin change the name and time zone', async () => {
+  it('lets an admin change the name, time zone and currency', async () => {
     api('ADMIN');
     let body: unknown;
     server.use(
@@ -45,6 +45,7 @@ describe('BandSettingsPage', () => {
           ...BAND_DATA,
           name: 'The Burst Live',
           timezone: 'Europe/Lisbon',
+          currency: 'USD',
         });
       }),
     );
@@ -52,16 +53,18 @@ describe('BandSettingsPage', () => {
     renderRoute('/settings', { host: BAND });
 
     const name = await screen.findByLabelText('Nome da banda');
-    expect(screen.getByText('Real brasileiro (BRL)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Moeda')).toHaveValue('BRL');
     expect(screen.getByText('burst.localhost')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Salvar alterações' })).toBeDisabled();
     await user.clear(name);
     await user.type(name, 'The Burst Live');
     await user.selectOptions(screen.getByLabelText('Fuso horário'), 'Europe/Lisbon');
+    await user.selectOptions(screen.getByLabelText('Moeda'), 'Dólar americano (USD)');
     await user.click(screen.getByRole('button', { name: 'Salvar alterações' }));
 
     expect(await screen.findByText('Alterações salvas.')).toBeInTheDocument();
-    expect(body).toEqual({ name: 'The Burst Live', timezone: 'Europe/Lisbon' });
+    expect(body).toEqual({ name: 'The Burst Live', timezone: 'Europe/Lisbon', currency: 'USD' });
+    expect(screen.getByLabelText('Moeda')).toHaveValue('USD');
   });
 
   it('validates the name and shows API errors next to the field', async () => {

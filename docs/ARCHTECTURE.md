@@ -73,7 +73,7 @@ Every band is a tenant. Rules:
 - Every repository query filters by `band_id`. A shared tenant context makes this hard to forget.
 - Automated tests try to read and change another band's data and must fail (RNF01).
 - PostgreSQL Row Level Security as a second barrier, with the API connected as a role that cannot bypass it. The roadmap proposes RLS from M2, while the requirements place it later (RNF07); see [ADR-0002](adr/0002-multi-tenancy-shared-schema-band-id-rls.md). The least-privilege roles are already in place ([Database](DATABASE.md)).
-- Each band has its own subdomain, `{slug}.{BASE_DOMAIN}` ([ADR-0005](adr/0005-subdomain-per-band-same-origin-api.md)). **The slug cannot change in v1:** it is the band's address, and sessions, cookies and links in emails depend on it. Changing it, with redirects from the old address, is a later feature. Admins can change the band's name and time zone; the currency is fixed to BRL.
+- Each band has its own subdomain, `{slug}.{BASE_DOMAIN}` ([ADR-0005](adr/0005-subdomain-per-band-same-origin-api.md)). **The slug cannot change in v1:** it is the band's address, and sessions, cookies and links in emails depend on it. Changing it, with redirects from the old address, is a later feature. Admins can change the band's name, time zone and default currency (BRL or USD, RF40). The default currency only pre-fills forms and formats totals: every amount stores its own currency.
 
 ### Money
 

@@ -163,7 +163,7 @@
     "adminsOnly": "Somente administradores podem alterar as configurações da banda.",
     "timezoneHint": "Os meses do resumo e dos relatórios são contados neste fuso.",
     "currency": "Moeda",
-    "currencyValue": "Real brasileiro (BRL)",
+    "currencyHint": "Preenche a moeda dos novos gastos e formata os totais. Valores já registrados mantêm a moeda deles.",
     "addressFixed": "O endereço da banda não pode ser alterado nesta versão.",
     "save": "Salvar alterações",
     "saving": "Salvando…",
@@ -288,5 +288,9 @@
     "accepting": "Entrando na banda…",
     "loggedInAs": "Você está conectado como {{email}}.",
     "switchAccount": "Entrar com outra conta"
+  },
+  "currencies": {
+    "BRL": "Real brasileiro (BRL)",
+    "USD": "Dólar americano (USD)"
   }
 }

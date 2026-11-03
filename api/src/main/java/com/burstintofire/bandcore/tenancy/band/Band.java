@@ -9,6 +9,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 
+import com.burstintofire.bandcore.shared.money.Currency;
 import com.burstintofire.bandcore.shared.persistence.AssignedIdEntity;
 
 /**
@@ -19,7 +20,7 @@ import com.burstintofire.bandcore.shared.persistence.AssignedIdEntity;
 @Table(name = "bands")
 public class Band extends AssignedIdEntity {
 
-	public static final String DEFAULT_CURRENCY = "BRL";
+	public static final Currency DEFAULT_CURRENCY = Currency.BRL;
 
 	public static final String DEFAULT_TIMEZONE = "America/Sao_Paulo";
 
@@ -29,8 +30,10 @@ public class Band extends AssignedIdEntity {
 	@Column(nullable = false)
 	private String name;
 
+	/** Pre-fills money forms and formats totals (RF40); every amount still has its own currency. */
+	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private String currency;
+	private Currency currency;
 
 	@Column(nullable = false)
 	private String timezone;
@@ -71,7 +74,7 @@ public class Band extends AssignedIdEntity {
 		return name;
 	}
 
-	public String getCurrency() {
+	public Currency getCurrency() {
 		return currency;
 	}
 
@@ -101,6 +104,11 @@ public class Band extends AssignedIdEntity {
 
 	void rename(String newName, Instant now) {
 		this.name = newName;
+		this.updatedAt = now;
+	}
+
+	void changeCurrency(Currency newCurrency, Instant now) {
+		this.currency = newCurrency;
 		this.updatedAt = now;
 	}
 
