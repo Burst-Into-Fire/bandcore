@@ -20,7 +20,7 @@ import com.burstintofire.bandcore.shared.persistence.TenantRepository;
 
 class ArchitectureRulesTest {
 
-	private static final String[] MONEY_PACKAGES = { "..finance..", "..merch.." };
+	private static final String[] MONEY_PACKAGES = { "..shared.money..", "..finance..", "..merch.." };
 
 	/** Packages whose entities live in tenant tables (band_id + RLS). */
 	private static final String[] TENANT_PACKAGES = { "..tenancy.member..", "..tenancy.membership..", "..finance..",
