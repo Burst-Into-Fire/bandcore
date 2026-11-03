@@ -60,8 +60,10 @@ class AuthorizationMatrixIT extends IntegrationTest {
 		UUID otherAdmin = fixtures.membership(band, fixtures.verifiedUser("other.admin@example.com"), "ADMIN");
 		ApiClient host = api.forBand("alpha");
 		String token = fixtures.login(host, "user@example.com");
+		UUID category = fixtures.category(band, "Gear");
 		var fixture = new AuthorizationMatrix.Fixture(Map.of("memberId", member.toString(), "userId", unlinked.toString(),
-				"invitationId", invitation.toString(), "membershipId", otherAdmin.toString()));
+				"invitationId", invitation.toString(), "membershipId", otherAdmin.toString(), "categoryId",
+				category.toString()));
 
 		ResponseEntity<String> response = host.send(rule.method(), rule.url(fixture), rule.body().apply(fixture),
 				headers -> headers.setBearerAuth(token));

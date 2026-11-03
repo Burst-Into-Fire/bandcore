@@ -281,6 +281,85 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/expense-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Categories of the current band by name, archived ones included */
+        get: operations["listExpenseCategories"];
+        put?: never;
+        /**
+         * Create a category (admins)
+         * @description 409 CATEGORY_NAME_TAKEN when another category, archived or not, has the name.
+         */
+        post: operations["createExpenseCategory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/expense-categories/{categoryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a category no expense uses (admins)
+         * @description 409 CATEGORY_IN_USE when expenses use it: archive it instead.
+         */
+        delete: operations["deleteExpenseCategory"];
+        options?: never;
+        head?: never;
+        /**
+         * Rename or recolor a category (admins)
+         * @description Omitted fields are left unchanged; an empty color clears it.
+         */
+        patch: operations["updateExpenseCategory"];
+        trace?: never;
+    };
+    "/expense-categories/{categoryId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive a category (admins): existing expenses keep it, new ones cannot use it */
+        post: operations["archiveExpenseCategory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/expense-categories/{categoryId}/unarchive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bring an archived category back (admins) */
+        post: operations["unarchiveExpenseCategory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/invitations": {
         parameters: {
             query?: never;
@@ -621,6 +700,18 @@ export interface components {
             role: "ADMIN" | "MEMBER" | "READ_ONLY";
             slug: string;
         };
+        CategoryResponse: {
+            archived: boolean;
+            color?: string;
+            /**
+             * @description Set while a default category keeps its original name; show its translation
+             * @enum {string}
+             */
+            defaultKey?: "REHEARSAL_SPACE" | "GEAR" | "VIDEO" | "PHOTOGRAPHY" | "TRAVEL" | "MERCH" | "OTHER";
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
         ChangeRoleRequest: {
             /** @enum {string} */
             role: "ADMIN" | "MEMBER" | "READ_ONLY";
@@ -629,6 +720,14 @@ export interface components {
             name: string;
             /** @example the-burst */
             slug: string;
+        };
+        CreateCategoryRequest: {
+            /**
+             * @description #rrggbb
+             * @example #ff6b5a
+             */
+            color?: string;
+            name: string;
         };
         CreateInvitationRequest: {
             /** Format: email */
@@ -801,6 +900,11 @@ export interface components {
             currency?: "BRL" | "USD";
             name?: string;
             timezone?: string;
+        };
+        UpdateCategoryRequest: {
+            /** @description #rrggbb; empty clears it */
+            color?: string;
+            name?: string;
         };
         UpdateMemberRequest: {
             displayName?: string;
@@ -1162,6 +1266,140 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SlugAvailabilityResponse"];
+                };
+            };
+        };
+    };
+    listExpenseCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CategoryResponse"][];
+                };
+            };
+        };
+    };
+    createExpenseCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CategoryResponse"];
+                };
+            };
+        };
+    };
+    deleteExpenseCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateExpenseCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CategoryResponse"];
+                };
+            };
+        };
+    };
+    archiveExpenseCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CategoryResponse"];
+                };
+            };
+        };
+    };
+    unarchiveExpenseCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CategoryResponse"];
                 };
             };
         };

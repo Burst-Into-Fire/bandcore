@@ -171,6 +171,10 @@ class TenantIsolationIT extends IntegrationTest {
 
 		UUID bravoMember;
 
+		UUID alphaCategory;
+
+		UUID bravoCategory;
+
 		ApiClient alphaHost;
 
 		ApiClient bravoHost;
@@ -198,6 +202,8 @@ class TenantIsolationIT extends IntegrationTest {
 
 			world.alphaMember = fixtures.member(world.alpha, "Alice Alpha");
 			world.bravoMember = fixtures.member(world.bravo, "Bruno Bravo Secreto");
+			world.alphaCategory = fixtures.category(world.alpha, "Alpha gear");
+			world.bravoCategory = fixtures.category(world.bravo, "Bravo secret category");
 			world.alphaInvitation = fixtures.invitation(world.alpha, "alpha.invited@example.com", "MEMBER", alphaAdmin).id();
 			world.bravoInvitation = fixtures.invitation(world.bravo, "bravo.invited.secret@example.com", "ADMIN",
 					world.bravoAdmin).id();
@@ -212,20 +218,22 @@ class TenantIsolationIT extends IntegrationTest {
 		IsolationScenarios.Target bravoTarget() {
 			return new IsolationScenarios.Target(bravo.toString(), "bravo-secret",
 					Map.of("memberId", bravoMember.toString(), "userId", bravoAdmin.toString(), "invitationId",
-							bravoInvitation.toString(), "membershipId", bravoAdminMembership.toString()));
+							bravoInvitation.toString(), "membershipId", bravoAdminMembership.toString(), "categoryId",
+							bravoCategory.toString()));
 		}
 
 		IsolationScenarios.Target alphaTarget() {
 			return new IsolationScenarios.Target(alpha.toString(), "alpha",
 					Map.of("memberId", alphaMember.toString(), "userId", alphaAdmin.toString(), "invitationId",
-							alphaInvitation.toString(), "membershipId", alphaAdminMembership.toString()));
+							alphaInvitation.toString(), "membershipId", alphaAdminMembership.toString(), "categoryId",
+							alphaCategory.toString()));
 		}
 
 		/** Strings that must never appear in a response to band A's requests. */
 		List<String> bravoSecrets() {
 			return List.of(bravo.toString(), "Bravo Secret Band", bravoMember.toString(), "Bruno Bravo Secreto",
 					bravoAdmin.toString(), "bravo.admin@example.com", bravoInvitation.toString(),
-					"bravo.invited.secret@example.com");
+					"bravo.invited.secret@example.com", bravoCategory.toString(), "Bravo secret category");
 		}
 
 	}

@@ -54,7 +54,14 @@ final class AuthorizationMatrix {
 			rule(HttpMethod.GET, "/memberships", ADMIN_ONLY),
 			rule(HttpMethod.PATCH, "/memberships/{membershipId}", ADMIN_ONLY, fixture -> "{\"role\": \"MEMBER\"}"),
 			rule(HttpMethod.DELETE, "/memberships/{membershipId}", ADMIN_ONLY),
-			rule(HttpMethod.POST, "/memberships/leave", EVERY_ROLE));
+			rule(HttpMethod.POST, "/memberships/leave", EVERY_ROLE),
+			rule(HttpMethod.GET, "/expense-categories", EVERY_ROLE),
+			rule(HttpMethod.POST, "/expense-categories", ADMIN_ONLY, fixture -> "{\"name\": \"New category\"}"),
+			rule(HttpMethod.PATCH, "/expense-categories/{categoryId}", ADMIN_ONLY,
+					fixture -> "{\"color\": \"#ff6b5a\"}"),
+			rule(HttpMethod.POST, "/expense-categories/{categoryId}/archive", ADMIN_ONLY),
+			rule(HttpMethod.POST, "/expense-categories/{categoryId}/unarchive", ADMIN_ONLY),
+			rule(HttpMethod.DELETE, "/expense-categories/{categoryId}", ADMIN_ONLY));
 
 	/** Endpoints on the central host: any authenticated account, no role. */
 	static final List<Rule> CENTRAL = List.of(
