@@ -17,9 +17,9 @@
 
 Every money rule in bandcore depends on splitting an amount into parts that always sum exactly to the total. The cent that does not divide evenly must always go to the same place for the same input.
 
-### Open question
+### Currency
 
-The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
+Decided 2026-11-03: BRL and USD from the start (RF40, RNF08, RN08). Every amount stores its own currency, the band's default currency only pre-fills forms, and amounts in different currencies are never added together.
 
 ### Scope
 
@@ -75,9 +75,9 @@ Categories (rehearsal space, gear, video, photography, travel, merch) organize e
 
 Expenses are the base of balances. Planned expenses (future dates) are tracked but only paid expenses affect balances.
 
-### Open question
+### Currency
 
-The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
+Decided 2026-11-03: BRL and USD from the start (RF40, RNF08, RN08). Every amount stores its own currency, the band's default currency only pre-fills forms, and amounts in different currencies are never added together.
 
 ### Scope
 
@@ -108,9 +108,9 @@ The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and ba
 
 Splits decide who owes what. The stored shares must always sum exactly to the expense amount.
 
-### Open question
+### Currency
 
-The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
+Decided 2026-11-03: BRL and USD from the start (RF40, RNF08, RN08). Every amount stores its own currency, the band's default currency only pre-fills forms, and amounts in different currencies are never added together.
 
 ### Scope
 

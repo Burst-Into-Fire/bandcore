@@ -17,6 +17,7 @@ import java.util.concurrent.Future;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.burstintofire.bandcore.shared.money.Currency;
 import com.burstintofire.bandcore.shared.web.ApiException;
 import com.burstintofire.bandcore.shared.web.ErrorCode;
 import com.burstintofire.bandcore.support.IntegrationTest;
@@ -35,7 +36,7 @@ class BandRegistryIT extends IntegrationTest {
 		assertThat(stored.getId()).isEqualTo(band.getId());
 		assertThat(stored.getId().version()).isEqualTo(7);
 		assertThat(stored.getName()).isEqualTo("The Burst");
-		assertThat(stored.getCurrency()).isEqualTo("BRL");
+		assertThat(stored.getCurrency()).isEqualTo(Currency.BRL);
 		assertThat(stored.getTimezone()).isEqualTo("America/Sao_Paulo");
 		assertThat(stored.getStatus()).isEqualTo(BandStatus.ACTIVE);
 	}

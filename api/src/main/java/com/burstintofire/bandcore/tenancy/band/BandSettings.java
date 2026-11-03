@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.burstintofire.bandcore.audit.AuditRecorder;
+import com.burstintofire.bandcore.shared.money.Currency;
 import com.burstintofire.bandcore.shared.security.Permissions;
 import com.burstintofire.bandcore.shared.tenant.TenantContextHolder;
 import com.burstintofire.bandcore.shared.web.ApiException;
@@ -19,8 +20,8 @@ import com.burstintofire.bandcore.shared.web.ErrorCode;
 
 /**
  * The current band's own data. The band is always the one of the request host; there is no
- * way to address another band here. Changes are recorded in the audit log. The currency is
- * fixed to BRL and the slug cannot change in v1 (it is the band's address).
+ * way to address another band here. Changes are recorded in the audit log. The slug cannot
+ * change in v1 (it is the band's address).
  */
 @Service
 public class BandSettings {
@@ -52,14 +53,18 @@ public class BandSettings {
 		return currentBand();
 	}
 
-	/** Null values are left unchanged. The slug is immutable in v1. */
+	/**
+	 * Null values are left unchanged. The slug is immutable in v1. Changing the currency only
+	 * changes the default of new forms: recorded amounts keep their own currency.
+	 */
 	@PreAuthorize(Permissions.CAN_MANAGE_BAND)
 	@Transactional
-	public Band update(String name, String timezone) {
+	public Band update(String name, String timezone, Currency currency) {
 		Band band = currentBand();
 		Map<String, Object> changes = new LinkedHashMap<>();
 		String previousTimezone = band.getTimezone();
 		String previousName = band.getName();
+		Currency previousCurrency = band.getCurrency();
 		if (timezone != null) {
 			// Region names from the IANA database only: fixed offsets such as "+03:00" or "UTC+3"
 			// would ignore daylight saving changes when months are computed in the band's time zone.
@@ -71,6 +76,10 @@ public class BandSettings {
 		}
 		if (name != null) {
 			band.rename(name.strip(), clock.instant());
+		}
+		if (currency != null && currency != previousCurrency) {
+			band.changeCurrency(currency, clock.instant());
+			changes.put("currency", AuditRecorder.change(previousCurrency.name(), currency.name()));
 		}
 		if (!band.getName().equals(previousName)) {
 			changes.put("name", AuditRecorder.change(previousName, band.getName()));

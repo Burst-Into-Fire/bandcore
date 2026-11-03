@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.burstintofire.bandcore.shared.money.Currency;
 import com.burstintofire.bandcore.shared.web.PublicEndpoint;
 import com.burstintofire.bandcore.tenancy.band.Band;
 import com.burstintofire.bandcore.tenancy.band.BandRegistry;
@@ -39,9 +40,9 @@ class BandController {
 	}
 
 	@PatchMapping
-	@Operation(operationId = "updateBand", summary = "Change the band's name or time zone (admins)")
+	@Operation(operationId = "updateBand", summary = "Change the band's name, time zone or default currency (admins)")
 	BandResponse update(@Valid @RequestBody UpdateBandRequest request) {
-		return BandResponse.of(settings.update(request.name(), request.timezone()));
+		return BandResponse.of(settings.update(request.name(), request.timezone(), request.currency()));
 	}
 
 	@GetMapping("/public-profile")
@@ -55,7 +56,8 @@ class BandController {
 	record BandResponse(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) String slug,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) String name,
-			@Schema(requiredMode = Schema.RequiredMode.REQUIRED, example = "BRL") String currency,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED,
+					description = "Default currency of new forms and totals (RF40)") Currency currency,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED, example = "America/Sao_Paulo") String timezone) {
 
 		static BandResponse of(Band band) {
@@ -66,7 +68,8 @@ class BandController {
 
 	record UpdateBandRequest(
 			@Size(min = 1, max = BandRegistry.MAX_NAME_LENGTH) @Pattern(regexp = ".*\\S.*") String name,
-			@Size(max = 64) String timezone) {
+			@Size(max = 64) String timezone,
+			@Schema(description = "Default currency of new forms; recorded amounts keep their own") Currency currency) {
 	}
 
 	record BandPublicProfile(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) String slug,

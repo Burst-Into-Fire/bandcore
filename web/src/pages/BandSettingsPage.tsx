@@ -17,13 +17,14 @@ import { SelectField } from '../components/SelectField';
 import { TextField } from '../components/TextField';
 import { translateKey } from '../i18n/messages';
 import { bandHostName, useHost } from '../lib/host';
+import { CURRENCIES, type Currency } from '../lib/money';
 import { timeZoneOptions } from '../lib/timezones';
 import { errorMessage } from './errorMessage';
 
 type SettingsInput = z.input<typeof bandSettingsSchema>;
 type SettingsValues = z.output<typeof bandSettingsSchema>;
 
-/** Band settings (admins): name and time zone. Currency and address are fixed in v1. */
+/** Band settings (admins): name, time zone and default currency. The address is fixed in v1. */
 export function BandSettingsPage() {
   const { t } = useTranslation();
   return (
@@ -58,23 +59,27 @@ function SettingsContent() {
   return <SettingsForm band={band.data} />;
 }
 
-function SettingsForm({ band }: { band: { slug: string; name: string; timezone: string } }) {
+function SettingsForm({
+  band,
+}: {
+  band: { slug: string; name: string; timezone: string; currency: Currency };
+}) {
   const { t } = useTranslation();
   const host = useHost();
   const queryClient = useQueryClient();
   const zones = useMemo(() => timeZoneOptions(band.timezone), [band.timezone]);
   const form = useForm<SettingsInput, unknown, SettingsValues>({
     resolver: zodResolver(bandSettingsSchema),
-    defaultValues: { name: band.name, timezone: band.timezone },
+    defaultValues: { name: band.name, timezone: band.timezone, currency: band.currency },
   });
   const save = useMutation({
     mutationFn: async (values: SettingsValues) =>
       unwrap(await api.PATCH('/band', { body: values })),
     onSuccess: (saved) => {
       queryClient.setQueryData(['band'], saved);
-      form.reset({ name: saved.name, timezone: saved.timezone });
+      form.reset({ name: saved.name, timezone: saved.timezone, currency: saved.currency });
     },
-    onError: (error) => applyProblem(error, form.setError, ['name', 'timezone']),
+    onError: (error) => applyProblem(error, form.setError, ['name', 'timezone', 'currency']),
   });
   const { errors, isDirty } = form.formState;
 
@@ -97,11 +102,17 @@ function SettingsForm({ band }: { band: { slug: string; name: string; timezone: 
         error={translateKey(t, errors.timezone?.message)}
         {...form.register('timezone')}
       />
-      <dl className="grid gap-3 sm:grid-cols-2">
-        <div className="flex flex-col gap-1">
-          <dt className="text-card-title text-muted">{t('settings.currency')}</dt>
-          <dd>{t('settings.currencyValue')}</dd>
-        </div>
+      <SelectField
+        label={t('settings.currency')}
+        hint={t('settings.currencyHint')}
+        options={CURRENCIES.map((currency) => ({
+          value: currency,
+          label: t(`currencies.${currency}`),
+        }))}
+        error={translateKey(t, errors.currency?.message)}
+        {...form.register('currency')}
+      />
+      <dl className="grid gap-3">
         <div className="flex flex-col gap-1">
           <dt className="text-card-title text-muted">{t('fields.slug')}</dt>
           <dd>{bandHostName(band.slug, host.baseDomain)}</dd>

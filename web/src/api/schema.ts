@@ -223,7 +223,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Change the band's name or time zone (admins) */
+        /** Change the band's name, time zone or default currency (admins) */
         patch: operations["updateBand"];
         trace?: never;
     };
@@ -601,8 +601,11 @@ export interface components {
             slug: string;
         };
         BandResponse: {
-            /** @example BRL */
-            currency: string;
+            /**
+             * @description Default currency of new forms and totals (RF40)
+             * @enum {string}
+             */
+            currency: "BRL" | "USD";
             /** Format: uuid */
             id: string;
             name: string;
@@ -791,6 +794,11 @@ export interface components {
             tokenType: string;
         };
         UpdateBandRequest: {
+            /**
+             * @description Default currency of new forms; recorded amounts keep their own
+             * @enum {string}
+             */
+            currency?: "BRL" | "USD";
             name?: string;
             timezone?: string;
         };

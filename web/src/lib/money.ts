@@ -3,7 +3,10 @@
  * point: formatting goes through a decimal string and parsing works on the digits.
  */
 
-export type Currency = 'BRL' | 'USD';
+/** The currencies bandcore handles (RNF08); amounts in different currencies are never added. */
+export const CURRENCIES = ['BRL', 'USD'] as const;
+
+export type Currency = (typeof CURRENCIES)[number];
 
 const LOCALE = 'pt-BR';
 

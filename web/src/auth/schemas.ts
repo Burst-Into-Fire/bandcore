@@ -59,6 +59,7 @@ export const invitationSchema = z.object({
 export const bandSettingsSchema = z.object({
   name: nameSchema,
   timezone: z.string().min(1, 'validation.required'),
+  currency: z.enum(['BRL', 'USD']),
 });
 
 export const createBandSchema = z.object({
