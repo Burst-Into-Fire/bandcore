@@ -60,6 +60,13 @@ public final class Permissions {
 
 	public static final String CAN_MANAGE_MEMBERS = HAS + MEMBER_MANAGE + END;
 
+	public static final String CAN_READ_FINANCE = HAS + FINANCE_READ + END;
+
+	/** Write access to one's own records; the service adds the ownership check. */
+	public static final String CAN_WRITE_FINANCE = HAS + FINANCE_WRITE + END;
+
+	public static final String CAN_MANAGE_FINANCE = HAS + FINANCE_MANAGE + END;
+
 	private Permissions() {
 	}
 

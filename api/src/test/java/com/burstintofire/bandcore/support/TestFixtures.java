@@ -101,6 +101,16 @@ public class TestFixtures {
 		return id;
 	}
 
+	/** An active expense category. */
+	public UUID category(UUID bandId, String name) {
+		UUID id = UUID.randomUUID();
+		OwnerSql.inBand(bandId, """
+				INSERT INTO bandcore.expense_categories (id, band_id, name, created_at, updated_at)
+				VALUES ('%s', '%s', '%s', now(), now())
+				""".formatted(id, bandId, name));
+		return id;
+	}
+
 	/** Logs in through the API on the client's host and returns the access token. */
 	public String login(ApiClient client, String email) {
 		ResponseEntity<String> response = client.postJson("/api/auth/login",

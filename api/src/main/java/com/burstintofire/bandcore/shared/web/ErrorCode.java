@@ -58,7 +58,13 @@ public enum ErrorCode {
 	/** The invitation was sent to another email than the logged-in account's. */
 	INVITATION_EMAIL_MISMATCH,
 	/** The change would leave the band without an active admin. */
-	LAST_ADMIN;
+	LAST_ADMIN,
+
+	// Finance
+	/** Another category of the band already has this name (archived ones included). */
+	CATEGORY_NAME_TAKEN,
+	/** The category is used by expenses: archive it instead of deleting. */
+	CATEGORY_IN_USE;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {
