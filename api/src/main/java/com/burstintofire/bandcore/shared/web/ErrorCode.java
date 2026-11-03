@@ -74,7 +74,13 @@ public enum ErrorCode {
 	/** The action only applies to paid expenses (for example, changing who paid). */
 	EXPENSE_NOT_PAID,
 	/** Someone else changed the record since it was read: reload and try again. */
-	VERSION_CONFLICT;
+	VERSION_CONFLICT,
+	/** Custom amounts do not add up to the expense amount; {@code differenceCents} says by how much. */
+	SPLIT_SUM_MISMATCH,
+	/** Percentages do not add up to 100% (10000 basis points); see {@code differenceBasisPoints}. */
+	SPLIT_PERCENT_SUM,
+	/** The split has no members, repeats a member or misses a value its mode needs. */
+	SPLIT_INVALID;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {

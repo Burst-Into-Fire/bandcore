@@ -80,7 +80,7 @@ Every band is a tenant. Rules:
 - Amounts are stored as integers in the smallest unit of the currency (`amount_minor`), next to an ISO 4217 code in a `currency` column restricted to `BRL` and `USD` (RNF08).
 - Use a small `Money` value object in Java so arithmetic and currency checks live in one place.
 - Amounts in different currencies are never added together. Balances and totals are computed per currency (RN08).
-- Splitting rounds in minor units and assigns the remainder deterministically, so shares always add up to the total (RN01).
+- Splitting rounds in minor units and assigns the remainder deterministically, so shares always add up to the total (RN01). Expense shares are stored as a cents snapshot with the mode and inputs (equal, custom amounts or percentages); members are ordered by id as text before allocating, in the API and in the web app. A deferred constraint trigger checks at commit that the shares of every expense add up to its amount.
 
 ### Sales and stock
 

@@ -64,6 +64,10 @@ public class Expense extends AssignedIdEntity {
 	@Column
 	private String notes;
 
+	@Enumerated(EnumType.STRING)
+	@Column(name = "split_mode", nullable = false)
+	private SplitMode splitMode;
+
 	@Column(name = "created_by", nullable = false, updatable = false)
 	private UUID createdBy;
 
@@ -139,6 +143,10 @@ public class Expense extends AssignedIdEntity {
 		return notes;
 	}
 
+	public SplitMode getSplitMode() {
+		return splitMode;
+	}
+
 	public UUID getCreatedBy() {
 		return createdBy;
 	}
@@ -169,6 +177,10 @@ public class Expense extends AssignedIdEntity {
 		this.currency = newAmount.currency();
 		this.amountCents = newAmount.cents();
 		this.expenseDate = newExpenseDate;
+	}
+
+	void changeSplitMode(SplitMode newMode) {
+		this.splitMode = newMode;
 	}
 
 	void markPlanned() {

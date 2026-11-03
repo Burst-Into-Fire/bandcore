@@ -1,5 +1,8 @@
 package com.burstintofire.bandcore.shared.web;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
@@ -17,6 +20,8 @@ public class ApiException extends RuntimeException {
 	private final String field;
 
 	private final HttpHeaders headers = new HttpHeaders();
+
+	private final Map<String, Object> properties = new LinkedHashMap<>();
 
 	public ApiException(HttpStatus status, ErrorCode code, String detail) {
 		this(status, code, detail, null);
@@ -48,6 +53,16 @@ public class ApiException extends RuntimeException {
 
 	public ApiException withHeader(String name, String value) {
 		headers.add(name, value);
+		return this;
+	}
+
+	/** Extra Problem Details members, for example {@code differenceCents} of a split that does not add up. */
+	public Map<String, Object> properties() {
+		return properties;
+	}
+
+	public ApiException withProperty(String name, Object value) {
+		properties.put(name, value);
 		return this;
 	}
 
