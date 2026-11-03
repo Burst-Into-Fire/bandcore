@@ -1,5 +1,6 @@
 package com.burstintofire.bandcore.tenancy.member;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,5 +18,9 @@ public interface MemberRepository extends TenantRepository<Member, UUID> {
 	List<Member> findByBandIdOrderByDisplayNameAsc(UUID bandId);
 
 	Optional<Member> findByBandIdAndUserId(UUID bandId, UUID userId);
+
+	List<Member> findByBandIdAndIdIn(UUID bandId, Collection<UUID> ids);
+
+	List<Member> findByBandIdAndStatusOrderByIdAsc(UUID bandId, MemberStatus status);
 
 }

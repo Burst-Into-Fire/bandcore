@@ -61,9 +61,11 @@ class AuthorizationMatrixIT extends IntegrationTest {
 		ApiClient host = api.forBand("alpha");
 		String token = fixtures.login(host, "user@example.com");
 		UUID category = fixtures.category(band, "Gear");
+		// The expense uses another category, so the category under test can be deleted.
+		UUID expense = fixtures.plannedExpense(band, fixtures.category(band, "Travel"), "Ensaio", UUID.randomUUID());
 		var fixture = new AuthorizationMatrix.Fixture(Map.of("memberId", member.toString(), "userId", unlinked.toString(),
 				"invitationId", invitation.toString(), "membershipId", otherAdmin.toString(), "categoryId",
-				category.toString()));
+				category.toString(), "expenseId", expense.toString()));
 
 		ResponseEntity<String> response = host.send(rule.method(), rule.url(fixture), rule.body().apply(fixture),
 				headers -> headers.setBearerAuth(token));

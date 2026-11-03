@@ -24,6 +24,17 @@ public final class CurrentUser {
 		return get().map(AuthenticatedUser::userId);
 	}
 
+	/**
+	 * Whether the current request was granted a permission ({@link Permissions}). For checks on
+	 * top of {@code @PreAuthorize}, such as "admins edit anyone's records, members their own".
+	 */
+	public static boolean hasPermission(String permission) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		return authentication != null && authentication.getAuthorities()
+			.stream()
+			.anyMatch(authority -> permission.equals(authority.getAuthority()));
+	}
+
 	/** The authenticated user; Spring Security guarantees one on non-public endpoints. */
 	public static AuthenticatedUser require() {
 		return get().orElseThrow(() -> new IllegalStateException("No authenticated user"));

@@ -29,6 +29,9 @@ final class AuthorizationMatrix {
 
 	static final Set<Role> ADMIN_ONLY = EnumSet.of(ADMIN);
 
+	/** Roles that create expenses and change their own (finance:write). */
+	static final Set<Role> WRITERS = EnumSet.of(ADMIN, MEMBER);
+
 	/** Endpoints on band hosts (and any-host endpoints, checked on a band host). */
 	static final List<Rule> BAND = List.of(
 			rule(HttpMethod.GET, "/me", EVERY_ROLE),
@@ -61,7 +64,16 @@ final class AuthorizationMatrix {
 					fixture -> "{\"color\": \"#ff6b5a\"}"),
 			rule(HttpMethod.POST, "/expense-categories/{categoryId}/archive", ADMIN_ONLY),
 			rule(HttpMethod.POST, "/expense-categories/{categoryId}/unarchive", ADMIN_ONLY),
-			rule(HttpMethod.DELETE, "/expense-categories/{categoryId}", ADMIN_ONLY));
+			rule(HttpMethod.DELETE, "/expense-categories/{categoryId}", ADMIN_ONLY),
+			rule(HttpMethod.GET, "/expenses", EVERY_ROLE),
+			rule(HttpMethod.GET, "/expenses/{expenseId}", EVERY_ROLE),
+			rule(HttpMethod.POST, "/expenses", WRITERS, fixture -> """
+					{"description": "Ensaio", "categoryId": "%s", "currency": "BRL", "amountCents": 5000,
+					 "expenseDate": "2026-11-10", "status": "PLANNED"}""".formatted(fixture.pathVariables().get("categoryId"))),
+			// The fixture expense was created by someone else: members may only change their own.
+			rule(HttpMethod.PATCH, "/expenses/{expenseId}", ADMIN_ONLY,
+					fixture -> "{\"version\": 0, \"description\": \"Renamed\"}"),
+			rule(HttpMethod.DELETE, "/expenses/{expenseId}", ADMIN_ONLY));
 
 	/** Endpoints on the central host: any authenticated account, no role. */
 	static final List<Rule> CENTRAL = List.of(

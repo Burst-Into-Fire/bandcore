@@ -50,7 +50,16 @@ final class IsolationScenarios {
 			probe(HttpMethod.PATCH, "/expense-categories/{categoryId}", target -> "{\"name\": \"Taken over\"}"),
 			probe(HttpMethod.POST, "/expense-categories/{categoryId}/archive"),
 			probe(HttpMethod.POST, "/expense-categories/{categoryId}/unarchive"),
-			probe(HttpMethod.DELETE, "/expense-categories/{categoryId}"));
+			probe(HttpMethod.DELETE, "/expense-categories/{categoryId}"),
+			probe(HttpMethod.GET, "/expenses"),
+			probe(HttpMethod.GET, "/expenses/{expenseId}"),
+			probe(HttpMethod.POST, "/expenses", target -> """
+					{"description": "Intruder", "categoryId": "%s", "currency": "BRL", "amountCents": 100,
+					 "expenseDate": "2026-11-10", "status": "PAID", "paidByMemberId": "%s"}"""
+				.formatted(target.resources().get("categoryId"), target.resources().get("memberId"))),
+			probe(HttpMethod.PATCH, "/expenses/{expenseId}",
+					target -> "{\"version\": 0, \"description\": \"Taken over\"}"),
+			probe(HttpMethod.DELETE, "/expenses/{expenseId}"));
 
 	/** The band an attack aims at, and its resources by path variable name. */
 	record Target(String bandId, String slug, Map<String, String> resources) {

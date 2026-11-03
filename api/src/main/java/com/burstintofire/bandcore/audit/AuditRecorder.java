@@ -2,6 +2,7 @@ package com.burstintofire.bandcore.audit;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -22,6 +23,21 @@ public interface AuditRecorder {
 	 * @throws org.springframework.transaction.IllegalTransactionStateException outside a transaction
 	 */
 	void record(String action, String entityType, UUID entityId, Map<String, ?> changes);
+
+	/**
+	 * The {@code changes} between two snapshots of an entity: one {@link #change} entry per key
+	 * whose value differs, in the order of {@code after}.
+	 */
+	static Map<String, Object> diff(Map<String, ?> before, Map<String, ?> after) {
+		Map<String, Object> changes = new LinkedHashMap<>();
+		for (Map.Entry<String, ?> entry : after.entrySet()) {
+			Object previous = before.get(entry.getKey());
+			if (!Objects.equals(previous, entry.getValue())) {
+				changes.put(entry.getKey(), change(previous, entry.getValue()));
+			}
+		}
+		return changes;
+	}
 
 	/** A {@code changes} entry for a field that changed from one value to another. */
 	static Map<String, Object> change(Object from, Object to) {

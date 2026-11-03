@@ -38,6 +38,10 @@ spring:
       mail.smtp.connectiontimeout: 5000
       mail.smtp.timeout: 10000
       mail.smtp.writetimeout: 10000
+  jackson:
+    deserialization:
+      # Money is integer cents (ADR-0006): 10.5 in an integer field is an error, never 10.
+      accept-float-as-int: false
   jpa:
     open-in-view: false
     hibernate:
