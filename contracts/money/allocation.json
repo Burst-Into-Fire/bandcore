@@ -1,0 +1,26 @@
+{
+  "description": "Money allocation test vectors (largest remainder, ties to the lower index). Shared by api/src/test/java/com/burstintofire/bandcore/shared/money/AllocationVectorsTest.java and web/src/lib/allocation.test.ts, so the backend and the frontend agree on every cent. Amounts are integer cents; weights in byWeights are relative (basis points when they sum to 10000).",
+  "equal": [
+    { "name": "R$ 100,00 by 3 (M5-01 acceptance)", "totalCents": 10000, "parts": 3, "expected": [3334, 3333, 3333] },
+    { "name": "one cent by 3", "totalCents": 1, "parts": 3, "expected": [1, 0, 0] },
+    { "name": "two cents by 3", "totalCents": 2, "parts": 3, "expected": [1, 1, 0] },
+    { "name": "zero by 2", "totalCents": 0, "parts": 2, "expected": [0, 0] },
+    { "name": "single part", "totalCents": 100, "parts": 1, "expected": [100] },
+    { "name": "exact by 4", "totalCents": 1000, "parts": 4, "expected": [250, 250, 250, 250] },
+    { "name": "one left by 4", "totalCents": 1001, "parts": 4, "expected": [251, 250, 250, 250] },
+    { "name": "three left by 4", "totalCents": 1003, "parts": 4, "expected": [251, 251, 251, 250] },
+    { "name": "R$ 350,00 by 6", "totalCents": 35000, "parts": 6, "expected": [5834, 5834, 5833, 5833, 5833, 5833] }
+  ],
+  "byWeights": [
+    { "name": "half and half", "totalCents": 10000, "weights": [5000, 5000], "expected": [5000, 5000] },
+    { "name": "thirds of R$ 100,00 in basis points", "totalCents": 10000, "weights": [3333, 3333, 3334], "expected": [3333, 3333, 3334] },
+    { "name": "thirds of R$ 1,00 in basis points", "totalCents": 100, "weights": [3333, 3333, 3334], "expected": [33, 33, 34] },
+    { "name": "quarters", "totalCents": 1000, "weights": [2500, 2500, 2500, 2500], "expected": [250, 250, 250, 250] },
+    { "name": "largest remainders win", "totalCents": 999, "weights": [5000, 2500, 2500], "expected": [499, 250, 250] },
+    { "name": "one cent, tie goes to the first", "totalCents": 1, "weights": [5000, 5000], "expected": [1, 0] },
+    { "name": "tie between first and last", "totalCents": 12345, "weights": [7000, 2000, 1000], "expected": [8642, 2469, 1234] },
+    { "name": "zero weight gets nothing", "totalCents": 10000, "weights": [10000, 0], "expected": [10000, 0] },
+    { "name": "relative weights", "totalCents": 7, "weights": [1, 1, 1], "expected": [3, 2, 2] },
+    { "name": "uneven relative weights", "totalCents": 50, "weights": [1, 2, 3], "expected": [8, 17, 25] }
+  ]
+}

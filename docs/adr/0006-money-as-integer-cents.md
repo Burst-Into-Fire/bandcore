@@ -11,9 +11,10 @@ Floating point cannot represent most decimal amounts exactly (`0.1 + 0.2 != 0.3`
 ## Decision
 
 - Amounts are stored as `BIGINT` in the smallest unit of the currency (cents), next to an ISO 4217 currency code where more than one currency is possible.
-- In Java, a `Money` value object (M5-01) holds the amount and currency and does all arithmetic and allocation. Remainders are distributed deterministically, so parts always sum to the total.
+- In Java, a `Money` value object (`shared.money.Money`, M5-01) holds the amount and currency and does all arithmetic with overflow checks. `shared.money.Allocation` splits amounts with the largest remainder method; leftover cents go to the largest remainders and ties to the lower index, so parts always sum to the total and the same input always gives the same output.
+- The web app runs the same algorithm (`web/src/lib/allocation.ts`). Both sides are tested against the shared vectors in `contracts/money/allocation.json`, so they agree on every cent.
 - In TypeScript, amounts are integer `number`s of cents (safe up to 2^53). Formatting and parsing never go through floating point (`web/src/lib/money.ts`).
-- `float` and `double` are forbidden in the finance and merch packages (ArchUnit rule in `ArchitectureRulesTest`); `parseFloat` is forbidden in the web app (ESLint rule).
+- `float` and `double` are forbidden in `shared.money` and the finance and merch packages (ArchUnit rule in `ArchitectureRulesTest`); `parseFloat` is forbidden in the web app (ESLint rule).
 - Amounts in different currencies are never added together (RN08).
 
 ## Alternatives considered
