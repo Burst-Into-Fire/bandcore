@@ -24,5 +24,5 @@ Floating point cannot represent most decimal amounts exactly (`0.1 + 0.2 != 0.3`
 
 ## Consequences
 
-- The API exchanges amounts as integers (`amountCents`), so no client can introduce rounding.
+- The API exchanges amounts as integers (`amountCents`), so no client can introduce rounding. Jackson's `accept-float-as-int` is turned off, so `10.5` in an integer field is a 400, never a silently truncated `10`.
 - Display formatting (`R$ 3.500,00`) happens only at the edges.

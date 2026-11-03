@@ -4,7 +4,7 @@ Two append-only tables record who did what and when ([M3-03](../roadmap/M03-secu
 
 | Table | Scope | Written by | What |
 |---|---|---|---|
-| `audit_events` | Tenant table, row-level security | Any module, through `AuditRecorder` (audit module) | Changes to a band's data: `band.*`, `member.*` (created, updated, deactivated, activated, deleted, linked, unlinked), `invitation.*` (created, resent, revoked, accepted), `membership.*`, `expense_category.*` (created, updated, archived, unarchived, deleted); later expenses, sales and stock |
+| `audit_events` | Tenant table, row-level security | Any module, through `AuditRecorder` (audit module) | Changes to a band's data: `band.*`, `member.*` (created, updated, deactivated, activated, deleted, linked, unlinked), `invitation.*` (created, resent, revoked, accepted), `membership.*`, `expense_category.*` (created, updated, archived, unarchived, deleted), `expense.*` (created, updated with a field diff, deleted, with `soft_deleted` true for paid expenses); later sales and stock |
 | `security_events` | Global table, identity module | `SecurityEvents` (identity module) | Account events: signup, email verification, login success and failure, rate-limited logins, refresh token reuse, logout everywhere, password reset |
 
 ## Audit events
@@ -15,7 +15,7 @@ Call `AuditRecorder.record(action, entityType, entityId, changes)` inside the tr
 - The band is read from the transaction's row-level security context inside the `INSERT`, so a record can never be written to another band.
 - The actor is the authenticated user; the request id, client address and user agent come from the current request.
 - `action` is `entity.verb` in lowercase (`expense.created`); `changes` is a JSON object, for example `{"name": {"from": "A", "to": "B"}}` (use `AuditRecorder.change`).
-- **Never put passwords, tokens or personal data the trail does not need in `changes`.** Prefer ids and amounts over names and emails.
+- **Never put passwords, tokens or personal data the trail does not need in `changes`.** Prefer ids and amounts over names and emails. `AuditRecorder.diff(before, after)` builds the changes between two snapshots; free text such as expense notes is recorded as its length only.
 
 ## Security events
 

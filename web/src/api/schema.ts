@@ -360,6 +360,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Expenses of the current band, filtered and paginated
+         * @description Deleted expenses are not listed. Pages start at 0.
+         */
+        get: operations["listExpenses"];
+        put?: never;
+        /**
+         * Record a planned or paid expense
+         * @description 422 PAYER_REQUIRED when a paid expense has no payer, MEMBER_INACTIVE when the payer left the band, CATEGORY_ARCHIVED for an archived category.
+         */
+        post: operations["createExpense"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/expenses/{expenseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One expense of the current band */
+        get: operations["getExpense"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete an expense (own ones; admins any)
+         * @description Paid expenses are kept for the audit trail and leave lists and balances; planned ones are deleted.
+         */
+        delete: operations["deleteExpense"];
+        options?: never;
+        head?: never;
+        /**
+         * Change an expense (own ones; admins any)
+         * @description Send the version that was read: 409 VERSION_CONFLICT when someone else changed the expense meanwhile. Omitted fields are left unchanged; empty notes clear them.
+         */
+        patch: operations["updateExpense"];
+        trace?: never;
+    };
     "/invitations": {
         parameters: {
             query?: never;
@@ -675,6 +724,10 @@ export interface components {
             /** @enum {string} */
             role: "ADMIN" | "MEMBER" | "READ_ONLY";
         };
+        AccessResponse: {
+            delete: boolean;
+            edit: boolean;
+        };
         BandPublicProfile: {
             name: string;
             slug: string;
@@ -729,6 +782,33 @@ export interface components {
             color?: string;
             name: string;
         };
+        CreateExpenseRequest: {
+            /** Format: int64 */
+            amountCents: number;
+            /** Format: uuid */
+            categoryId: string;
+            /** @enum {string} */
+            currency: "BRL" | "USD";
+            description: string;
+            /**
+             * Format: date
+             * @description Future dates are allowed
+             */
+            expenseDate: string;
+            notes?: string;
+            /**
+             * Format: uuid
+             * @description Required when PAID; ignored when PLANNED
+             */
+            paidByMemberId?: string;
+            /**
+             * Format: date
+             * @description When PAID; defaults to the expense date
+             */
+            paidOn?: string;
+            /** @enum {string} */
+            status: "PLANNED" | "PAID";
+        };
         CreateInvitationRequest: {
             /** Format: email */
             email: string;
@@ -752,6 +832,39 @@ export interface components {
             slug: string;
             /** @example https://the-burst.bandcore.app */
             url: string;
+        };
+        ExpenseResponse: {
+            /** @description What the current user may do with this expense */
+            access: components["schemas"]["AccessResponse"];
+            /** Format: int64 */
+            amountCents: number;
+            /** Format: uuid */
+            categoryId: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            createdBy: string;
+            /** @enum {string} */
+            currency: "BRL" | "USD";
+            description: string;
+            /** Format: date */
+            expenseDate: string;
+            /** Format: uuid */
+            id: string;
+            notes?: string;
+            /** Format: uuid */
+            paidByMemberId?: string;
+            /** Format: date */
+            paidOn?: string;
+            /** @enum {string} */
+            status: "PLANNED" | "PAID";
+            /** Format: date-time */
+            updatedAt: string;
+            /**
+             * Format: int64
+             * @description Send it back when changing the expense
+             */
+            version: number;
         };
         HandoffExchangeRequest: {
             code: string;
@@ -840,6 +953,17 @@ export interface components {
             slug: string;
             url: string;
         };
+        PageResponseExpenseResponse: {
+            items: components["schemas"]["ExpenseResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
         PasswordResetConfirmation: {
             password: string;
             token: string;
@@ -905,6 +1029,34 @@ export interface components {
             /** @description #rrggbb; empty clears it */
             color?: string;
             name?: string;
+        };
+        UpdateExpenseRequest: {
+            /** Format: int64 */
+            amountCents?: number;
+            /** Format: uuid */
+            categoryId?: string;
+            /** @enum {string} */
+            currency?: "BRL" | "USD";
+            description?: string;
+            /** Format: date */
+            expenseDate?: string;
+            /** @description Empty clears them */
+            notes?: string;
+            /**
+             * Format: uuid
+             * @description Paid expenses only
+             */
+            paidByMemberId?: string;
+            /**
+             * Format: date
+             * @description Paid expenses only
+             */
+            paidOn?: string;
+            /**
+             * Format: int64
+             * @description The version that was read
+             */
+            version: number;
         };
         UpdateMemberRequest: {
             displayName?: string;
@@ -1400,6 +1552,134 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CategoryResponse"];
+                };
+            };
+        };
+    };
+    listExpenses: {
+        parameters: {
+            query?: {
+                /** @description yyyy-MM, by expense date */
+                month?: string;
+                status?: "PLANNED" | "PAID";
+                categoryId?: string;
+                /** @description The member who paid */
+                payerMemberId?: string;
+                currency?: "BRL" | "USD";
+                /** @description Text in the description */
+                q?: string;
+                sort?: "DATE_DESC" | "DATE_ASC" | "AMOUNT_DESC" | "AMOUNT_ASC" | "CREATED_DESC";
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseExpenseResponse"];
+                };
+            };
+        };
+    };
+    createExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateExpenseRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExpenseResponse"];
+                };
+            };
+        };
+    };
+    getExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                expenseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExpenseResponse"];
+                };
+            };
+        };
+    };
+    deleteExpense: {
+        parameters: {
+            query?: {
+                /** @description The version that was read; 409 VERSION_CONFLICT when it changed */
+                version?: number;
+            };
+            header?: never;
+            path: {
+                expenseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                expenseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateExpenseRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExpenseResponse"];
                 };
             };
         };

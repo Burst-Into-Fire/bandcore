@@ -24,6 +24,8 @@ Roles are per band: the same person can be `ADMIN` in one band and `READ_ONLY` i
 | Change band settings | Yes | No | No | `band:manage` |
 | View the audit trail | Yes | No | No | `audit:read` |
 
+An expense is a member's **own** when they created it or when the member (integrante) linked to their account paid it, so whoever pays a planned expense created by someone else can mark it as paid. Each expense in the API carries an `access` object with what the current user may do, so the web app does not repeat the rule.
+
 "Own only" and "open events only" are not permissions: the service checks them after the permission, and answers 404 (not 403) when the record belongs to someone else and must stay hidden, or 403 when it is visible but not editable.
 
 ## Permissions by role
@@ -60,6 +62,9 @@ Roles are per band: the same person can be `ADMIN` in one band and `READ_ONLY` i
 | `POST /api/memberships/leave` | band | Any role, except the last admin |
 | `GET /api/expense-categories` | band | `finance:read` |
 | `POST /api/expense-categories`, `PATCH`/`DELETE /api/expense-categories/{id}`, `POST /api/expense-categories/{id}/archive`, `/unarchive` | band | `finance:manage`; a category in use cannot be deleted (409 `CATEGORY_IN_USE`) |
+| `GET /api/expenses`, `GET /api/expenses/{id}` | band | `finance:read` |
+| `POST /api/expenses` | band | `finance:write` |
+| `PATCH`/`DELETE /api/expenses/{id}` | band | `finance:manage` (any), or `finance:write` on one's own expenses (403 otherwise) |
 | `POST /api/invitations/accept` | central | Any authenticated account whose verified email is the invited one |
 | `POST /api/invitations/preview` | central | Public (the token is the credential) |
 | `GET /api/me/bands`, `GET /api/bands/slug-availability`, `POST /api/bands` | central | Any authenticated account (creating a band also needs a verified email) |

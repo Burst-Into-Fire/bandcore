@@ -111,6 +111,23 @@ public class TestFixtures {
 		return id;
 	}
 
+	/** A planned expense of R$ 100,00 dated 2026-11-20, created by {@code createdBy}. */
+	public UUID plannedExpense(UUID bandId, UUID categoryId, String description, UUID createdBy) {
+		UUID id = UUID.randomUUID();
+		OwnerSql.inBand(bandId, """
+				INSERT INTO bandcore.expenses (id, band_id, description, category_id, currency, amount_cents,
+				    expense_date, status, created_by, created_at, updated_at)
+				VALUES ('%s', '%s', '%s', '%s', 'BRL', 10000, DATE '2026-11-20', 'PLANNED', '%s', now(), now())
+				""".formatted(id, bandId, description, categoryId, createdBy));
+		return id;
+	}
+
+	/** The member (integrante) linked to an account in a band. */
+	public UUID memberOf(UUID bandId, UUID userId) {
+		return UUID.fromString(OwnerSql.superuserQueryForString(
+				"SELECT id FROM bandcore.members WHERE band_id = '%s' AND user_id = '%s'".formatted(bandId, userId)));
+	}
+
 	/** Logs in through the API on the client's host and returns the access token. */
 	public String login(ApiClient client, String email) {
 		ResponseEntity<String> response = client.postJson("/api/auth/login",

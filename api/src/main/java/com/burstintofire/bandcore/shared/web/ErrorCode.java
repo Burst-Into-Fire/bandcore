@@ -64,7 +64,17 @@ public enum ErrorCode {
 	/** Another category of the band already has this name (archived ones included). */
 	CATEGORY_NAME_TAKEN,
 	/** The category is used by expenses: archive it instead of deleting. */
-	CATEGORY_IN_USE;
+	CATEGORY_IN_USE,
+	/** Archived categories cannot be chosen for new expenses or moved to. */
+	CATEGORY_ARCHIVED,
+	/** A paid expense needs the member who paid it. */
+	PAYER_REQUIRED,
+	/** Only active members can pay or share new expenses. */
+	MEMBER_INACTIVE,
+	/** The action only applies to paid expenses (for example, changing who paid). */
+	EXPENSE_NOT_PAID,
+	/** Someone else changed the record since it was read: reload and try again. */
+	VERSION_CONFLICT;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {
