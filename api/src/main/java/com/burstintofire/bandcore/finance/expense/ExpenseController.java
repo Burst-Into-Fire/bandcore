@@ -4,6 +4,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -82,7 +83,7 @@ class ExpenseController {
 	ResponseEntity<ExpenseResponse> create(@Valid @RequestBody CreateExpenseRequest request) {
 		Expenses.ExpenseDetails created = expenses.create(new Expenses.NewExpense(request.description(),
 				request.categoryId(), request.currency(), request.amountCents(), request.expenseDate(), request.status(),
-				request.paidByMemberId(), request.paidOn(), request.notes()));
+				request.paidByMemberId(), request.paidOn(), request.notes(), SplitBody.toRequest(request.split())));
 		return ResponseEntity.created(URI.create("/api/expenses/" + created.expense().getId()))
 			.body(ExpenseResponse.of(created));
 	}
@@ -95,7 +96,7 @@ class ExpenseController {
 		return ExpenseResponse.of(expenses.update(expenseId,
 				new Expenses.ExpenseChanges(request.version(), request.description(), request.categoryId(),
 						request.currency(), request.amountCents(), request.expenseDate(), request.paidByMemberId(),
-						request.paidOn(), request.notes())));
+						request.paidOn(), request.notes(), SplitBody.toRequest(request.split()))));
 	}
 
 	@DeleteMapping("/{expenseId}")
@@ -121,7 +122,9 @@ class ExpenseController {
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) @NotNull ExpenseStatus status,
 			@Schema(description = "Required when PAID; ignored when PLANNED") UUID paidByMemberId,
 			@Schema(description = "When PAID; defaults to the expense date") LocalDate paidOn,
-			@Size(max = Expense.MAX_NOTES_LENGTH) String notes) {
+			@Size(max = Expense.MAX_NOTES_LENGTH) String notes,
+			@Schema(description = "How to split it; by default equally among every active member") @Valid
+			SplitBody split) {
 	}
 
 	record UpdateExpenseRequest(
@@ -131,7 +134,57 @@ class ExpenseController {
 			UUID categoryId, Currency currency, @Positive @Max(Expense.MAX_AMOUNT_CENTS) Long amountCents,
 			LocalDate expenseDate, @Schema(description = "Paid expenses only") UUID paidByMemberId,
 			@Schema(description = "Paid expenses only") LocalDate paidOn,
-			@Schema(description = "Empty clears them") @Size(max = Expense.MAX_NOTES_LENGTH) String notes) {
+			@Schema(description = "Empty clears them") @Size(max = Expense.MAX_NOTES_LENGTH) String notes,
+			@Schema(description = "A new split. Without it, equal and percentage splits follow a new amount; "
+					+ "custom amounts must be sent again (422 SPLIT_SUM_MISMATCH otherwise).") @Valid SplitBody split) {
+	}
+
+	@Schema(description = "422 SPLIT_SUM_MISMATCH (with differenceCents) when custom amounts do not add up to the "
+			+ "expense amount, SPLIT_PERCENT_SUM (with differenceBasisPoints) when percentages do not add up to 10000, "
+			+ "SPLIT_INVALID for no or repeated members, MEMBER_INACTIVE for a member who left the band.")
+	record SplitBody(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) @NotNull SplitMode mode,
+			@Schema(description = "EQUAL: the members (none means every active member); CUSTOM_AMOUNTS: amountCents "
+					+ "per member; CUSTOM_PERCENTAGES: basisPoints per member") @Size(
+							max = 100) List<@Valid @NotNull ShareBody> shares) {
+
+		static Expenses.SplitRequest toRequest(SplitBody body) {
+			if (body == null) {
+				return null;
+			}
+			List<SplitCalculator.ShareInput> shares = body.shares() == null ? null
+					: body.shares()
+						.stream()
+						.map(share -> new SplitCalculator.ShareInput(share.memberId(), share.amountCents(),
+								share.basisPoints()))
+						.toList();
+			return new Expenses.SplitRequest(body.mode(), shares);
+		}
+
+	}
+
+	record ShareBody(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) @NotNull UUID memberId,
+			@Schema(description = "CUSTOM_AMOUNTS only") @PositiveOrZero @Max(Expense.MAX_AMOUNT_CENTS) Long amountCents,
+			@Schema(description = "CUSTOM_PERCENTAGES only; 10000 is 100%") @Min(0) @Max(10_000) Long basisPoints) {
+	}
+
+	record ShareResponse(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID memberId,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "This member's part, in cents")
+			long shareCents, @Schema(description = "The amount given, for CUSTOM_AMOUNTS") Long amountCents,
+			@Schema(description = "The percentage given, for CUSTOM_PERCENTAGES") Long basisPoints) {
+	}
+
+	record SplitResponse(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) SplitMode mode,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED,
+					description = "Sorted by member id; the shares add up to the amount") List<ShareResponse> shares) {
+
+		static SplitResponse of(Expense expense, List<ExpenseSplit> shares) {
+			return new SplitResponse(expense.getSplitMode(),
+					shares.stream()
+						.map(share -> new ShareResponse(share.getMemberId(), share.getShareCents(),
+								share.getInputCents(), share.getInputBasisPoints()))
+						.toList());
+		}
+
 	}
 
 	record AccessResponse(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean edit,
@@ -146,6 +199,7 @@ class ExpenseController {
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) LocalDate expenseDate,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) ExpenseStatus status, UUID paidByMemberId,
 			LocalDate paidOn, String notes,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) SplitResponse split,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID createdBy,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED,
 					description = "Send it back when changing the expense") long version,
@@ -158,7 +212,8 @@ class ExpenseController {
 			Expense expense = details.expense();
 			return new ExpenseResponse(expense.getId(), expense.getDescription(), expense.getCategoryId(),
 					expense.getCurrency(), expense.getAmountCents(), expense.getExpenseDate(), expense.getStatus(),
-					expense.getPaidByMemberId(), expense.getPaidOn(), expense.getNotes(), expense.getCreatedBy(),
+					expense.getPaidByMemberId(), expense.getPaidOn(), expense.getNotes(),
+					SplitResponse.of(expense, details.shares()), expense.getCreatedBy(),
 					expense.getVersion(), new AccessResponse(details.access().edit(), details.access().delete()),
 					expense.getCreatedAt(), expense.getUpdatedAt());
 		}

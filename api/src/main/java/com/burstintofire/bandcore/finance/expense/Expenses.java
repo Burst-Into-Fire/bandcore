@@ -3,11 +3,17 @@ package com.burstintofire.bandcore.finance.expense;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -30,31 +36,46 @@ import com.burstintofire.bandcore.shared.web.ErrorCode;
 import com.burstintofire.bandcore.tenancy.BandMembers;
 
 /**
- * Expenses of the current band. Everyone reads them; members with write access create them and
- * change their own (created by them, or paid by the member linked to their account); admins
- * change any. Every change is audited with a diff, and edits carry the version that was read.
+ * Expenses of the current band and how they are split. Everyone reads them; members with write
+ * access create them and change their own (created by them, or paid by the member linked to their
+ * account); admins change any. Every change is audited with a diff, and edits carry the version
+ * that was read. The shares of an expense always add up to its amount.
  */
 @Service
 public class Expenses {
 
-	/** What a create request says; nulls are refused by the controller except where noted. */
-	public record NewExpense(String description, UUID categoryId, Currency currency, long amountCents,
-			LocalDate expenseDate, ExpenseStatus status, UUID paidByMemberId, LocalDate paidOn, String notes) {
+	/**
+	 * How to split an expense. For {@link SplitMode#EQUAL}, no shares means every active member;
+	 * the other modes need a value per member.
+	 */
+	public record SplitRequest(SplitMode mode, List<SplitCalculator.ShareInput> shares) {
 	}
 
-	/** A partial update: null leaves a field unchanged; empty notes clear them. */
+	/** What a create request says; nulls are refused by the controller except where noted. */
+	public record NewExpense(String description, UUID categoryId, Currency currency, long amountCents,
+			LocalDate expenseDate, ExpenseStatus status, UUID paidByMemberId, LocalDate paidOn, String notes,
+			SplitRequest split) {
+	}
+
+	/**
+	 * A partial update: null leaves a field unchanged; empty notes clear them. Without a new split,
+	 * equal and percentage splits follow a new amount; custom amounts must be sent again.
+	 */
 	public record ExpenseChanges(long version, String description, UUID categoryId, Currency currency,
-			Long amountCents, LocalDate expenseDate, UUID paidByMemberId, LocalDate paidOn, String notes) {
+			Long amountCents, LocalDate expenseDate, UUID paidByMemberId, LocalDate paidOn, String notes,
+			SplitRequest split) {
 	}
 
 	/** What the current user may do with an expense. */
 	public record Access(boolean edit, boolean delete) {
 	}
 
-	public record ExpenseDetails(Expense expense, Access access) {
+	public record ExpenseDetails(Expense expense, List<ExpenseSplit> shares, Access access) {
 	}
 
 	private final ExpenseRepository expenses;
+
+	private final ExpenseSplitRepository splits;
 
 	private final ExpenseSearch search;
 
@@ -68,9 +89,11 @@ public class Expenses {
 
 	private final Clock clock;
 
-	Expenses(ExpenseRepository expenses, ExpenseSearch search, ExpenseCategoryRepository categories,
-			BandMembers members, AuditRecorder audit, IdGenerator ids, Clock clock) {
+	Expenses(ExpenseRepository expenses, ExpenseSplitRepository splits, ExpenseSearch search,
+			ExpenseCategoryRepository categories, BandMembers members, AuditRecorder audit, IdGenerator ids,
+			Clock clock) {
 		this.expenses = expenses;
+		this.splits = splits;
 		this.search = search;
 		this.categories = categories;
 		this.members = members;
@@ -83,7 +106,9 @@ public class Expenses {
 	@Transactional(readOnly = true)
 	public Page<ExpenseDetails> list(ExpenseSearch.Filter filter, ExpenseSearch.Sort sort, int page, int size) {
 		Ownership ownership = ownership();
-		return search.search(bandId(), filter, sort, page, size).map(expense -> details(expense, ownership));
+		Page<Expense> found = search.search(bandId(), filter, sort, page, size);
+		Map<UUID, List<ExpenseSplit>> shares = sharesOf(found.getContent().stream().map(Expense::getId).toList());
+		return found.map(expense -> details(expense, shares.getOrDefault(expense.getId(), List.of()), ownership));
 	}
 
 	/** A deleted expense, or another band's, answers 404. */
@@ -110,9 +135,14 @@ public class Expenses {
 		else {
 			expense.markPlanned();
 		}
+		SplitRequest split = input.split() != null ? input.split() : new SplitRequest(SplitMode.EQUAL, null);
+		List<SplitCalculator.Share> shares = SplitCalculator.compute(split.mode(), expense.getAmountCents(),
+				participants(split, Set.of()));
+		expense.changeSplitMode(split.mode());
 		expenses.saveAndFlush(expense);
-		audit.record("expense.created", "expense", expense.getId(), expense.snapshot());
-		return details(expense, ownership());
+		List<ExpenseSplit> saved = replaceShares(expense, shares);
+		audit.record("expense.created", "expense", expense.getId(), snapshot(expense, saved));
+		return new ExpenseDetails(expense, saved, access(expense, ownership()));
 	}
 
 	@PreAuthorize(Permissions.CAN_WRITE_FINANCE)
@@ -122,7 +152,8 @@ public class Expenses {
 		Ownership ownership = ownership();
 		requireOwnership(expense, ownership);
 		requireVersion(expense, changes.version());
-		Map<String, Object> before = expense.snapshot();
+		List<ExpenseSplit> current = sharesOf(List.of(expense.getId())).getOrDefault(expense.getId(), List.of());
+		Map<String, Object> before = snapshot(expense, current);
 
 		UUID categoryId = expense.getCategoryId();
 		if (changes.categoryId() != null && !changes.categoryId().equals(categoryId)) {
@@ -146,18 +177,36 @@ public class Expenses {
 			expense.markPaid(payer, changes.paidOn() != null ? changes.paidOn() : expense.getPaidOn());
 		}
 
-		Map<String, Object> diff = AuditRecorder.diff(before, expense.snapshot());
+		List<ExpenseSplit> after = current;
+		List<SplitCalculator.Share> currentShares = current.stream().map(ExpenseSplit::toShare).toList();
+		List<SplitCalculator.Share> newShares = null;
+		if (changes.split() != null) {
+			Set<UUID> sharing = current.stream().map(ExpenseSplit::getMemberId).collect(Collectors.toSet());
+			newShares = SplitCalculator.compute(changes.split().mode(), expense.getAmountCents(),
+					participants(changes.split(), sharing));
+			expense.changeSplitMode(changes.split().mode());
+		}
+		else if (sumOf(currentShares) != expense.getAmountCents()) {
+			// The amount changed: equal and percentage splits follow it, custom amounts must be resent.
+			newShares = SplitCalculator.compute(expense.getSplitMode(), expense.getAmountCents(),
+					SplitCalculator.inputsOf(currentShares));
+		}
+		if (newShares != null && !newShares.equals(currentShares)) {
+			after = replaceShares(expense, newShares);
+		}
+
+		Map<String, Object> diff = AuditRecorder.diff(before, snapshot(expense, after));
 		if (!diff.isEmpty()) {
 			expense.touch(clock.instant());
 			flush(expense);
 			audit.record("expense.updated", "expense", expense.getId(), diff);
 		}
-		return details(expense, ownership);
+		return new ExpenseDetails(expense, after, access(expense, ownership));
 	}
 
 	/**
 	 * Paid expenses are soft-deleted: they leave balances and lists but stay for the audit trail.
-	 * Planned expenses never moved money and are deleted.
+	 * Planned expenses never moved money and are deleted with their shares.
 	 */
 	@PreAuthorize(Permissions.CAN_WRITE_FINANCE)
 	@Transactional
@@ -174,6 +223,7 @@ public class Expenses {
 			changes.put("soft_deleted", true);
 		}
 		else {
+			splits.deleteByExpense(bandId(), expense.getId());
 			expenses.delete(expense);
 			expenses.flush();
 			changes.put("soft_deleted", false);
@@ -194,8 +244,16 @@ public class Expenses {
 	}
 
 	ExpenseDetails details(Expense expense, Ownership ownership) {
+		return details(expense, sharesOf(List.of(expense.getId())).getOrDefault(expense.getId(), List.of()), ownership);
+	}
+
+	ExpenseDetails details(Expense expense, List<ExpenseSplit> shares, Ownership ownership) {
+		return new ExpenseDetails(expense, shares, access(expense, ownership));
+	}
+
+	Access access(Expense expense, Ownership ownership) {
 		boolean owns = ownership.mayChange(expense);
-		return new ExpenseDetails(expense, new Access(owns, owns));
+		return new Access(owns, owns);
 	}
 
 	/** Visible but not theirs: 403, as docs/security/permissions.md says. */
@@ -238,6 +296,71 @@ public class Expenses {
 	static ApiException payerRequired() {
 		return new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, ErrorCode.PAYER_REQUIRED,
 				"Say which member paid this expense.", "paidByMemberId");
+	}
+
+	Map<String, Object> snapshot(Expense expense, List<ExpenseSplit> shares) {
+		Map<String, Object> snapshot = expense.snapshot();
+		snapshot.put("split_mode", expense.getSplitMode() == null ? null : expense.getSplitMode().name());
+		Map<String, Long> byMember = new TreeMap<>();
+		shares.forEach(share -> byMember.put(share.getMemberId().toString(), share.getShareCents()));
+		snapshot.put("shares", byMember);
+		return snapshot;
+	}
+
+	/**
+	 * The members of a split. Members already sharing the expense may stay even if they have left
+	 * the band since; new ones must be active members of this band (404 for unknown ids).
+	 */
+	private List<SplitCalculator.ShareInput> participants(SplitRequest split, Set<UUID> alreadySharing) {
+		if (split.mode() == SplitMode.EQUAL && (split.shares() == null || split.shares().isEmpty())) {
+			return members.activeMemberIds()
+				.stream()
+				.map(memberId -> new SplitCalculator.ShareInput(memberId, null, null))
+				.toList();
+		}
+		List<SplitCalculator.ShareInput> inputs = split.shares() == null ? List.of() : split.shares();
+		List<UUID> joining = inputs.stream()
+			.map(SplitCalculator.ShareInput::memberId)
+			.filter(memberId -> memberId != null && !alreadySharing.contains(memberId))
+			.distinct()
+			.toList();
+		Map<UUID, Boolean> status = members.activeStatus(joining);
+		for (UUID memberId : joining) {
+			Boolean active = status.get(memberId);
+			if (active == null) {
+				throw ApiException.notFound();
+			}
+			if (!active) {
+				throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, ErrorCode.MEMBER_INACTIVE,
+						"A member of this split has left the band.", "split");
+			}
+		}
+		return inputs;
+	}
+
+	/** Deletes and inserts in two flushes: the unique (expense, member) key would see both at once. */
+	private List<ExpenseSplit> replaceShares(Expense expense, List<SplitCalculator.Share> shares) {
+		splits.deleteByExpense(bandId(), expense.getId());
+		List<ExpenseSplit> saved = new ArrayList<>(shares.size());
+		for (SplitCalculator.Share share : shares) {
+			saved.add(splits.save(new ExpenseSplit(ids.newId(), bandId(), expense.getId(), share)));
+		}
+		splits.flush();
+		return List.copyOf(saved);
+	}
+
+	private Map<UUID, List<ExpenseSplit>> sharesOf(Collection<UUID> expenseIds) {
+		if (expenseIds.isEmpty()) {
+			return Map.of();
+		}
+		return splits.findByBandIdAndExpenseIdIn(bandId(), expenseIds)
+			.stream()
+			.sorted(Comparator.comparing(ExpenseSplit::getMemberId, SplitCalculator.MEMBER_ORDER))
+			.collect(Collectors.groupingBy(ExpenseSplit::getExpenseId));
+	}
+
+	private static long sumOf(List<SplitCalculator.Share> shares) {
+		return shares.stream().mapToLong(SplitCalculator.Share::shareCents).sum();
 	}
 
 	private UUID usableCategory(UUID categoryId) {

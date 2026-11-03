@@ -74,6 +74,7 @@ class ProblemDetailsExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(ApiException.class)
 	ResponseEntity<Object> handleApiException(ApiException ex, WebRequest request) {
 		ProblemDetail problem = Problems.of(ex.status(), ex.code(), ex.getMessage());
+		ex.properties().forEach(problem::setProperty);
 		if (ex.field() != null) {
 			problem.setProperty("errors",
 					List.of(Map.of("field", ex.field(), "code", ex.code().name(), "message", ex.getMessage())));

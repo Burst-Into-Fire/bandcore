@@ -64,7 +64,7 @@ An expense is a member's **own** when they created it or when the member (integr
 | `POST /api/expense-categories`, `PATCH`/`DELETE /api/expense-categories/{id}`, `POST /api/expense-categories/{id}/archive`, `/unarchive` | band | `finance:manage`; a category in use cannot be deleted (409 `CATEGORY_IN_USE`) |
 | `GET /api/expenses`, `GET /api/expenses/{id}` | band | `finance:read` |
 | `POST /api/expenses` | band | `finance:write` |
-| `PATCH`/`DELETE /api/expenses/{id}` | band | `finance:manage` (any), or `finance:write` on one's own expenses (403 otherwise) |
+| `PATCH`/`DELETE /api/expenses/{id}` | band | `finance:manage` (any), or `finance:write` on one's own expenses (403 otherwise). The split travels with the expense |
 | `POST /api/invitations/accept` | central | Any authenticated account whose verified email is the invited one |
 | `POST /api/invitations/preview` | central | Public (the token is the credential) |
 | `GET /api/me/bands`, `GET /api/bands/slug-availability`, `POST /api/bands` | central | Any authenticated account (creating a band also needs a verified email) |

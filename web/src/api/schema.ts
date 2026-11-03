@@ -806,6 +806,8 @@ export interface components {
              * @description When PAID; defaults to the expense date
              */
             paidOn?: string;
+            /** @description How to split it; by default equally among every active member */
+            split?: components["schemas"]["SplitBody"];
             /** @enum {string} */
             status: "PLANNED" | "PAID";
         };
@@ -856,6 +858,7 @@ export interface components {
             paidByMemberId?: string;
             /** Format: date */
             paidOn?: string;
+            split: components["schemas"]["SplitResponse"];
             /** @enum {string} */
             status: "PLANNED" | "PAID";
             /** Format: date-time */
@@ -983,6 +986,39 @@ export interface components {
             /** Format: email */
             email: string;
         };
+        ShareBody: {
+            /**
+             * Format: int64
+             * @description CUSTOM_AMOUNTS only
+             */
+            amountCents?: number;
+            /**
+             * Format: int64
+             * @description CUSTOM_PERCENTAGES only; 10000 is 100%
+             */
+            basisPoints?: number;
+            /** Format: uuid */
+            memberId: string;
+        };
+        ShareResponse: {
+            /**
+             * Format: int64
+             * @description The amount given, for CUSTOM_AMOUNTS
+             */
+            amountCents?: number;
+            /**
+             * Format: int64
+             * @description The percentage given, for CUSTOM_PERCENTAGES
+             */
+            basisPoints?: number;
+            /** Format: uuid */
+            memberId: string;
+            /**
+             * Format: int64
+             * @description This member's part, in cents
+             */
+            shareCents: number;
+        };
         SignupRequest: {
             displayName: string;
             /** Format: email */
@@ -998,6 +1034,19 @@ export interface components {
             reason?: "SLUG_INVALID" | "SLUG_RESERVED" | "SLUG_TAKEN";
             /** @description Normalized slug */
             slug: string;
+        };
+        /** @description 422 SPLIT_SUM_MISMATCH (with differenceCents) when custom amounts do not add up to the expense amount, SPLIT_PERCENT_SUM (with differenceBasisPoints) when percentages do not add up to 10000, SPLIT_INVALID for no or repeated members, MEMBER_INACTIVE for a member who left the band. */
+        SplitBody: {
+            /** @enum {string} */
+            mode: "EQUAL" | "CUSTOM_AMOUNTS" | "CUSTOM_PERCENTAGES";
+            /** @description EQUAL: the members (none means every active member); CUSTOM_AMOUNTS: amountCents per member; CUSTOM_PERCENTAGES: basisPoints per member */
+            shares?: components["schemas"]["ShareBody"][];
+        };
+        SplitResponse: {
+            /** @enum {string} */
+            mode: "EQUAL" | "CUSTOM_AMOUNTS" | "CUSTOM_PERCENTAGES";
+            /** @description Sorted by member id; the shares add up to the amount */
+            shares: components["schemas"]["ShareResponse"][];
         };
         StatusResponse: {
             /** @example UP */
@@ -1052,6 +1101,8 @@ export interface components {
              * @description Paid expenses only
              */
             paidOn?: string;
+            /** @description A new split. Without it, equal and percentage splits follow a new amount; custom amounts must be sent again (422 SPLIT_SUM_MISMATCH otherwise). */
+            split?: components["schemas"]["SplitBody"];
             /**
              * Format: int64
              * @description The version that was read
