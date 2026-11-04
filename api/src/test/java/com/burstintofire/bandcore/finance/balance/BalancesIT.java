@@ -120,6 +120,35 @@ class BalancesIT extends IntegrationTest {
 		assertThat(JsonPath.<List<Object>>read(response.getBody(), "$.currencies")).isEmpty();
 	}
 
+	@Test
+	void theMockupPlanIsThreeTransfersToTheVocalistAndRecordingThemSettlesEveryone() {
+		expense(270_000, "PAID", "BRL", "2026-11-05");
+
+		String plan = band.get("/api/balances/settlement-plan", headers -> headers.setBearerAuth(token)).getBody();
+
+		assertThat(JsonPath.<List<String>>read(plan, "$.currencies[*].currency")).containsExactly("BRL");
+		assertThat(JsonPath.<List<String>>read(plan, "$.currencies[0].transfers[*].toMemberId"))
+			.containsOnly(vocalist.toString())
+			.hasSize(3);
+		assertThat(JsonPath.<List<Integer>>read(plan, "$.currencies[0].transfers[*].amountCents"))
+			.containsExactly(67_500, 67_500, 67_500);
+		assertThat(JsonPath.<List<String>>read(plan, "$.currencies[0].transfers[*].fromMemberId"))
+			.containsExactlyInAnyOrder(guitar.toString(), bass.toString(), drums.toString());
+
+		List<String> from = JsonPath.read(plan, "$.currencies[0].transfers[*].fromMemberId");
+		for (String payer : from) {
+			ResponseEntity<String> recorded = band.postJson("/api/settlements", """
+					{"fromMemberId": "%s", "toMemberId": "%s", "currency": "BRL", "amountCents": 67500}"""
+				.formatted(payer, vocalist), headers -> headers.setBearerAuth(token));
+			assertThat(recorded.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+		}
+
+		assertThat(JsonPath.<List<Object>>read(band.get("/api/balances/settlement-plan",
+				headers -> headers.setBearerAuth(token)).getBody(), "$.currencies")).isEmpty();
+		assertThat(JsonPath.<List<String>>read(balances(""), "$.currencies[0].members[*].direction"))
+			.containsOnly("SETTLED");
+	}
+
 	private String expense(long cents, String status, String currency, String date) {
 		ResponseEntity<String> created = band.postJson("/api/expenses", """
 				{"description": "Estúdio", "categoryId": "%s", "currency": "%s", "amountCents": %d,

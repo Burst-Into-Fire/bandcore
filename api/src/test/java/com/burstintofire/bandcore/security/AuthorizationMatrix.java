@@ -80,6 +80,7 @@ final class AuthorizationMatrix {
 			rule(HttpMethod.POST, "/expenses/{expenseId}/revert-payment", ADMIN_ONLY, fixture -> "{}")
 				.with("expenseId", "paidExpenseId"),
 			rule(HttpMethod.GET, "/balances", EVERY_ROLE),
+			rule(HttpMethod.GET, "/balances/settlement-plan", EVERY_ROLE),
 			rule(HttpMethod.GET, "/settlements", EVERY_ROLE),
 			rule(HttpMethod.GET, "/settlements/{settlementId}", EVERY_ROLE),
 			rule(HttpMethod.POST, "/settlements", WRITERS, fixture -> """
