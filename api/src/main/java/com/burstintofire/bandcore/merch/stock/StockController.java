@@ -6,14 +6,21 @@ import java.util.UUID;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.burstintofire.bandcore.shared.web.PageResponse;
@@ -30,8 +37,11 @@ class StockController {
 
 	private final StockService stock;
 
-	StockController(StockService stock) {
+	private final StockAdjustments adjustments;
+
+	StockController(StockService stock, StockAdjustments adjustments) {
 		this.stock = stock;
+		this.adjustments = adjustments;
 	}
 
 	@GetMapping("/{variantId}/movements")
@@ -41,6 +51,26 @@ class StockController {
 			@RequestParam(defaultValue = "0") @PositiveOrZero @Max(MAX_PAGE) int page,
 			@RequestParam(defaultValue = "50") @Min(1) @Max(MAX_SIZE) int size) {
 		return PageResponse.of(stock.movements(variantId, page, size), StockMovementResponse::of);
+	}
+
+	@PostMapping("/{variantId}/adjustments")
+	@ResponseStatus(HttpStatus.CREATED)
+	@Operation(operationId = "adjustStock", summary = "Correct a variant's stock by hand, with a reason (admins)",
+			description = "Give the counted quantity or the change, not both; OTHER needs a note. The average unit cost "
+					+ "does not change. 409 INSUFFICIENT_STOCK when the stock would go below zero; 422 STOCK_UNCHANGED "
+					+ "when nothing would change. Archived variants can be adjusted too.")
+	StockMovementResponse adjust(@PathVariable UUID variantId, @Valid @RequestBody AdjustStockRequest request) {
+		return StockMovementResponse.of(adjustments.adjust(variantId, request.countedQuantity(),
+				request.quantityDelta(), request.reason(), request.note()));
+	}
+
+	record AdjustStockRequest(
+			@Schema(description = "The quantity found in a count") @PositiveOrZero @Max(
+					StockService.MAX_DELTA) Integer countedQuantity,
+			@Schema(description = "Units found (positive) or gone (negative)") @Min(-StockService.MAX_DELTA) @Max(
+					StockService.MAX_DELTA) Integer quantityDelta,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) @NotNull AdjustmentReason reason,
+			@Schema(description = "Required for OTHER") @Size(max = StockAdjustments.MAX_NOTE_LENGTH) String note) {
 	}
 
 	record StockMovementResponse(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id,

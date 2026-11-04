@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.SqlArrayValue;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -103,6 +104,18 @@ public class StockService {
 			LIMIT ? OFFSET ?
 			""";
 
+	private static final String MOVEMENT = """
+			SELECT id, type, quantity_delta, quantity_after, source_type, source_id, reason, note, actor_user_id,
+			    occurred_at
+			FROM stock_movements
+			WHERE band_id = ? AND id = ?
+			""";
+
+	private static final RowMapper<Movement> MOVEMENT_ROW = (rs, row) -> new Movement(rs.getObject(1, UUID.class),
+			MovementType.valueOf(rs.getString(2)), rs.getInt(3), rs.getInt(4), rs.getString(5),
+			rs.getObject(6, UUID.class), rs.getString(7), rs.getString(8), rs.getObject(9, UUID.class),
+			rs.getTimestamp(10).toInstant());
+
 	private static final String DRIFT = """
 			SELECT l.variant_id, l.quantity_on_hand, coalesce(sum(m.quantity_delta), 0)
 			FROM stock_levels l
@@ -144,6 +157,38 @@ public class StockService {
 			applied.add(record(type, change, source, null, null));
 		}
 		return applied;
+	}
+
+	/**
+	 * Corrects a variant's stock by hand (M7-05): to a counted quantity, or by a delta. The average
+	 * unit cost does not change (ADR-0009). Never below zero (409 INSUFFICIENT_STOCK); a change of
+	 * nothing is refused (422 STOCK_UNCHANGED). Archived variants can be adjusted too.
+	 *
+	 * @param countedQuantity the quantity found, or null when {@code delta} is given
+	 */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public Applied adjust(UUID variantId, Integer countedQuantity, Integer delta, AdjustmentReason reason,
+			String note) {
+		int change;
+		if (countedQuantity != null) {
+			Level level = lock(List.of(variantId)).get(variantId);
+			if (level == null) {
+				throw ApiException.notFound();
+			}
+			change = countedQuantity - level.quantityOnHand();
+		}
+		else {
+			change = delta;
+		}
+		if (change == 0) {
+			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, ErrorCode.STOCK_UNCHANGED,
+					"The stock already has this quantity.");
+		}
+		if (Math.abs(change) > MAX_DELTA) {
+			throw new ApiException(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED,
+					"An adjustment moves at most " + MAX_DELTA + " units.", "countedQuantity");
+		}
+		return record(MovementType.ADJUSTMENT, new Change(variantId, change), null, reason.name(), note);
 	}
 
 	/**
@@ -193,12 +238,17 @@ public class StockService {
 		}
 		Long total = jdbc.queryForObject("SELECT count(*) FROM stock_movements WHERE band_id = ? AND variant_id = ?",
 				Long.class, bandId(), variantId);
-		List<Movement> movements = jdbc.query(MOVEMENTS,
-				(rs, row) -> new Movement(rs.getObject(1, UUID.class), MovementType.valueOf(rs.getString(2)), rs.getInt(3),
-						rs.getInt(4), rs.getString(5), rs.getObject(6, UUID.class), rs.getString(7), rs.getString(8),
-						rs.getObject(9, UUID.class), rs.getTimestamp(10).toInstant()),
-				bandId(), variantId, size, (long) page * size);
+		List<Movement> movements = jdbc.query(MOVEMENTS, MOVEMENT_ROW, bandId(), variantId, size, (long) page * size);
 		return new PageImpl<>(movements, PageRequest.of(page, size), total == null ? 0 : total);
+	}
+
+	/** One movement of the current band, just recorded. */
+	@Transactional(readOnly = true)
+	public Movement movement(UUID movementId) {
+		return jdbc.query(MOVEMENT, MOVEMENT_ROW, bandId(), movementId)
+			.stream()
+			.findFirst()
+			.orElseThrow(ApiException::notFound);
 	}
 
 	/**
