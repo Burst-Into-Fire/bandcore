@@ -777,6 +777,55 @@ export interface paths {
         patch: operations["changeMembershipRole"];
         trace?: never;
     };
+    "/settlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Settlements of the current band, newest first
+         * @description Deleted settlements are not listed. Pages start at 0.
+         */
+        get: operations["listSettlements"];
+        put?: never;
+        /**
+         * Record that one member paid another
+         * @description Any member with write access records settlements between any two members, including members who left. 422 SETTLEMENT_SAME_MEMBER when both are the same member. Without paidOn, it is today in the band's time zone.
+         */
+        post: operations["createSettlement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settlements/{settlementId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One settlement of the current band */
+        get: operations["getSettlement"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a settlement (same rule as changing it)
+         * @description It leaves lists and balances and is kept for the audit trail.
+         */
+        delete: operations["deleteSettlement"];
+        options?: never;
+        head?: never;
+        /**
+         * Change a settlement (recorded by the user or between their member and someone; admins any)
+         * @description Send the version that was read: 409 VERSION_CONFLICT when it changed meanwhile. Omitted fields are left unchanged; an empty note clears it.
+         */
+        patch: operations["updateSettlement"];
+        trace?: never;
+    };
     "/status": {
         parameters: {
             query?: never;
@@ -915,6 +964,28 @@ export interface components {
             displayName: string;
             /** @example Vocal */
             instrument?: string;
+        };
+        CreateSettlementRequest: {
+            /** Format: int64 */
+            amountCents: number;
+            /** @enum {string} */
+            currency: "BRL" | "USD";
+            /**
+             * Format: uuid
+             * @description Who paid
+             */
+            fromMemberId: string;
+            note?: string;
+            /**
+             * Format: date
+             * @description Defaults to today in the band's time zone
+             */
+            paidOn?: string;
+            /**
+             * Format: uuid
+             * @description Who received
+             */
+            toMemberId: string;
         };
         CreatedBandResponse: {
             /** Format: uuid */
@@ -1090,6 +1161,17 @@ export interface components {
             /** Format: int32 */
             totalPages: number;
         };
+        PageResponseSettlementResponse: {
+            items: components["schemas"]["SettlementResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
         PasswordResetConfirmation: {
             password: string;
             token: string;
@@ -1125,6 +1207,36 @@ export interface components {
         ResendVerificationRequest: {
             /** Format: email */
             email: string;
+        };
+        SettlementAccessResponse: {
+            delete: boolean;
+            edit: boolean;
+        };
+        SettlementResponse: {
+            /** @description What the current user may do with this settlement */
+            access: components["schemas"]["SettlementAccessResponse"];
+            /** Format: int64 */
+            amountCents: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            createdBy: string;
+            /** @enum {string} */
+            currency: "BRL" | "USD";
+            /** Format: uuid */
+            fromMemberId: string;
+            /** Format: uuid */
+            id: string;
+            note?: string;
+            /** Format: date */
+            paidOn: string;
+            /** Format: uuid */
+            toMemberId: string;
+            /**
+             * Format: int64
+             * @description Send it back when changing the settlement
+             */
+            version: number;
         };
         ShareBody: {
             /**
@@ -1252,6 +1364,25 @@ export interface components {
         UpdateMemberRequest: {
             displayName?: string;
             instrument?: string;
+        };
+        UpdateSettlementRequest: {
+            /** Format: int64 */
+            amountCents?: number;
+            /** @enum {string} */
+            currency?: "BRL" | "USD";
+            /** Format: uuid */
+            fromMemberId?: string;
+            /** @description Empty clears it */
+            note?: string;
+            /** Format: date */
+            paidOn?: string;
+            /** Format: uuid */
+            toMemberId?: string;
+            /**
+             * Format: int64
+             * @description The version that was read
+             */
+            version: number;
         };
         VerifyEmailRequest: {
             token: string;
@@ -2436,6 +2567,129 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    listSettlements: {
+        parameters: {
+            query?: {
+                /** @description A member who sent or received */
+                memberId?: string;
+                currency?: "BRL" | "USD";
+                /** @description yyyy-MM, by payment date */
+                month?: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseSettlementResponse"];
+                };
+            };
+        };
+    };
+    createSettlement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSettlementRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SettlementResponse"];
+                };
+            };
+        };
+    };
+    getSettlement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                settlementId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SettlementResponse"];
+                };
+            };
+        };
+    };
+    deleteSettlement: {
+        parameters: {
+            query?: {
+                /** @description The version that was read; 409 VERSION_CONFLICT when it changed */
+                version?: number;
+            };
+            header?: never;
+            path: {
+                settlementId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateSettlement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                settlementId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSettlementRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SettlementResponse"];
+                };
             };
         };
     };

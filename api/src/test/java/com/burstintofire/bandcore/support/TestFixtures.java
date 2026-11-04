@@ -145,6 +145,17 @@ public class TestFixtures {
 		return id;
 	}
 
+	/** A settlement of R$ 50,00 paid on 2026-11-20, recorded by {@code createdBy}. */
+	public UUID settlement(UUID bandId, UUID fromMemberId, UUID toMemberId, String note, UUID createdBy) {
+		UUID id = UUID.randomUUID();
+		OwnerSql.inBand(bandId, """
+				INSERT INTO bandcore.settlements (id, band_id, from_member_id, to_member_id, currency, amount_cents,
+				    paid_on, note, created_by, created_at, updated_at)
+				VALUES ('%s', '%s', '%s', '%s', 'BRL', 5000, DATE '2026-11-20', '%s', '%s', now(), now())
+				""".formatted(id, bandId, fromMemberId, toMemberId, note, createdBy));
+		return id;
+	}
+
 	/** The member (integrante) linked to an account in a band. */
 	public UUID memberOf(UUID bandId, UUID userId) {
 		return UUID.fromString(OwnerSql.superuserQueryForString(

@@ -30,6 +30,14 @@ class BalanceLedger {
 			    FROM expense_splits s
 			    JOIN expenses e ON e.band_id = s.band_id AND e.id = s.expense_id
 			    WHERE s.band_id = ? AND e.status = 'PAID' AND e.deleted_at IS NULL AND e.paid_on <= ?
+			  UNION ALL
+			    SELECT t.from_member_id, t.currency, 0, 0, t.amount_cents, 0
+			    FROM settlements t
+			    WHERE t.band_id = ? AND t.deleted_at IS NULL AND t.paid_on <= ?
+			  UNION ALL
+			    SELECT t.to_member_id, t.currency, 0, 0, 0, t.amount_cents
+			    FROM settlements t
+			    WHERE t.band_id = ? AND t.deleted_at IS NULL AND t.paid_on <= ?
 			)
 			SELECT member_id, currency, sum(paid), sum(share), sum(sent), sum(received)
 			FROM ledger
@@ -47,7 +55,7 @@ class BalanceLedger {
 		return jdbc.query(TOTALS,
 				(rs, row) -> new MemberTotals(rs.getObject(1, UUID.class), Currency.valueOf(rs.getString(2)),
 						rs.getLong(3), rs.getLong(4), rs.getLong(5), rs.getLong(6)),
-				bandId, asOf, bandId, asOf);
+				bandId, asOf, bandId, asOf, bandId, asOf, bandId, asOf);
 	}
 
 }
