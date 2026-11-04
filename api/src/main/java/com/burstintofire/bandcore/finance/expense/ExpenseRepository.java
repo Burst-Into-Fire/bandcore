@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.Query;
 
+import com.burstintofire.bandcore.shared.money.Currency;
 import com.burstintofire.bandcore.shared.persistence.TenantRepository;
 
 /**
@@ -25,6 +26,19 @@ public interface ExpenseRepository extends TenantRepository<Expense, UUID> {
 			ORDER BY e.expenseDate, e.id
 			""")
 	List<Expense> findUpcoming(UUID bandId, LocalDate until, Limit limit);
+
+	/** One row per currency, category and status, for expenses dated within the range. */
+	record MonthTotal(Currency currency, UUID categoryId, ExpenseStatus status, long totalCents) {
+	}
+
+	@Query("""
+			SELECT new com.burstintofire.bandcore.finance.expense.ExpenseRepository$MonthTotal(
+			    e.currency, e.categoryId, e.status, sum(e.amountCents))
+			FROM Expense e
+			WHERE e.bandId = :bandId AND e.deletedAt IS NULL AND e.expenseDate BETWEEN :from AND :to
+			GROUP BY e.currency, e.categoryId, e.status
+			""")
+	List<MonthTotal> totalsBetween(UUID bandId, LocalDate from, LocalDate to);
 
 	default List<Expense> findUpcoming(UUID bandId, LocalDate until) {
 		return findUpcoming(bandId, until, Limit.of(100));
