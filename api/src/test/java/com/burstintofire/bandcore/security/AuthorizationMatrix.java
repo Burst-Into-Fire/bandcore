@@ -78,7 +78,8 @@ final class AuthorizationMatrix {
 			// Members may mark anyone's planned expense as paid by themselves (no payer: their own member).
 			rule(HttpMethod.POST, "/expenses/{expenseId}/pay", WRITERS, fixture -> "{}"),
 			rule(HttpMethod.POST, "/expenses/{expenseId}/revert-payment", ADMIN_ONLY, fixture -> "{}")
-				.with("expenseId", "paidExpenseId"));
+				.with("expenseId", "paidExpenseId"),
+			rule(HttpMethod.GET, "/balances", EVERY_ROLE));
 
 	/** Endpoints on the central host: any authenticated account, no role. */
 	static final List<Rule> CENTRAL = List.of(

@@ -63,7 +63,8 @@ final class IsolationScenarios {
 			probe(HttpMethod.GET, "/expenses/upcoming"),
 			probe(HttpMethod.POST, "/expenses/{expenseId}/pay",
 					target -> "{\"payerMemberId\": \"%s\"}".formatted(target.resources().get("memberId"))),
-			probe(HttpMethod.POST, "/expenses/{expenseId}/revert-payment", target -> "{\"version\": 0}"));
+			probe(HttpMethod.POST, "/expenses/{expenseId}/revert-payment", target -> "{\"version\": 0}"),
+			probe(HttpMethod.GET, "/balances"));
 
 	/** The band an attack aims at, and its resources by path variable name. */
 	record Target(String bandId, String slug, Map<String, String> resources) {

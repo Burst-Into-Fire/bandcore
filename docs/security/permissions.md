@@ -69,6 +69,7 @@ An expense is a member's **own** when they created it or when the member (integr
 | `GET /api/expenses/upcoming` | band | `finance:read` |
 | `POST /api/expenses/{id}/pay` | band | `finance:manage`, or `finance:write` on one's own expense, or on anyone's when paying it themselves |
 | `POST /api/expenses/{id}/revert-payment` | band | `finance:manage` |
+| `GET /api/balances` | band | `finance:read` |
 | `POST /api/invitations/accept` | central | Any authenticated account whose verified email is the invited one |
 | `POST /api/invitations/preview` | central | Public (the token is the credential) |
 | `GET /api/me/bands`, `GET /api/bands/slug-availability`, `POST /api/bands` | central | Any authenticated account (creating a band also needs a verified email) |

@@ -209,6 +209,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/balances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Each member's balance, per currency
+         * @description Balance = paid expenses the member paid − their shares of paid expenses + settlements sent − settlements received. Positive: the member receives; negative: the member owes. Each currency's balances add up to zero; currencies are never mixed. Only currencies with movements are listed. Members who left the band appear while their balance is not zero.
+         */
+        get: operations["getBalances"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/band": {
         parameters: {
             query?: never;
@@ -792,6 +812,11 @@ export interface components {
             /** @description Turn back into planned */
             revertPayment: boolean;
         };
+        BalancesResponse: {
+            /** Format: date */
+            asOf?: string;
+            currencies: components["schemas"]["CurrencyBalancesResponse"][];
+        };
         BandPublicProfile: {
             name: string;
             slug: string;
@@ -899,6 +924,12 @@ export interface components {
             /** @example https://the-burst.bandcore.app */
             url: string;
         };
+        CurrencyBalancesResponse: {
+            /** @enum {string} */
+            currency: "BRL" | "USD";
+            /** @description Who receives first, then who is settled, then who owes */
+            members: components["schemas"]["MemberBalanceResponse"][];
+        };
         ExpenseResponse: {
             /** @description What the current user may do with this expense */
             access: components["schemas"]["AccessResponse"];
@@ -980,6 +1011,32 @@ export interface components {
             emailVerified: boolean;
             /** Format: uuid */
             id: string;
+        };
+        MemberBalanceResponse: {
+            active: boolean;
+            /**
+             * Format: int64
+             * @description Positive: receives; negative: owes
+             */
+            balanceCents: number;
+            /** @enum {string} */
+            direction: "RECEIVES" | "OWES" | "SETTLED";
+            /** Format: uuid */
+            memberId: string;
+            /**
+             * Format: int64
+             * @description Paid expenses this member paid
+             */
+            paidCents: number;
+            /** Format: int64 */
+            receivedCents: number;
+            /** Format: int64 */
+            sentCents: number;
+            /**
+             * Format: int64
+             * @description This member's shares of paid expenses
+             */
+            shareCents: number;
         };
         MemberResponse: {
             displayName: string;
@@ -1450,6 +1507,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    getBalances: {
+        parameters: {
+            query?: {
+                /** @description Count only payments up to this date (inclusive) */
+                asOf?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BalancesResponse"];
+                };
             };
         };
     };
