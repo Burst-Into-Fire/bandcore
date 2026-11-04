@@ -71,6 +71,14 @@ public class Expense extends AssignedIdEntity {
 	@Column(name = "created_by", nullable = false, updatable = false)
 	private UUID createdBy;
 
+	/** What this expense pays for when another module created it, for example a production batch. */
+	@Enumerated(EnumType.STRING)
+	@Column(name = "source_type", updatable = false)
+	private ExpenseSourceType sourceType;
+
+	@Column(name = "source_id", updatable = false)
+	private UUID sourceId;
+
 	@Column(name = "deleted_at")
 	private Instant deletedAt;
 
@@ -97,6 +105,19 @@ public class Expense extends AssignedIdEntity {
 
 	public UUID getBandId() {
 		return bandId;
+	}
+
+	public ExpenseSourceType getSourceType() {
+		return sourceType;
+	}
+
+	public UUID getSourceId() {
+		return sourceId;
+	}
+
+	void linkTo(ExpenseSourceType type, UUID id) {
+		this.sourceType = type;
+		this.sourceId = id;
 	}
 
 	public String getDescription() {

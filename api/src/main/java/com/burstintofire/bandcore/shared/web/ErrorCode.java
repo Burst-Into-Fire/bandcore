@@ -112,7 +112,9 @@ public enum ErrorCode {
 	/** Stock of the batch's variants moved after it, so it can no longer be cancelled exactly. */
 	BATCH_HAS_LATER_MOVEMENTS,
 	/** The production batch is already cancelled. */
-	BATCH_CANCELLED;
+	BATCH_CANCELLED,
+	/** A production batch that costs nothing cannot become an expense. */
+	BATCH_COST_REQUIRED;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {
