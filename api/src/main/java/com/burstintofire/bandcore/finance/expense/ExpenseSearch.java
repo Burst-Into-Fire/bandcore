@@ -47,14 +47,22 @@ class ExpenseSearch {
 		this.entityManager = entityManager;
 	}
 
+	/** Deep enough for any band; the controller enforces the same limits. */
+	static final int MAX_PAGE = 10_000;
+
+	static final int MAX_SIZE = 100;
+
 	Page<Expense> search(UUID bandId, Filter filter, Sort sort, int page, int size) {
+		if (page < 0 || page > MAX_PAGE || size < 1 || size > MAX_SIZE) {
+			throw new IllegalArgumentException("Page " + page + " of size " + size + " is out of range");
+		}
 		CriteriaBuilder cb = entityManager.getCriteriaBuilder();
 
 		CriteriaQuery<Expense> query = cb.createQuery(Expense.class);
 		Root<Expense> expense = query.from(Expense.class);
 		query.select(expense).where(predicates(cb, expense, bandId, filter)).orderBy(order(cb, expense, sort));
 		List<Expense> items = entityManager.createQuery(query)
-			.setFirstResult(page * size)
+			.setFirstResult(Math.multiplyExact(page, size))
 			.setMaxResults(size)
 			.getResultList();
 

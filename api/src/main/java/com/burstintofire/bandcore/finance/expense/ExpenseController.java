@@ -44,8 +44,6 @@ import com.burstintofire.bandcore.shared.web.PageResponse;
 @Tag(name = "Expenses")
 class ExpenseController {
 
-	static final int MAX_PAGE_SIZE = 100;
-
 	private final Expenses expenses;
 
 	ExpenseController(Expenses expenses) {
@@ -64,8 +62,8 @@ class ExpenseController {
 			@Parameter(description = "Text in the description") @RequestParam(required = false) @Size(
 					max = 100) String q,
 			@RequestParam(defaultValue = "DATE_DESC") ExpenseSearch.Sort sort,
-			@RequestParam(defaultValue = "0") @PositiveOrZero @Max(10_000) int page,
-			@RequestParam(defaultValue = "50") @Min(1) @Max(MAX_PAGE_SIZE) int size) {
+			@RequestParam(defaultValue = "0") @PositiveOrZero @Max(ExpenseSearch.MAX_PAGE) int page,
+			@RequestParam(defaultValue = "50") @Min(1) @Max(ExpenseSearch.MAX_SIZE) int size) {
 		var filter = new ExpenseSearch.Filter(month, status, categoryId, payerMemberId, currency, q);
 		return PageResponse.of(expenses.list(filter, sort, page, size), ExpenseResponse::of);
 	}
