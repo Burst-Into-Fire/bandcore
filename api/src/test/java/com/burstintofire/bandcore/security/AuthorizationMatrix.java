@@ -104,7 +104,8 @@ final class AuthorizationMatrix {
 			rule(HttpMethod.POST, "/variants/{variantId}/archive", ADMIN_ONLY),
 			rule(HttpMethod.POST, "/variants/{variantId}/unarchive", ADMIN_ONLY),
 			// The fixture product has two variants, so the one under test may be deleted.
-			rule(HttpMethod.DELETE, "/variants/{variantId}", ADMIN_ONLY));
+			rule(HttpMethod.DELETE, "/variants/{variantId}", ADMIN_ONLY),
+			rule(HttpMethod.GET, "/variants/{variantId}/movements", EVERY_ROLE));
 
 	/** Endpoints on the central host: any authenticated account, no role. */
 	static final List<Rule> CENTRAL = List.of(

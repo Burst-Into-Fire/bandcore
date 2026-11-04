@@ -98,7 +98,11 @@ public enum ErrorCode {
 	/** The variant has stock history: archive it instead of deleting. */
 	VARIANT_HAS_HISTORY,
 	/** A product keeps at least one variant: delete the product instead. */
-	LAST_VARIANT;
+	LAST_VARIANT,
+	/** The product's currency cannot change once its variants have stock history. */
+	PRODUCT_CURRENCY_LOCKED,
+	/** The change would take a variant's stock below zero; {@code available} says what there is. */
+	INSUFFICIENT_STOCK;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {

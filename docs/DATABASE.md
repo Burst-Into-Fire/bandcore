@@ -12,7 +12,7 @@ Row-level security only protects data if the role the API uses neither owns the 
 | `bandcore_app` | The API at runtime (datasource) | `SELECT`, `INSERT`, `UPDATE`, `DELETE` on tables; nothing else. `NOSUPERUSER`, `NOBYPASSRLS`, owns nothing, cannot create objects |
 
 - Privileges for `bandcore_app` come from `ALTER DEFAULT PRIVILEGES` in the baseline migration, so every new table is usable automatically.
-- Append-only tables must `REVOKE UPDATE, DELETE, TRUNCATE ... FROM bandcore_app` in their migration. Today: `audit_events` and `security_events` ([audit log](security/audit-log.md)); later: stock movements.
+- Append-only tables must `REVOKE UPDATE, DELETE, TRUNCATE ... FROM bandcore_app` in their migration. Today: `audit_events` and `security_events` ([audit log](security/audit-log.md)), and `stock_movements` (see below).
 - Never use the owner or a superuser for the runtime connection, not even in tests.
 - `DatabaseRolesIT` proves all of the above on every build.
 
@@ -62,6 +62,8 @@ Every table that holds band data must have, in the same migration:
 
 **Rows that point to members.** Expenses, splits, sales and anything else that refers to a member must use a composite foreign key `(band_id, member_id) REFERENCES members (band_id, id)` with the default `ON DELETE NO ACTION`. Deleting a member with history then fails in the database, and the API answers 409 `MEMBER_HAS_HISTORY` so the admin deactivates the member instead (M4-01). Never use `ON DELETE CASCADE` or `SET NULL` there.
 
+**Rows that point to variants.** Stock movements, batch items and sale items refer to a product variant with the default `ON DELETE NO ACTION` too: a variant that ever moved stock cannot be deleted, and the API answers 409 `VARIANT_HAS_HISTORY` (or `PRODUCT_HAS_HISTORY`) so the admin archives it.
+
 The schema guard test (`SchemaGuardIT`) fails the build when a table misses any of these. Global tables (no `band_id`) must be added to its allowlist with a reason.
 
 Template:
@@ -85,6 +87,15 @@ CREATE POLICY expenses_band_isolation ON expenses
 ```
 
 `NULLIF(..., '')` makes an unset context compare with `NULL`, so the policy returns no rows and rejects every write instead of failing with a cast error.
+
+### Stock
+
+Stock can never go below zero (RN03), even when several phones sell the last unit at once ([M7-02](roadmap/M07-merch-catalog-stock.md)):
+
+- `stock_levels` holds the quantity on hand of each variant, with `CHECK (quantity_on_hand >= 0)` as the last line of defense.
+- `stock_movements` is append-only: every change, with its type, delta, the quantity it left, its source and who made it. `sequence` orders the movements of a variant.
+- Every change goes through the merch module's `StockService`, which updates the level and inserts the movement in one statement, and only when the result is not negative (`... WHERE quantity_on_hand + :delta >= 0`). Zero rows updated means insufficient stock (409 `INSUFFICIENT_STOCK`). Changes to several variants are applied in order of variant id, so they never wait for each other's locks in opposite orders.
+- `StockService.drift()` lists the variants whose quantity differs from the sum of their movements; the stock tests assert it stays empty.
 
 ## Row-level security at runtime
 

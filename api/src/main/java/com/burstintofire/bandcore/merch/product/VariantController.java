@@ -46,22 +46,20 @@ class VariantController {
 		Products.VariantDetails details = products.replaceVariant(variantId, request.version(),
 				new Products.VariantInput(request.size(), request.color(), request.sku(), request.priceCents(),
 						request.lowStockThreshold() == null ? 0 : request.lowStockThreshold()));
-		return ProductVariantResponse.of(details.product(), details.variant());
+		return ProductVariantResponse.of(details);
 	}
 
 	@PostMapping("/{variantId}/archive")
 	@Operation(operationId = "archiveVariant",
 			summary = "Archive a variant (admins): it stays on past records but can no longer be sold")
 	ProductVariantResponse archive(@PathVariable UUID variantId) {
-		Products.VariantDetails details = products.archiveVariant(variantId);
-		return ProductVariantResponse.of(details.product(), details.variant());
+		return ProductVariantResponse.of(products.archiveVariant(variantId));
 	}
 
 	@PostMapping("/{variantId}/unarchive")
 	@Operation(operationId = "unarchiveVariant", summary = "Bring an archived variant back (admins)")
 	ProductVariantResponse unarchive(@PathVariable UUID variantId) {
-		Products.VariantDetails details = products.unarchiveVariant(variantId);
-		return ProductVariantResponse.of(details.product(), details.variant());
+		return ProductVariantResponse.of(products.unarchiveVariant(variantId));
 	}
 
 	@DeleteMapping("/{variantId}")

@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.burstintofire.bandcore.merch.stock.StockService;
 import com.burstintofire.bandcore.shared.money.Currency;
 
 /** The merch catalog of the current band: products and their variants, prices in cents. */
@@ -110,7 +111,7 @@ class ProductController {
 			@Valid @RequestBody ProductVariantRequest request) {
 		Products.VariantDetails created = products.addVariant(productId, VariantController.input(request));
 		return ResponseEntity.created(URI.create("/api/variants/" + created.variant().getId()))
-			.body(ProductVariantResponse.of(created.product(), created.variant()));
+			.body(ProductVariantResponse.of(created));
 	}
 
 	record CreateProductRequest(
@@ -149,14 +150,23 @@ class ProductController {
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED,
 					description = "What a sale charges: the variant's price or the product's") long effectivePriceCents,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) int lowStockThreshold,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) int quantityOnHand,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED,
+					description = "Quantity on hand at or below the low-stock threshold") boolean lowStock,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean archived,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED,
 					description = "Send it back when changing the variant") long version) {
 
-		static ProductVariantResponse of(Product product, ProductVariant variant) {
+		static ProductVariantResponse of(Products.VariantDetails details) {
+			return of(details.product(), details.variant(), details.stock());
+		}
+
+		static ProductVariantResponse of(Product product, ProductVariant variant, StockService.Level stock) {
+			int onHand = stock == null ? 0 : stock.quantityOnHand();
 			return new ProductVariantResponse(variant.getId(), variant.getProductId(), variant.getSize(),
 					variant.getColor(), variant.getSku(), variant.getPriceCents(), variant.effectivePriceCents(product),
-					variant.getLowStockThreshold(), variant.isArchived(), variant.getVersion());
+					variant.getLowStockThreshold(), onHand, onHand <= variant.getLowStockThreshold(), variant.isArchived(),
+					variant.getVersion());
 		}
 
 	}
@@ -176,7 +186,10 @@ class ProductController {
 			Product product = details.product();
 			return new ProductResponse(product.getId(), product.getName(), product.getDescription(),
 					product.getCurrency(), product.getDefaultPriceCents(), product.isArchived(), product.getVersion(),
-					details.variants().stream().map(variant -> ProductVariantResponse.of(product, variant)).toList(),
+					details.variants()
+						.stream()
+						.map(variant -> ProductVariantResponse.of(product, variant, details.stockOf(variant)))
+						.toList(),
 					product.getCreatedAt());
 		}
 

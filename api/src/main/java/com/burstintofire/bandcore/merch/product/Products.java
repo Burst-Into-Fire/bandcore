@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.burstintofire.bandcore.audit.AuditRecorder;
+import com.burstintofire.bandcore.merch.stock.StockService;
 import com.burstintofire.bandcore.shared.id.IdGenerator;
 import com.burstintofire.bandcore.shared.money.Currency;
 import com.burstintofire.bandcore.shared.security.CurrentUser;
@@ -50,12 +51,17 @@ public class Products {
 			Long defaultPriceCents) {
 	}
 
-	/** A product with its variants in display order. */
-	public record ProductDetails(Product product, List<ProductVariant> variants) {
+	/** A product with its variants in display order, and their stock by variant id. */
+	public record ProductDetails(Product product, List<ProductVariant> variants, Map<UUID, StockService.Level> stock) {
+
+		public StockService.Level stockOf(ProductVariant variant) {
+			return stock.get(variant.getId());
+		}
+
 	}
 
-	/** A variant with the product it belongs to, for its effective price and currency. */
-	public record VariantDetails(Product product, ProductVariant variant) {
+	/** A variant with the product it belongs to (for its effective price and currency) and its stock. */
+	public record VariantDetails(Product product, ProductVariant variant, StockService.Level stock) {
 	}
 
 	/** Which products a listing includes. */
@@ -79,16 +85,19 @@ public class Products {
 
 	private final ProductVariantRepository variants;
 
+	private final StockService stock;
+
 	private final AuditRecorder audit;
 
 	private final IdGenerator ids;
 
 	private final Clock clock;
 
-	Products(ProductRepository products, ProductVariantRepository variants, AuditRecorder audit, IdGenerator ids,
-			Clock clock) {
+	Products(ProductRepository products, ProductVariantRepository variants, StockService stock, AuditRecorder audit,
+			IdGenerator ids, Clock clock) {
 		this.products = products;
 		this.variants = variants;
+		this.stock = stock;
 		this.audit = audit;
 		this.ids = ids;
 		this.clock = clock;
@@ -100,6 +109,8 @@ public class Products {
 		Map<UUID, List<ProductVariant>> byProduct = variants.findByBandId(bandId())
 			.stream()
 			.collect(Collectors.groupingBy(ProductVariant::getProductId, LinkedHashMap::new, Collectors.toList()));
+		Map<UUID, StockService.Level> levels = stock
+			.levels(byProduct.values().stream().flatMap(List::stream).map(ProductVariant::getId).toList());
 		List<ProductDetails> details = new ArrayList<>();
 		for (Product product : products.findByBandId(bandId())) {
 			List<ProductVariant> own = byProduct.getOrDefault(product.getId(), List.of());
@@ -109,7 +120,7 @@ public class Products {
 					continue;
 				}
 			}
-			details.add(new ProductDetails(product, own));
+			details.add(new ProductDetails(product, own, levels));
 		}
 		return details;
 	}
@@ -138,7 +149,8 @@ public class Products {
 		for (int position = 0; position < requested.size(); position++) {
 			created.add(addVariant(product, requested.get(position), position, "variants[" + position + "]", now));
 		}
-		return new ProductDetails(product, created);
+		return new ProductDetails(product, created,
+				stock.levels(created.stream().map(ProductVariant::getId).toList()));
 	}
 
 	@PreAuthorize(Permissions.CAN_MANAGE_MERCH)
@@ -147,6 +159,11 @@ public class Products {
 		Product product = find(productId);
 		requireVersion(product.getVersion(), changes.version());
 		Map<String, Object> before = product.snapshot();
+		if (changes.currency() != null && changes.currency() != product.getCurrency() && stock.anyMovements(
+				variants.findByBandIdAndProductId(bandId(), product.getId()).stream().map(ProductVariant::getId).toList())) {
+			throw new ApiException(HttpStatus.CONFLICT, ErrorCode.PRODUCT_CURRENCY_LOCKED,
+					"The product's stock has a cost in its currency, which can no longer change.", "currency");
+		}
 		String name = changes.name() != null ? changes.name().strip() : product.getName();
 		if (!name.equals(product.getName())) {
 			ensureNameFree(name, product.getId());
@@ -214,7 +231,7 @@ public class Products {
 		Product product = find(productId);
 		ProductVariant variant = addVariant(product, input, variants.nextPosition(bandId(), product.getId()), null,
 				clock.instant());
-		return new VariantDetails(product, variant);
+		return variantDetails(product, variant);
 	}
 
 	/** Replaces every value of a variant; send them all. */
@@ -231,7 +248,7 @@ public class Products {
 			flush(variant);
 			audit.record("product_variant.updated", "product_variant", variant.getId(), diff);
 		}
-		return new VariantDetails(productOf(variant), variant);
+		return variantDetails(productOf(variant), variant);
 	}
 
 	@PreAuthorize(Permissions.CAN_MANAGE_MERCH)
@@ -243,7 +260,7 @@ public class Products {
 			flush(variant);
 			audit.record("product_variant.archived", "product_variant", variant.getId(), Map.of());
 		}
-		return new VariantDetails(productOf(variant), variant);
+		return variantDetails(productOf(variant), variant);
 	}
 
 	@PreAuthorize(Permissions.CAN_MANAGE_MERCH)
@@ -255,7 +272,7 @@ public class Products {
 			flush(variant);
 			audit.record("product_variant.unarchived", "product_variant", variant.getId(), Map.of());
 		}
-		return new VariantDetails(productOf(variant), variant);
+		return variantDetails(productOf(variant), variant);
 	}
 
 	/**
@@ -288,6 +305,7 @@ public class Products {
 		ProductVariant variant = new ProductVariant(ids.newId(), bandId(), product.getId(), position, now);
 		apply(variant, input, field);
 		save(variant);
+		stock.open(variant.getId());
 		audit.record("product_variant.created", "product_variant", variant.getId(), variant.snapshot());
 		return variant;
 	}
@@ -323,7 +341,12 @@ public class Products {
 	}
 
 	private ProductDetails details(Product product) {
-		return new ProductDetails(product, variants.findByBandIdAndProductId(bandId(), product.getId()));
+		List<ProductVariant> own = variants.findByBandIdAndProductId(bandId(), product.getId());
+		return new ProductDetails(product, own, stock.levels(own.stream().map(ProductVariant::getId).toList()));
+	}
+
+	private VariantDetails variantDetails(Product product, ProductVariant variant) {
+		return new VariantDetails(product, variant, stock.levels(List.of(variant.getId())).get(variant.getId()));
 	}
 
 	private Product find(UUID productId) {
