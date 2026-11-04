@@ -187,6 +187,14 @@ class TenantIsolationIT extends IntegrationTest {
 
 		UUID bravoSettlement;
 
+		UUID alphaProduct;
+
+		UUID bravoProduct;
+
+		UUID alphaVariant;
+
+		UUID bravoVariant;
+
 		ApiClient alphaHost;
 
 		ApiClient bravoHost;
@@ -225,6 +233,12 @@ class TenantIsolationIT extends IntegrationTest {
 					"Alpha pix", alphaAdmin);
 			world.bravoSettlement = fixtures.settlement(world.bravo, world.bravoMember, world.bravoOtherMember,
 					"Bravo secret pix", world.bravoAdmin);
+			world.alphaProduct = fixtures.product(world.alpha, "Alpha shirt");
+			world.alphaVariant = fixtures.variant(world.alpha, world.alphaProduct, "M");
+			fixtures.variant(world.alpha, world.alphaProduct, "G");
+			world.bravoProduct = fixtures.product(world.bravo, "Bravo secret shirt");
+			world.bravoVariant = fixtures.variant(world.bravo, world.bravoProduct, "BravoSecretSize");
+			fixtures.variant(world.bravo, world.bravoProduct, "G");
 			world.alphaInvitation = fixtures.invitation(world.alpha, "alpha.invited@example.com", "MEMBER", alphaAdmin).id();
 			world.bravoInvitation = fixtures.invitation(world.bravo, "bravo.invited.secret@example.com", "ADMIN",
 					world.bravoAdmin).id();
@@ -238,18 +252,24 @@ class TenantIsolationIT extends IntegrationTest {
 
 		IsolationScenarios.Target bravoTarget() {
 			return new IsolationScenarios.Target(bravo.toString(), "bravo-secret",
-					Map.of("memberId", bravoMember.toString(), "userId", bravoAdmin.toString(), "invitationId",
-							bravoInvitation.toString(), "membershipId", bravoAdminMembership.toString(), "categoryId",
-							bravoCategory.toString(), "expenseId", bravoExpense.toString(), "settlementId",
-							bravoSettlement.toString(), "otherMemberId", bravoOtherMember.toString()));
+					Map.ofEntries(Map.entry("memberId", bravoMember.toString()), Map.entry("userId", bravoAdmin.toString()),
+							Map.entry("invitationId", bravoInvitation.toString()),
+							Map.entry("membershipId", bravoAdminMembership.toString()),
+							Map.entry("categoryId", bravoCategory.toString()), Map.entry("expenseId", bravoExpense.toString()),
+							Map.entry("settlementId", bravoSettlement.toString()),
+							Map.entry("otherMemberId", bravoOtherMember.toString()),
+							Map.entry("productId", bravoProduct.toString()), Map.entry("variantId", bravoVariant.toString())));
 		}
 
 		IsolationScenarios.Target alphaTarget() {
 			return new IsolationScenarios.Target(alpha.toString(), "alpha",
-					Map.of("memberId", alphaMember.toString(), "userId", alphaAdmin.toString(), "invitationId",
-							alphaInvitation.toString(), "membershipId", alphaAdminMembership.toString(), "categoryId",
-							alphaCategory.toString(), "expenseId", alphaExpense.toString(), "settlementId",
-							alphaSettlement.toString(), "otherMemberId", alphaOtherMember.toString()));
+					Map.ofEntries(Map.entry("memberId", alphaMember.toString()), Map.entry("userId", alphaAdmin.toString()),
+							Map.entry("invitationId", alphaInvitation.toString()),
+							Map.entry("membershipId", alphaAdminMembership.toString()),
+							Map.entry("categoryId", alphaCategory.toString()), Map.entry("expenseId", alphaExpense.toString()),
+							Map.entry("settlementId", alphaSettlement.toString()),
+							Map.entry("otherMemberId", alphaOtherMember.toString()),
+							Map.entry("productId", alphaProduct.toString()), Map.entry("variantId", alphaVariant.toString())));
 		}
 
 		/** Strings that must never appear in a response to band A's requests. */
@@ -258,7 +278,8 @@ class TenantIsolationIT extends IntegrationTest {
 					bravoAdmin.toString(), "bravo.admin@example.com", bravoInvitation.toString(),
 					"bravo.invited.secret@example.com", bravoCategory.toString(), "Bravo secret category", bravoExpense.toString(),
 					"Bravo secret expense", bravoSettlement.toString(), "Bravo secret pix", bravoOtherMember.toString(),
-					"Bete Bravo Secreta");
+					"Bete Bravo Secreta", bravoProduct.toString(), "Bravo secret shirt", bravoVariant.toString(),
+					"BravoSecretSize");
 		}
 
 	}

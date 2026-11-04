@@ -73,6 +73,9 @@ An expense is a member's **own** when they created it or when the member (integr
 | `GET /api/settlements`, `GET /api/settlements/{id}` | band | `finance:read` |
 | `POST /api/settlements` | band | `finance:write` (between any two members of the band, including members who left) |
 | `PATCH`/`DELETE /api/settlements/{id}` | band | `finance:manage` (any), or `finance:write` on settlements the user recorded or whose member is one of the two parties (403 otherwise) |
+| `GET /api/products`, `GET /api/products/{id}` | band | `merch:read` (`?status=ACTIVE` leaves out archived products and variants) |
+| `POST /api/products`, `PATCH`/`DELETE /api/products/{id}`, `POST /api/products/{id}/archive`, `/unarchive`, `POST /api/products/{id}/variants` | band | `merch:manage`; a product with stock history cannot be deleted (409 `PRODUCT_HAS_HISTORY`) |
+| `PUT`/`DELETE /api/variants/{id}`, `POST /api/variants/{id}/archive`, `/unarchive` | band | `merch:manage`; a variant with stock history (409 `VARIANT_HAS_HISTORY`) or the only variant of a product (409 `LAST_VARIANT`) cannot be deleted |
 | `POST /api/invitations/accept` | central | Any authenticated account whose verified email is the invited one |
 | `POST /api/invitations/preview` | central | Public (the token is the credential) |
 | `GET /api/me/bands`, `GET /api/bands/slug-availability`, `POST /api/bands` | central | Any authenticated account (creating a band also needs a verified email) |

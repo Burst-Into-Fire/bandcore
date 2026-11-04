@@ -69,10 +69,16 @@ class AuthorizationMatrixIT extends IntegrationTest {
 		UUID payer = fixtures.member(band, "Caio");
 		UUID payee = fixtures.member(band, "Dani");
 		UUID settlement = fixtures.settlement(band, payer, payee, "Pix", UUID.randomUUID());
-		var fixture = new AuthorizationMatrix.Fixture(Map.of("memberId", member.toString(), "userId", unlinked.toString(),
-				"invitationId", invitation.toString(), "membershipId", otherAdmin.toString(), "categoryId",
-				category.toString(), "expenseId", expense.toString(), "paidExpenseId", paidExpense.toString(),
-				"settlementId", settlement.toString(), "payerId", payer.toString(), "payeeId", payee.toString()));
+		UUID product = fixtures.product(band, "Camiseta");
+		UUID variant = fixtures.variant(band, product, "M");
+		fixtures.variant(band, product, "G");
+		var fixture = new AuthorizationMatrix.Fixture(Map.ofEntries(Map.entry("memberId", member.toString()),
+				Map.entry("userId", unlinked.toString()), Map.entry("invitationId", invitation.toString()),
+				Map.entry("membershipId", otherAdmin.toString()), Map.entry("categoryId", category.toString()),
+				Map.entry("expenseId", expense.toString()), Map.entry("paidExpenseId", paidExpense.toString()),
+				Map.entry("settlementId", settlement.toString()), Map.entry("payerId", payer.toString()),
+				Map.entry("payeeId", payee.toString()), Map.entry("productId", product.toString()),
+				Map.entry("variantId", variant.toString())));
 
 		ResponseEntity<String> response = host.send(rule.method(), rule.url(fixture), rule.body().apply(fixture),
 				headers -> headers.setBearerAuth(token));
