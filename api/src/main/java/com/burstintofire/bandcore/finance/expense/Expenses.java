@@ -129,8 +129,26 @@ public class Expenses {
 	@PreAuthorize(Permissions.CAN_WRITE_FINANCE)
 	@Transactional
 	public ExpenseDetails create(NewExpense input) {
+		return create(input, null, null);
+	}
+
+	/**
+	 * Creates the expense that pays for another module's record, for example a production batch
+	 * (M7-04), in that record's transaction. One expense per source, ever: the unique index
+	 * refuses a second one even when the first was deleted.
+	 */
+	@PreAuthorize(Permissions.CAN_WRITE_FINANCE)
+	@Transactional
+	public ExpenseDetails createFromSource(ExpenseSourceType sourceType, UUID sourceId, NewExpense input) {
+		return create(input, sourceType, sourceId);
+	}
+
+	private ExpenseDetails create(NewExpense input, ExpenseSourceType sourceType, UUID sourceId) {
 		Instant now = clock.instant();
 		Expense expense = new Expense(ids.newId(), bandId(), CurrentUser.require().userId(), now);
+		if (sourceType != null) {
+			expense.linkTo(sourceType, sourceId);
+		}
 		expense.describe(input.description().strip(), usableCategory(input.categoryId()), blankToNull(input.notes()));
 		expense.changeAmount(Money.of(input.amountCents(), input.currency()), input.expenseDate());
 		if (input.status() == ExpenseStatus.PAID) {
@@ -149,7 +167,12 @@ public class Expenses {
 		expense.changeSplitMode(split.mode());
 		expenses.saveAndFlush(expense);
 		List<ExpenseSplit> saved = replaceShares(expense, shares);
-		audit.record("expense.created", "expense", expense.getId(), snapshot(expense, saved));
+		Map<String, Object> created = snapshot(expense, saved);
+		if (sourceType != null) {
+			created.put("source_type", sourceType.name());
+			created.put("source_id", sourceId.toString());
+		}
+		audit.record("expense.created", "expense", expense.getId(), created);
 		return details(expense, saved, ownership());
 	}
 

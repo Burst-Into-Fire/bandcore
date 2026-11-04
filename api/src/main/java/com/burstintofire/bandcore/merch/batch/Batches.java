@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.burstintofire.bandcore.audit.AuditRecorder;
+import com.burstintofire.bandcore.merch.ProductionBatchRegistered;
 import com.burstintofire.bandcore.merch.product.Products;
 import com.burstintofire.bandcore.merch.stock.MovementType;
 import com.burstintofire.bandcore.merch.stock.StockService;
@@ -47,9 +49,13 @@ public class Batches {
 	public record ItemInput(UUID variantId, int quantity, Long unitCostCents) {
 	}
 
-	/** A new batch; without a received date it is today in the band's time zone. */
+	/**
+	 * A new batch; without a received date it is today in the band's time zone. With an expense,
+	 * the finance module creates it for the batch's total, in the same transaction.
+	 */
 	public record NewBatch(String supplier, LocalDate orderedOn, LocalDate receivedOn, Currency currency,
-			CostMode costMode, Long totalCostCents, String notes, List<ItemInput> items) {
+			CostMode costMode, Long totalCostCents, String notes, List<ItemInput> items,
+			ProductionBatchRegistered.ExpenseDraft expense) {
 	}
 
 	/** A partial update of the description: null leaves a field unchanged; empty texts clear it. */
@@ -78,18 +84,22 @@ public class Batches {
 
 	private final AuditRecorder audit;
 
+	private final ApplicationEventPublisher events;
+
 	private final IdGenerator ids;
 
 	private final Clock clock;
 
 	Batches(ProductionBatchRepository batches, BatchItemRepository items, Products products, StockService stock,
-			BandCalendar calendar, AuditRecorder audit, IdGenerator ids, Clock clock) {
+			BandCalendar calendar, AuditRecorder audit, ApplicationEventPublisher events, IdGenerator ids,
+			Clock clock) {
 		this.batches = batches;
 		this.items = items;
 		this.products = products;
 		this.stock = stock;
 		this.calendar = calendar;
 		this.audit = audit;
+		this.events = events;
 		this.ids = ids;
 		this.clock = clock;
 	}
@@ -111,7 +121,9 @@ public class Batches {
 	/**
 	 * Receives a batch: every line's units come into stock (BATCH_IN movements) and each variant's
 	 * average unit cost takes them in. Variants of other bands answer 404; archived ones 422
-	 * VARIANT_ARCHIVED; a product in another currency 422 BATCH_CURRENCY_MISMATCH.
+	 * VARIANT_ARCHIVED; a product in another currency 422 BATCH_CURRENCY_MISMATCH. With an
+	 * expense, the batch must cost something (422 BATCH_COST_REQUIRED), and an expense the finance
+	 * module refuses rolls the whole batch back.
 	 */
 	@PreAuthorize(Permissions.CAN_MANAGE_MERCH)
 	@Transactional
@@ -134,10 +146,14 @@ public class Batches {
 			throw new ApiException(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED,
 					"A batch cannot be ordered after it was received.", "orderedOn");
 		}
+		if (input.expense() != null && total == 0) {
+			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, ErrorCode.BATCH_COST_REQUIRED,
+					"A batch that costs nothing cannot become an expense.", "expense");
+		}
 
 		Instant now = clock.instant();
 		ProductionBatch batch = new ProductionBatch(ids.newId(), bandId(), receivedOn, input.currency(),
-				input.costMode(), total, CurrentUser.require().userId(), now);
+				input.costMode(), total, input.expense() != null, CurrentUser.require().userId(), now);
 		batch.describe(blankToNull(input.supplier()), input.orderedOn(), blankToNull(input.notes()));
 		batches.saveAndFlush(batch);
 
@@ -161,6 +177,8 @@ public class Batches {
 		}
 		items.flush();
 		audit.record("production_batch.registered", "production_batch", batch.getId(), snapshot(batch, saved));
+		events.publishEvent(new ProductionBatchRegistered(bandId(), batch.getId(), batch.getCurrency(),
+				batch.getTotalCostCents(), batch.getReceivedOn(), input.expense()));
 		return get(batch.getId());
 	}
 
@@ -296,6 +314,7 @@ public class Batches {
 		snapshot.put("currency", batch.getCurrency().name());
 		snapshot.put("cost_mode", batch.getCostMode().name());
 		snapshot.put("total_cost_cents", batch.getTotalCostCents());
+		snapshot.put("expense_requested", batch.isExpenseRequested());
 		snapshot.putAll(batch.details());
 		snapshot.put("items", lines.stream().map(line -> {
 			Map<String, Object> item = new LinkedHashMap<>();

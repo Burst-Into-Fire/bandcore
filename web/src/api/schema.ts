@@ -336,7 +336,7 @@ export interface paths {
         put?: never;
         /**
          * Receive a production batch (admins)
-         * @description Its units come into stock and each variant's average unit cost takes them in. PER_ITEM needs every item's unit cost; ALLOCATED needs the total, split by quantity. Without receivedOn, it is today in the band's time zone. 422 VARIANT_ARCHIVED, BATCH_CURRENCY_MISMATCH (every product must be in the batch's currency) or BATCH_DUPLICATE_VARIANT.
+         * @description Its units come into stock and each variant's average unit cost takes them in. PER_ITEM needs every item's unit cost; ALLOCATED needs the total, split by quantity. Without receivedOn, it is today in the band's time zone. 422 VARIANT_ARCHIVED, BATCH_CURRENCY_MISMATCH (every product must be in the batch's currency) or BATCH_DUPLICATE_VARIANT. With expense, the batch's total also becomes a split expense, saved together with the batch: the expense's errors (for example SPLIT_SUM_MISMATCH or MEMBER_INACTIVE) point at expense.* fields and nothing is saved; 422 BATCH_COST_REQUIRED for a batch that costs nothing.
          */
         post: operations["registerBatch"];
         delete?: never;
@@ -1177,6 +1177,31 @@ export interface components {
             role: "ADMIN" | "MEMBER" | "READ_ONLY";
             slug: string;
         };
+        BatchExpenseRequest: {
+            /**
+             * Format: uuid
+             * @description Usually the band's default merch category
+             */
+            categoryId: string;
+            description: string;
+            /**
+             * Format: date
+             * @description Defaults to the batch's received date
+             */
+            expenseDate?: string;
+            notes?: string;
+            /** @description Paid already (needs paidByMemberId); planned when omitted */
+            paid?: boolean;
+            /** Format: uuid */
+            paidByMemberId?: string;
+            /**
+             * Format: date
+             * @description When paid; defaults to the expense date
+             */
+            paidOn?: string;
+            /** @description By default equally among every active member */
+            split?: components["schemas"]["BatchSplitRequest"];
+        };
         BatchItemRequest: {
             /** Format: int32 */
             quantity: number;
@@ -1217,6 +1242,8 @@ export interface components {
             createdAt: string;
             /** @enum {string} */
             currency: "BRL" | "USD";
+            /** @description Registering it also created an expense, which cancelling does not change */
+            expenseRequested: boolean;
             /** Format: uuid */
             id: string;
             items: components["schemas"]["BatchItemResponse"][];
@@ -1235,6 +1262,26 @@ export interface components {
              * @description Send it back when changing or cancelling the batch
              */
             version: number;
+        };
+        BatchShareRequest: {
+            /**
+             * Format: int64
+             * @description CUSTOM_AMOUNTS only
+             */
+            amountCents?: number;
+            /**
+             * Format: int64
+             * @description CUSTOM_PERCENTAGES only; 10000 is 100%
+             */
+            basisPoints?: number;
+            /** Format: uuid */
+            memberId: string;
+        };
+        BatchSplitRequest: {
+            /** @enum {string} */
+            mode: "EQUAL" | "CUSTOM_AMOUNTS" | "CUSTOM_PERCENTAGES";
+            /** @description EQUAL: the members (none means every active member); CUSTOM_AMOUNTS: amountCents per member; CUSTOM_PERCENTAGES: basisPoints per member */
+            shares?: components["schemas"]["BatchShareRequest"][];
         };
         CancelBatchRequest: {
             /**
@@ -1417,6 +1464,8 @@ export interface components {
             paidByMemberId?: string;
             /** Format: date */
             paidOn?: string;
+            /** @description What the expense pays for when another module created it, for example a production batch */
+            source?: components["schemas"]["ExpenseSourceResponse"];
             split: components["schemas"]["SplitResponse"];
             /** @enum {string} */
             status: "PLANNED" | "PAID";
@@ -1427,6 +1476,12 @@ export interface components {
              * @description Send it back when changing the expense
              */
             version: number;
+        };
+        ExpenseSourceResponse: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            type: "BATCH";
         };
         FinanceSummaryResponse: {
             /** @description Only currencies with expenses in the month */
@@ -1712,6 +1767,8 @@ export interface components {
              * @enum {string}
              */
             currency: "BRL" | "USD";
+            /** @description Also create an expense for the batch's total, split among members */
+            expense?: components["schemas"]["BatchExpenseRequest"];
             items: components["schemas"]["BatchItemRequest"][];
             notes?: string;
             /** Format: date */

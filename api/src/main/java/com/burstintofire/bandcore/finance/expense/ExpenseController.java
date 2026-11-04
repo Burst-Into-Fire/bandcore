@@ -228,6 +228,10 @@ class ExpenseController {
 					description = "Turn back into planned") boolean revertPayment) {
 	}
 
+	record ExpenseSourceResponse(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) ExpenseSourceType type,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id) {
+	}
+
 	record ExpenseResponse(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) String description,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID categoryId,
@@ -245,6 +249,8 @@ class ExpenseController {
 					description = "Send it back when changing the expense") long version,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED,
 					description = "What the current user may do with this expense") AccessResponse access,
+			@Schema(description = "What the expense pays for when another module created it, for example a "
+					+ "production batch") ExpenseSourceResponse source,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant createdAt,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant updatedAt) {
 
@@ -257,6 +263,8 @@ class ExpenseController {
 					expense.getVersion(),
 					new AccessResponse(details.access().edit(), details.access().delete(), details.access().pay(),
 							details.access().revertPayment()),
+					expense.getSourceType() == null ? null
+							: new ExpenseSourceResponse(expense.getSourceType(), expense.getSourceId()),
 					expense.getCreatedAt(), expense.getUpdatedAt());
 		}
 

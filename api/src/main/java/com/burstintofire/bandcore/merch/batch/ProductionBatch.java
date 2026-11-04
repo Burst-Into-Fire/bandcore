@@ -57,6 +57,10 @@ public class ProductionBatch extends AssignedIdEntity {
 	@Column
 	private String notes;
 
+	/** Registering the batch also created an expense for its cost (M7-04). */
+	@Column(name = "expense_requested", nullable = false, updatable = false)
+	private boolean expenseRequested;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	private BatchStatus status;
@@ -84,13 +88,14 @@ public class ProductionBatch extends AssignedIdEntity {
 	}
 
 	ProductionBatch(UUID id, UUID bandId, LocalDate receivedOn, Currency currency, CostMode costMode,
-			long totalCostCents, UUID createdBy, Instant now) {
+			long totalCostCents, boolean expenseRequested, UUID createdBy, Instant now) {
 		super(id);
 		this.bandId = bandId;
 		this.receivedOn = receivedOn;
 		this.currency = currency;
 		this.costMode = costMode;
 		this.totalCostCents = totalCostCents;
+		this.expenseRequested = expenseRequested;
 		this.status = BatchStatus.RECEIVED;
 		this.createdBy = createdBy;
 		this.createdAt = now;
@@ -127,6 +132,10 @@ public class ProductionBatch extends AssignedIdEntity {
 
 	public String getNotes() {
 		return notes;
+	}
+
+	public boolean isExpenseRequested() {
+		return expenseRequested;
 	}
 
 	public BatchStatus getStatus() {

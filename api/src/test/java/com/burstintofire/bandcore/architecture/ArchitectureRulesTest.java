@@ -89,6 +89,18 @@ class ArchitectureRulesTest {
 	}
 
 	@Test
+	void merchNeverDependsOnFinance() {
+		ArchRule rule = noClasses().that()
+			.resideInAPackage("..merch..")
+			.should()
+			.dependOnClassesThat()
+			.resideInAPackage("..finance..")
+			.because("a batch's expense goes through the ProductionBatchRegistered event, which finance listens to "
+					+ "(M7-04); the other way round would make the modules depend on each other");
+		rule.check(CLASSES);
+	}
+
+	@Test
 	void usersAreOnlyAccessedThroughTheIdentityModule() {
 		ArchRule rule = noClasses().that()
 			.resideOutsideOfPackage("..identity..")
