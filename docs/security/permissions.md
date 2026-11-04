@@ -25,7 +25,7 @@ Roles are per band: the same person can be `ADMIN` in one band and `READ_ONLY` i
 | Change band settings | Yes | No | No | `band:manage` |
 | View the audit trail | Yes | No | No | `audit:read` |
 
-An expense is a member's **own** when they created it or when the member (integrante) linked to their account paid it, so whoever pays a planned expense created by someone else can mark it as paid. Each expense in the API carries an `access` object with what the current user may do, so the web app does not repeat the rule.
+An expense is a member's **own** when they created it or when the member (integrante) linked to their account paid it, so whoever pays a planned expense created by someone else can mark it as paid. A settlement is a member's own when they recorded it or when their member sent or received it. Each expense in the API carries an `access` object with what the current user may do, so the web app does not repeat the rule.
 
 "Own only" and "open events only" are not permissions: the service checks them after the permission, and answers 404 (not 403) when the record belongs to someone else and must stay hidden, or 403 when it is visible but not editable.
 
@@ -70,6 +70,9 @@ An expense is a member's **own** when they created it or when the member (integr
 | `POST /api/expenses/{id}/pay` | band | `finance:manage`, or `finance:write` on one's own expense, or on anyone's when paying it themselves |
 | `POST /api/expenses/{id}/revert-payment` | band | `finance:manage` |
 | `GET /api/balances` | band | `finance:read` |
+| `GET /api/settlements`, `GET /api/settlements/{id}` | band | `finance:read` |
+| `POST /api/settlements` | band | `finance:write` (between any two members of the band, including members who left) |
+| `PATCH`/`DELETE /api/settlements/{id}` | band | `finance:manage` (any), or `finance:write` on settlements the user recorded or whose member is one of the two parties (403 otherwise) |
 | `POST /api/invitations/accept` | central | Any authenticated account whose verified email is the invited one |
 | `POST /api/invitations/preview` | central | Public (the token is the credential) |
 | `GET /api/me/bands`, `GET /api/bands/slug-availability`, `POST /api/bands` | central | Any authenticated account (creating a band also needs a verified email) |

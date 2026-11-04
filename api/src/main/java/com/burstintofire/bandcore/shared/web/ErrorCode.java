@@ -82,7 +82,9 @@ public enum ErrorCode {
 	/** Percentages do not add up to 100% (10000 basis points); see {@code differenceBasisPoints}. */
 	SPLIT_PERCENT_SUM,
 	/** The split has no members, repeats a member or misses a value its mode needs. */
-	SPLIT_INVALID;
+	SPLIT_INVALID,
+	/** A settlement goes from one member to another, never to the same member. */
+	SETTLEMENT_SAME_MEMBER;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {

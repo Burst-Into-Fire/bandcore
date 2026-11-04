@@ -65,9 +65,14 @@ class AuthorizationMatrixIT extends IntegrationTest {
 		UUID travel = fixtures.category(band, "Travel");
 		UUID expense = fixtures.plannedExpense(band, travel, "Ensaio", UUID.randomUUID());
 		UUID paidExpense = fixtures.paidExpense(band, travel, "Van", UUID.randomUUID());
+		// Two members without accounts settle between themselves: no role under test is a party.
+		UUID payer = fixtures.member(band, "Caio");
+		UUID payee = fixtures.member(band, "Dani");
+		UUID settlement = fixtures.settlement(band, payer, payee, "Pix", UUID.randomUUID());
 		var fixture = new AuthorizationMatrix.Fixture(Map.of("memberId", member.toString(), "userId", unlinked.toString(),
 				"invitationId", invitation.toString(), "membershipId", otherAdmin.toString(), "categoryId",
-				category.toString(), "expenseId", expense.toString(), "paidExpenseId", paidExpense.toString()));
+				category.toString(), "expenseId", expense.toString(), "paidExpenseId", paidExpense.toString(),
+				"settlementId", settlement.toString(), "payerId", payer.toString(), "payeeId", payee.toString()));
 
 		ResponseEntity<String> response = host.send(rule.method(), rule.url(fixture), rule.body().apply(fixture),
 				headers -> headers.setBearerAuth(token));

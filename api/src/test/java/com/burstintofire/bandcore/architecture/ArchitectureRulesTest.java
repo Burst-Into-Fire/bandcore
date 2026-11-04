@@ -1,11 +1,17 @@
 package com.burstintofire.bandcore.architecture;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.fields;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.library.GeneralCodingRules.NO_CLASSES_SHOULD_USE_FIELD_INJECTION;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -118,6 +124,25 @@ class ArchitectureRulesTest {
 			.because("controllers call services, which own transactions and tenant filtering")
 			.allowEmptyShould(true);
 		rule.check(CLASSES);
+	}
+
+	/**
+	 * Request and response records become OpenAPI schemas by their simple name: two records with the
+	 * same name in different controllers would silently share one schema in the generated client.
+	 */
+	@Test
+	void controllerRecordsHaveUniqueNames() {
+		Map<String, List<String>> byName = CLASSES.stream()
+			.filter(JavaClass::isRecord)
+			.filter(record -> record.getEnclosingClass()
+				.map(owner -> owner.isAnnotatedWith(RestController.class))
+				.orElse(false))
+			.collect(Collectors.groupingBy(JavaClass::getSimpleName,
+					Collectors.mapping(JavaClass::getName, Collectors.toList())));
+
+		assertThat(byName.entrySet().stream().filter(entry -> entry.getValue().size() > 1).toList())
+			.as("records with the same name in different controllers")
+			.isEmpty();
 	}
 
 }

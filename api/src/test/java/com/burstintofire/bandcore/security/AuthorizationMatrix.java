@@ -79,7 +79,16 @@ final class AuthorizationMatrix {
 			rule(HttpMethod.POST, "/expenses/{expenseId}/pay", WRITERS, fixture -> "{}"),
 			rule(HttpMethod.POST, "/expenses/{expenseId}/revert-payment", ADMIN_ONLY, fixture -> "{}")
 				.with("expenseId", "paidExpenseId"),
-			rule(HttpMethod.GET, "/balances", EVERY_ROLE));
+			rule(HttpMethod.GET, "/balances", EVERY_ROLE),
+			rule(HttpMethod.GET, "/settlements", EVERY_ROLE),
+			rule(HttpMethod.GET, "/settlements/{settlementId}", EVERY_ROLE),
+			rule(HttpMethod.POST, "/settlements", WRITERS, fixture -> """
+					{"fromMemberId": "%s", "toMemberId": "%s", "currency": "BRL", "amountCents": 1000}"""
+				.formatted(fixture.pathVariables().get("payerId"), fixture.pathVariables().get("payeeId"))),
+			// The fixture settlement is between two other members and recorded by someone else.
+			rule(HttpMethod.PATCH, "/settlements/{settlementId}", ADMIN_ONLY,
+					fixture -> "{\"version\": 0, \"note\": \"Pix\"}"),
+			rule(HttpMethod.DELETE, "/settlements/{settlementId}", ADMIN_ONLY));
 
 	/** Endpoints on the central host: any authenticated account, no role. */
 	static final List<Rule> CENTRAL = List.of(
