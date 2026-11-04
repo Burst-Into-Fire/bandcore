@@ -113,7 +113,8 @@ public class TestFixtures {
 
 	/**
 	 * A planned expense of R$ 100,00 dated 2026-11-20, created by {@code createdBy} and charged
-	 * entirely to the band's first member. One statement, so the deferred check that shares add up
+	 * entirely to the band's first member with an account (members without one stay free of
+	 * history, so tests can delete them). One statement, so the deferred check that shares add up
 	 * to the amount sees both rows.
 	 */
 	public UUID plannedExpense(UUID bandId, UUID categoryId, String description, UUID createdBy) {
@@ -126,9 +127,21 @@ public class TestFixtures {
 				    RETURNING id, band_id)
 				INSERT INTO bandcore.expense_splits (id, band_id, expense_id, member_id, share_cents)
 				SELECT gen_random_uuid(), e.band_id, e.id,
-				    (SELECT m.id FROM bandcore.members m WHERE m.band_id = e.band_id ORDER BY m.id LIMIT 1), 10000
+				    (SELECT m.id FROM bandcore.members m WHERE m.band_id = e.band_id AND m.user_id IS NOT NULL
+				     ORDER BY m.id LIMIT 1), 10000
 				FROM expense e
 				""".formatted(id, bandId, description, categoryId, createdBy));
+		return id;
+	}
+
+	/** Like {@link #plannedExpense}, but paid on 2026-11-20 by the same member. */
+	public UUID paidExpense(UUID bandId, UUID categoryId, String description, UUID createdBy) {
+		UUID id = plannedExpense(bandId, categoryId, description, createdBy);
+		OwnerSql.inBand(bandId, """
+				UPDATE bandcore.expenses SET status = 'PAID', paid_on = DATE '2026-11-20',
+				    paid_by_member_id = (SELECT m.member_id FROM bandcore.expense_splits m WHERE m.expense_id = '%s')
+				WHERE id = '%s'
+				""".formatted(id, id));
 		return id;
 	}
 

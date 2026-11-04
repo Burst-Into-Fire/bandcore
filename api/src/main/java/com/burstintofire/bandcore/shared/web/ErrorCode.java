@@ -73,6 +73,8 @@ public enum ErrorCode {
 	MEMBER_INACTIVE,
 	/** The action only applies to paid expenses (for example, changing who paid). */
 	EXPENSE_NOT_PAID,
+	/** The action only applies to planned expenses (for example, marking as paid). */
+	EXPENSE_NOT_PLANNED,
 	/** Someone else changed the record since it was read: reload and try again. */
 	VERSION_CONFLICT,
 	/** Custom amounts do not add up to the expense amount; {@code differenceCents} says by how much. */

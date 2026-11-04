@@ -12,13 +12,13 @@ import com.burstintofire.bandcore.shared.cache.ExpiringCache;
 import com.burstintofire.bandcore.shared.cache.ResettableCache;
 
 /**
- * Resolves slugs to bands on every request through a short cache. Changes to a band's status
- * evict its entry, so a suspension takes effect on the next request.
+ * Resolves slugs to bands on every request through a short cache. Changes to a band's status or
+ * time zone evict its entry, so they take effect on the next request.
  */
 @Component
 public class BandDirectory implements ResettableCache {
 
-	public record BandSnapshot(UUID id, String slug, String name, BandStatus status) {
+	public record BandSnapshot(UUID id, String slug, String name, BandStatus status, String timezone) {
 
 		public boolean isActive() {
 			return status == BandStatus.ACTIVE;
@@ -50,7 +50,7 @@ public class BandDirectory implements ResettableCache {
 	}
 
 	static BandSnapshot snapshot(Band band) {
-		return new BandSnapshot(band.getId(), band.getSlug(), band.getName(), band.getStatus());
+		return new BandSnapshot(band.getId(), band.getSlug(), band.getName(), band.getStatus(), band.getTimezone());
 	}
 
 }

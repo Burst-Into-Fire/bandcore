@@ -384,6 +384,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/expenses/upcoming": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Planned expenses still to pay, overdue first, up to some days ahead (at most 100)
+         * @description Days are counted from today in the band's time zone.
+         */
+        get: operations["listUpcomingExpenses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/expenses/{expenseId}": {
         parameters: {
             query?: never;
@@ -407,6 +427,46 @@ export interface paths {
          * @description Send the version that was read: 409 VERSION_CONFLICT when someone else changed the expense meanwhile. Omitted fields are left unchanged; empty notes clear them.
          */
         patch: operations["updateExpense"];
+        trace?: never;
+    };
+    "/expenses/{expenseId}/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark a planned expense as paid
+         * @description Admins and the expense's creator say who paid; other members can only pay it themselves. Without payerMemberId the caller's own member pays; without paidOn it is paid today (band time zone). 409 EXPENSE_NOT_PLANNED when it is already paid.
+         */
+        post: operations["payExpense"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/expenses/{expenseId}/revert-payment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Turn a paid expense back into a planned one (admins), for payments recorded by mistake
+         * @description 409 EXPENSE_NOT_PAID when it is not paid.
+         */
+        post: operations["revertExpensePayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/invitations": {
@@ -727,6 +787,10 @@ export interface components {
         AccessResponse: {
             delete: boolean;
             edit: boolean;
+            /** @description Mark as paid */
+            pay: boolean;
+            /** @description Turn back into planned */
+            revertPayment: boolean;
         };
         BandPublicProfile: {
             name: string;
@@ -854,6 +918,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             notes?: string;
+            /** @description Planned and dated before today in the band's time zone */
+            overdue: boolean;
             /** Format: uuid */
             paidByMemberId?: string;
             /** Format: date */
@@ -974,6 +1040,23 @@ export interface components {
         PasswordResetRequest: {
             /** Format: email */
             email: string;
+        };
+        PayExpenseRequest: {
+            /**
+             * Format: date
+             * @description Defaults to today in the band's time zone
+             */
+            paidOn?: string;
+            /**
+             * Format: uuid
+             * @description Defaults to the caller's own member
+             */
+            payerMemberId?: string;
+            /**
+             * Format: int64
+             * @description The version that was read; 409 VERSION_CONFLICT when it changed
+             */
+            version?: number;
         };
         PreviewResponse: {
             bandName: string;
@@ -1115,6 +1198,13 @@ export interface components {
         };
         VerifyEmailRequest: {
             token: string;
+        };
+        VersionRequest: {
+            /**
+             * Format: int64
+             * @description The version that was read; 409 VERSION_CONFLICT when it changed
+             */
+            version?: number;
         };
     };
     responses: never;
@@ -1664,6 +1754,28 @@ export interface operations {
             };
         };
     };
+    listUpcomingExpenses: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExpenseResponse"][];
+                };
+            };
+        };
+    };
     getExpense: {
         parameters: {
             query?: never;
@@ -1721,6 +1833,58 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateExpenseRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExpenseResponse"];
+                };
+            };
+        };
+    };
+    payExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                expenseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayExpenseRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExpenseResponse"];
+                };
+            };
+        };
+    };
+    revertExpensePayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                expenseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["VersionRequest"];
             };
         };
         responses: {

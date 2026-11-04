@@ -4,7 +4,7 @@ Two append-only tables record who did what and when ([M3-03](../roadmap/M03-secu
 
 | Table | Scope | Written by | What |
 |---|---|---|---|
-| `audit_events` | Tenant table, row-level security | Any module, through `AuditRecorder` (audit module) | Changes to a band's data: `band.*`, `member.*` (created, updated, deactivated, activated, deleted, linked, unlinked), `invitation.*` (created, resent, revoked, accepted), `membership.*`, `expense_category.*` (created, updated, archived, unarchived, deleted), `expense.*` (created, updated with a field diff, deleted, with `soft_deleted` true for paid expenses); later sales and stock |
+| `audit_events` | Tenant table, row-level security | Any module, through `AuditRecorder` (audit module) | Changes to a band's data: `band.*`, `member.*` (created, updated, deactivated, activated, deleted, linked, unlinked), `invitation.*` (created, resent, revoked, accepted), `membership.*`, `expense_category.*` (created, updated, archived, unarchived, deleted), `expense.*` (created, updated with a field diff, paid, payment_reverted, deleted, with `soft_deleted` true for paid expenses); later sales and stock |
 | `security_events` | Global table, identity module | `SecurityEvents` (identity module) | Account events: signup, email verification, login success and failure, rate-limited logins, refresh token reuse, logout everywhere, password reset |
 
 ## Audit events
