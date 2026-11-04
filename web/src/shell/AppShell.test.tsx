@@ -61,7 +61,7 @@ describe('AppShell', () => {
       'aria-current',
       'page',
     );
-    expect(await screen.findByRole('heading', { name: 'Resumo' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /^Resumo/ })).toBeInTheDocument();
   });
 
   it('hides admin-only sections from members', async () => {

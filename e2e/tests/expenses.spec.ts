@@ -32,7 +32,7 @@ test('an expense paid by one member and split among four, from a phone', async (
   await page.getByLabel('Email').fill(account.email);
   await page.getByLabel('Senha').fill(account.password);
   await page.getByRole('button', { name: 'Entrar' }).click();
-  await expect(page.getByRole('heading', { name: 'Resumo' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Resumo/ })).toBeVisible();
 
   const started = Date.now();
   await page.getByRole('link', { name: 'Novo gasto' }).click();

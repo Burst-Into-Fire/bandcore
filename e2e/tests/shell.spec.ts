@@ -21,7 +21,7 @@ test('the band workspace at 360, 768 and 1280 px', async ({ page }, testInfo) =>
   await page.getByLabel('Email').fill(account.email);
   await page.getByLabel('Senha').fill(account.password);
   await page.getByRole('button', { name: 'Entrar' }).click();
-  await expect(page.getByRole('heading', { name: 'Resumo' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Resumo/ })).toBeVisible();
 
   for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: width < 768 ? 780 : 800 });
@@ -33,7 +33,8 @@ test('the band workspace at 360, 768 and 1280 px', async ({ page }, testInfo) =>
       ['settings', '/settings', 'Configurações', 'Fuso horário'],
     ] as const) {
       await page.goto(`${hostUrl(slug)}${path}`);
-      await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();
+      // Resumo's title names the month ("Resumo de novembro de 2026").
+      await expect(page.getByRole('heading', { level: 1, name: new RegExp(`^${heading}`) })).toBeVisible();
       await expect(page.getByText(loaded, { exact: true })).toBeVisible();
       await expect(page.getByRole('navigation', { name: 'Seções da banda' })).toBeVisible();
       // Nothing may overflow sideways, down to 360 px.

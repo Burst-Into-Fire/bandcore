@@ -220,7 +220,7 @@
     "stockEmpty": "Nenhum produto ainda",
     "stockHint": "Os produtos de merch e os avisos de estoque baixo aparecem aqui.",
     "latestExpenses": "Últimos gastos",
-    "latestExpensesEmpty": "Nenhum gasto neste mês",
+    "latestExpensesEmpty": "Nenhum gasto registrado neste mês",
     "latestExpensesHint": "Os gastos pagos e previstos do mês aparecem aqui.",
     "allExpenses": "Ver todos",
     "titleMonth": "Resumo de {{month}}",
