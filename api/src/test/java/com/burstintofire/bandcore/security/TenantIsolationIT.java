@@ -239,6 +239,7 @@ class TenantIsolationIT extends IntegrationTest {
 			world.bravoProduct = fixtures.product(world.bravo, "Bravo secret shirt");
 			world.bravoVariant = fixtures.variant(world.bravo, world.bravoProduct, "BravoSecretSize");
 			fixtures.variant(world.bravo, world.bravoProduct, "G");
+			fixtures.received(world.bravo, world.bravoVariant, 7);
 			world.alphaInvitation = fixtures.invitation(world.alpha, "alpha.invited@example.com", "MEMBER", alphaAdmin).id();
 			world.bravoInvitation = fixtures.invitation(world.bravo, "bravo.invited.secret@example.com", "ADMIN",
 					world.bravoAdmin).id();

@@ -167,15 +167,39 @@ public class TestFixtures {
 		return id;
 	}
 
-	/** An active variant of a product, with a size and nothing else, after the product's others. */
+	/**
+	 * An active variant of a product, with a size and nothing else, after the product's others.
+	 * Its stock starts at zero, as when the API creates it.
+	 */
 	public UUID variant(UUID bandId, UUID productId, String size) {
 		UUID id = UUID.randomUUID();
 		OwnerSql.inBand(bandId, """
-				INSERT INTO bandcore.product_variants (id, band_id, product_id, size, position, created_at, updated_at)
-				SELECT '%s', '%s', '%s', '%s', count(*), now(), now()
-				FROM bandcore.product_variants WHERE product_id = '%s'
+				WITH variant AS (
+				    INSERT INTO bandcore.product_variants (id, band_id, product_id, size, position, created_at, updated_at)
+				    SELECT '%s', '%s', '%s', '%s', count(*), now(), now()
+				    FROM bandcore.product_variants WHERE product_id = '%s'
+				    RETURNING band_id, id)
+				INSERT INTO bandcore.stock_levels (band_id, variant_id, updated_at) SELECT band_id, id, now() FROM variant
 				""".formatted(id, bandId, productId, size, productId));
 		return id;
+	}
+
+	/**
+	 * Puts units of a variant into stock the way a production batch does: a BATCH_IN movement and
+	 * the stock level it leaves, so the ledger stays consistent.
+	 */
+	public void received(UUID bandId, UUID variantId, int quantity) {
+		OwnerSql.inBand(bandId, """
+				WITH movement AS (
+				    INSERT INTO bandcore.stock_movements (id, band_id, variant_id, type, quantity_delta, quantity_after,
+				        source_type, source_id, occurred_at)
+				    SELECT gen_random_uuid(), band_id, variant_id, 'BATCH_IN', %d, quantity_on_hand + %d, 'BATCH',
+				        gen_random_uuid(), now()
+				    FROM bandcore.stock_levels WHERE variant_id = '%s'
+				    RETURNING id, band_id, variant_id, quantity_after)
+				UPDATE bandcore.stock_levels l SET quantity_on_hand = m.quantity_after, last_movement_id = m.id
+				FROM movement m WHERE l.band_id = m.band_id AND l.variant_id = m.variant_id
+				""".formatted(quantity, quantity, variantId));
 	}
 
 	/** The member (integrante) linked to an account in a band. */

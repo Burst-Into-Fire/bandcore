@@ -1027,6 +1027,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/variants/{variantId}/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stock movements of a variant, newest first
+         * @description Every change to the quantity on hand, with what caused it. Pages start at 0.
+         */
+        get: operations["listStockMovements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/variants/{variantId}/unarchive": {
         parameters: {
             query?: never;
@@ -1422,6 +1442,17 @@ export interface components {
             /** Format: int32 */
             totalPages: number;
         };
+        PageResponseStockMovementResponse: {
+            items: components["schemas"]["StockMovementResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
         PasswordResetConfirmation: {
             password: string;
             token: string;
@@ -1505,6 +1536,8 @@ export interface components {
             effectivePriceCents: number;
             /** Format: uuid */
             id: string;
+            /** @description Quantity on hand at or below the low-stock threshold */
+            lowStock: boolean;
             /** Format: int32 */
             lowStockThreshold: number;
             /**
@@ -1514,6 +1547,8 @@ export interface components {
             priceCents?: number;
             /** Format: uuid */
             productId: string;
+            /** Format: int32 */
+            quantityOnHand: number;
             size?: string;
             sku?: string;
             /**
@@ -1647,6 +1682,36 @@ export interface components {
         StatusResponse: {
             /** @example UP */
             status: string;
+        };
+        StockMovementResponse: {
+            /**
+             * Format: uuid
+             * @description Who made it, when it was a person
+             */
+            actorUserId?: string;
+            /** Format: uuid */
+            id: string;
+            note?: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /**
+             * Format: int32
+             * @description Quantity on hand right after the movement
+             */
+            quantityAfter: number;
+            /**
+             * Format: int32
+             * @description Units in (positive) or out (negative)
+             */
+            quantityDelta: number;
+            /** @description Why an adjustment was made */
+            reason?: string;
+            /** Format: uuid */
+            sourceId?: string;
+            /** @description What caused it, for example BATCH */
+            sourceType?: string;
+            /** @enum {string} */
+            type: "BATCH_IN" | "BATCH_REVERSAL" | "SALE" | "REFUND" | "ADJUSTMENT" | "RECONCILIATION";
         };
         TokenRequest: {
             token: string;
@@ -3382,6 +3447,31 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ProductVariantResponse"];
+                };
+            };
+        };
+    };
+    listStockMovements: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                variantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseStockMovementResponse"];
                 };
             };
         };
