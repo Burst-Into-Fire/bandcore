@@ -42,9 +42,9 @@ Sales usually happen at shows, and the closing report is per show.
 
 A sale and its stock update happen in the same transaction. The sale also freezes the price and the unit cost at that moment, so later changes do not rewrite past profit.
 
-### Open question
+### Currency
 
-The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
+Decided 2026-11-03: BRL and USD from the start (RF40, RNF08, RN08). Every amount stores its own currency, the band's default currency only pre-fills forms, and amounts in different currencies are never added together: totals and balances are computed per currency.
 
 ### Scope
 
@@ -134,9 +134,9 @@ RF21 has a unit cost entered manually on each product. This roadmap derives the 
 
 The dashboard shows merch sales, items sold, profit after production cost and low stock for the month.
 
-### Open question
+### Currency
 
-The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
+Decided 2026-11-03: BRL and USD from the start (RF40, RNF08, RN08). Every amount stores its own currency, the band's default currency only pre-fills forms, and amounts in different currencies are never added together: totals and balances are computed per currency.
 
 ### Scope
 

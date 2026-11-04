@@ -17,9 +17,9 @@
 
 The balance answers "who owes whom". In the mockup, the vocalist paid R$ 2.700,00 split among four members, so the vocalist receives R$ 2.025,00 and each of the others owes R$ 675,00.
 
-### Open question
+### Currency
 
-The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
+Decided 2026-11-03: BRL and USD from the start (RF40, RNF08, RN08). Every amount stores its own currency, the band's default currency only pre-fills forms, and amounts in different currencies are never added together: totals and balances are computed per currency.
 
 ### Scope
 
@@ -50,9 +50,9 @@ The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and ba
 
 Members settle debts by paying each other. Recording those payments brings balances back to zero.
 
-### Open question
+### Currency
 
-The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
+Decided 2026-11-03: BRL and USD from the start (RF40, RNF08, RN08). Every amount stores its own currency, the band's default currency only pre-fills forms, and amounts in different currencies are never added together: totals and balances are computed per currency.
 
 ### Scope
 
@@ -105,9 +105,9 @@ Instead of everyone working out who pays whom, bandcore suggests a short list of
 
 The dashboard needs one fast call with the month's numbers, computed in the band's timezone.
 
-### Open question
+### Currency
 
-The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
+Decided 2026-11-03: BRL and USD from the start (RF40, RNF08, RN08). Every amount stores its own currency, the band's default currency only pre-fills forms, and amounts in different currencies are never added together: totals and balances are computed per currency.
 
 ### Scope
 

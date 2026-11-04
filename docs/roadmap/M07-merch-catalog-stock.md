@@ -17,9 +17,11 @@
 
 Merch items such as "Camiseta preta" come in variants (M, G, GG). Stock and price live on the variant.
 
-### Open question
+### Currency
 
-The requirements now include BRL and USD (RF40, RNF08, RN08), with totals and balances computed per currency. This issue was written for BRL only and needs a currency dimension once that is confirmed.
+Decided 2026-11-03: BRL and USD from the start (RF40, RNF08, RN08). Every amount stores its own currency, the band's default currency only pre-fills forms, and amounts in different currencies are never added together: totals and balances are computed per currency.
+
+### Open question
 
 RF21 has a unit cost entered manually on each product. This roadmap derives the unit cost from production batches (weighted average). To be decided before this issue starts.
 
