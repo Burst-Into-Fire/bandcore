@@ -863,6 +863,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/summary/finance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The month's expenses for the dashboard, per currency
+         * @description Expenses count in the month of their date: total, paid and planned, overall and by category (largest first). Also the month's latest expenses and the planned expenses of the next 30 days, overdue first. Without month, the current month in the band's time zone.
+         */
+        get: operations["getFinanceSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -922,6 +942,16 @@ export interface components {
             /** Format: uuid */
             id: string;
             name: string;
+        };
+        CategoryTotalsResponse: {
+            /** Format: uuid */
+            categoryId: string;
+            /** Format: int64 */
+            paidCents: number;
+            /** Format: int64 */
+            plannedCents: number;
+            /** Format: int64 */
+            totalCents: number;
         };
         ChangeRoleRequest: {
             /** @enum {string} */
@@ -1026,6 +1056,17 @@ export interface components {
             currency: "BRL" | "USD";
             transfers: components["schemas"]["TransferResponse"][];
         };
+        CurrencySummaryResponse: {
+            categories: components["schemas"]["CategoryTotalsResponse"][];
+            /** @enum {string} */
+            currency: "BRL" | "USD";
+            /** Format: int64 */
+            paidCents: number;
+            /** Format: int64 */
+            plannedCents: number;
+            /** Format: int64 */
+            totalCents: number;
+        };
         ExpenseResponse: {
             /** @description What the current user may do with this expense */
             access: components["schemas"]["AccessResponse"];
@@ -1061,6 +1102,16 @@ export interface components {
              * @description Send it back when changing the expense
              */
             version: number;
+        };
+        FinanceSummaryResponse: {
+            /** @description Only currencies with expenses in the month */
+            currencies: components["schemas"]["CurrencySummaryResponse"][];
+            /** @description The month's latest expenses by date (at most 5) */
+            latest: components["schemas"]["ExpenseResponse"][];
+            /** @example 2026-11 */
+            month: string;
+            /** @description Planned expenses of the next 30 days, overdue first */
+            upcoming: components["schemas"]["ExpenseResponse"][];
         };
         HandoffExchangeRequest: {
             code: string;
@@ -2771,6 +2822,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StatusResponse"];
+                };
+            };
+        };
+    };
+    getFinanceSummary: {
+        parameters: {
+            query?: {
+                /** @description yyyy-MM */
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FinanceSummaryResponse"];
                 };
             };
         };
