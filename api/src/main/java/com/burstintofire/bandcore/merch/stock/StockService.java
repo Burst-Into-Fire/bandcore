@@ -55,8 +55,12 @@ public class StockService {
 	public record Applied(UUID movementId, UUID variantId, int delta, int quantityAfter) {
 	}
 
-	/** A variant's stock right now. */
-	public record Level(UUID variantId, int quantityOnHand, UUID lastMovementId) {
+	/**
+	 * A variant's stock right now.
+	 *
+	 * @param averageUnitCostCents weighted average of the batches (ADR-0009); null before the first
+	 */
+	public record Level(UUID variantId, int quantityOnHand, Long averageUnitCostCents, UUID lastMovementId) {
 	}
 
 	public record Movement(UUID id, MovementType type, int quantityDelta, int quantityAfter, String sourceType,
@@ -85,7 +89,7 @@ public class StockService {
 			""";
 
 	private static final String LEVELS = """
-			SELECT variant_id, quantity_on_hand, last_movement_id FROM stock_levels
+			SELECT variant_id, quantity_on_hand, average_unit_cost_cents, last_movement_id FROM stock_levels
 			WHERE band_id = ? AND variant_id = ANY (?)
 			ORDER BY variant_id
 			""";
@@ -149,6 +153,18 @@ public class StockService {
 	@Transactional(propagation = Propagation.MANDATORY)
 	public Map<UUID, Level> lock(Collection<UUID> variantIds) {
 		return query(LEVELS + " FOR UPDATE", variantIds);
+	}
+
+	/**
+	 * Sets a variant's average unit cost; null when it has none. Lock the variant first
+	 * ({@link #lock}), since the new average depends on the current one.
+	 */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void setAverageCost(UUID variantId, Long averageUnitCostCents) {
+		jdbc.update("""
+				UPDATE stock_levels SET average_unit_cost_cents = ?::bigint, updated_at = ?
+				WHERE band_id = ? AND variant_id = ?
+				""", averageUnitCostCents, Timestamp.from(clock.instant()), bandId(), variantId);
 	}
 
 	/** The current stock of the variants of the current band; others are left out. */
@@ -224,7 +240,8 @@ public class StockService {
 			return levels;
 		}
 		jdbc.query(sql, rs -> {
-			Level level = new Level(rs.getObject(1, UUID.class), rs.getInt(2), rs.getObject(3, UUID.class));
+			Level level = new Level(rs.getObject(1, UUID.class), rs.getInt(2), rs.getObject(3, Long.class),
+					rs.getObject(4, UUID.class));
 			levels.put(level.variantId(), level);
 		}, bandId(), uuids(variantIds));
 		return levels;

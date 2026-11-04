@@ -88,7 +88,14 @@ final class IsolationScenarios {
 			probe(HttpMethod.POST, "/variants/{variantId}/archive"),
 			probe(HttpMethod.POST, "/variants/{variantId}/unarchive"),
 			probe(HttpMethod.DELETE, "/variants/{variantId}"),
-			probe(HttpMethod.GET, "/variants/{variantId}/movements"));
+			probe(HttpMethod.GET, "/variants/{variantId}/movements"),
+			probe(HttpMethod.GET, "/batches"),
+			probe(HttpMethod.GET, "/batches/{batchId}"),
+			probe(HttpMethod.POST, "/batches", target -> """
+					{"currency": "BRL", "costMode": "PER_ITEM", "items": [{"variantId": "%s", "quantity": 1, "unitCostCents": 100}]}"""
+				.formatted(target.resources().get("variantId"))),
+			probe(HttpMethod.PATCH, "/batches/{batchId}", target -> "{\"version\": 0, \"notes\": \"Taken over\"}"),
+			probe(HttpMethod.POST, "/batches/{batchId}/cancel", target -> "{\"version\": 0}"));
 
 	/** The band an attack aims at, and its resources by path variable name. */
 	record Target(String bandId, String slug, Map<String, String> resources) {

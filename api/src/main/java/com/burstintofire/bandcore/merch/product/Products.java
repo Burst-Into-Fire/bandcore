@@ -3,6 +3,7 @@ package com.burstintofire.bandcore.merch.product;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -299,6 +300,29 @@ public class Products {
 					"This variant has stock history. Archive it instead.");
 		}
 		audit.record("product_variant.deleted", "product_variant", variantId, variant.snapshot());
+	}
+
+	/**
+	 * Variants of the current band by id, with their products and stock, for other parts of the
+	 * merch module (batches, sales). Ids of other bands are left out; callers check permissions.
+	 */
+	@Transactional(readOnly = true)
+	public Map<UUID, VariantDetails> variants(Collection<UUID> variantIds) {
+		if (variantIds.isEmpty()) {
+			return Map.of();
+		}
+		List<ProductVariant> found = variants.findByBandIdAndIdIn(bandId(), List.copyOf(variantIds));
+		Map<UUID, Product> owners = products
+			.findByBandIdAndIdIn(bandId(), found.stream().map(ProductVariant::getProductId).distinct().toList())
+			.stream()
+			.collect(Collectors.toMap(Product::getId, product -> product));
+		Map<UUID, StockService.Level> levels = stock.levels(variantIds);
+		Map<UUID, VariantDetails> details = new LinkedHashMap<>();
+		for (ProductVariant variant : found) {
+			details.put(variant.getId(),
+					new VariantDetails(owners.get(variant.getProductId()), variant, levels.get(variant.getId())));
+		}
+		return details;
 	}
 
 	private ProductVariant addVariant(Product product, VariantInput input, int position, String field, Instant now) {

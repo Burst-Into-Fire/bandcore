@@ -13,6 +13,9 @@ public interface ProductVariantRepository extends TenantRepository<ProductVarian
 
 	Optional<ProductVariant> findByBandIdAndId(UUID bandId, UUID id);
 
+	@Query("SELECT v FROM ProductVariant v WHERE v.bandId = :bandId AND v.id IN :ids")
+	List<ProductVariant> findByBandIdAndIdIn(UUID bandId, List<UUID> ids);
+
 	@Query("SELECT v FROM ProductVariant v WHERE v.bandId = :bandId ORDER BY v.productId, v.position, v.id")
 	List<ProductVariant> findByBandId(UUID bandId);
 
@@ -22,7 +25,10 @@ public interface ProductVariantRepository extends TenantRepository<ProductVarian
 			""")
 	List<ProductVariant> findByBandIdAndProductId(UUID bandId, UUID productId);
 
-	@Query("SELECT coalesce(max(v.position), -1) + 1 FROM ProductVariant v WHERE v.bandId = :bandId AND v.productId = :productId")
+	@Query("""
+			SELECT coalesce(max(v.position), -1) + 1 FROM ProductVariant v
+			WHERE v.bandId = :bandId AND v.productId = :productId
+			""")
 	int nextPosition(UUID bandId, UUID productId);
 
 	/** @param sizeKey and colorKey: lowercase, empty when not set (the unique index's expressions) */
