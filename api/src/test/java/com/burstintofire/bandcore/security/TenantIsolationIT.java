@@ -195,6 +195,10 @@ class TenantIsolationIT extends IntegrationTest {
 
 		UUID bravoVariant;
 
+		UUID alphaBatch;
+
+		UUID bravoBatch;
+
 		ApiClient alphaHost;
 
 		ApiClient bravoHost;
@@ -240,6 +244,8 @@ class TenantIsolationIT extends IntegrationTest {
 			world.bravoVariant = fixtures.variant(world.bravo, world.bravoProduct, "BravoSecretSize");
 			fixtures.variant(world.bravo, world.bravoProduct, "G");
 			fixtures.received(world.bravo, world.bravoVariant, 7);
+			world.alphaBatch = fixtures.batch(world.alpha, world.alphaVariant, 10, 2500, "Alpha print shop");
+			world.bravoBatch = fixtures.batch(world.bravo, world.bravoVariant, 5, 3100, "Bravo secret supplier");
 			world.alphaInvitation = fixtures.invitation(world.alpha, "alpha.invited@example.com", "MEMBER", alphaAdmin).id();
 			world.bravoInvitation = fixtures.invitation(world.bravo, "bravo.invited.secret@example.com", "ADMIN",
 					world.bravoAdmin).id();
@@ -259,7 +265,8 @@ class TenantIsolationIT extends IntegrationTest {
 							Map.entry("categoryId", bravoCategory.toString()), Map.entry("expenseId", bravoExpense.toString()),
 							Map.entry("settlementId", bravoSettlement.toString()),
 							Map.entry("otherMemberId", bravoOtherMember.toString()),
-							Map.entry("productId", bravoProduct.toString()), Map.entry("variantId", bravoVariant.toString())));
+							Map.entry("productId", bravoProduct.toString()), Map.entry("variantId", bravoVariant.toString()),
+							Map.entry("batchId", bravoBatch.toString())));
 		}
 
 		IsolationScenarios.Target alphaTarget() {
@@ -270,7 +277,8 @@ class TenantIsolationIT extends IntegrationTest {
 							Map.entry("categoryId", alphaCategory.toString()), Map.entry("expenseId", alphaExpense.toString()),
 							Map.entry("settlementId", alphaSettlement.toString()),
 							Map.entry("otherMemberId", alphaOtherMember.toString()),
-							Map.entry("productId", alphaProduct.toString()), Map.entry("variantId", alphaVariant.toString())));
+							Map.entry("productId", alphaProduct.toString()), Map.entry("variantId", alphaVariant.toString()),
+							Map.entry("batchId", alphaBatch.toString())));
 		}
 
 		/** Strings that must never appear in a response to band A's requests. */
@@ -280,7 +288,7 @@ class TenantIsolationIT extends IntegrationTest {
 					"bravo.invited.secret@example.com", bravoCategory.toString(), "Bravo secret category", bravoExpense.toString(),
 					"Bravo secret expense", bravoSettlement.toString(), "Bravo secret pix", bravoOtherMember.toString(),
 					"Bete Bravo Secreta", bravoProduct.toString(), "Bravo secret shirt", bravoVariant.toString(),
-					"BravoSecretSize");
+					"BravoSecretSize", bravoBatch.toString(), "Bravo secret supplier");
 		}
 
 	}

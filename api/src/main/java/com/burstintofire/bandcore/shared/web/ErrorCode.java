@@ -102,7 +102,17 @@ public enum ErrorCode {
 	/** The product's currency cannot change once its variants have stock history. */
 	PRODUCT_CURRENCY_LOCKED,
 	/** The change would take a variant's stock below zero; {@code available} says what there is. */
-	INSUFFICIENT_STOCK;
+	INSUFFICIENT_STOCK,
+	/** Archived products and variants cannot receive stock or be sold. */
+	VARIANT_ARCHIVED,
+	/** Every product in a production batch must be in the batch's currency. */
+	BATCH_CURRENCY_MISMATCH,
+	/** A variant appears more than once in a production batch. */
+	BATCH_DUPLICATE_VARIANT,
+	/** Stock of the batch's variants moved after it, so it can no longer be cancelled exactly. */
+	BATCH_HAS_LATER_MOVEMENTS,
+	/** The production batch is already cancelled. */
+	BATCH_CANCELLED;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {

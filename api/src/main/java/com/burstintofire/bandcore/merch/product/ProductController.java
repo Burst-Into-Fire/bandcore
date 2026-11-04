@@ -153,6 +153,8 @@ class ProductController {
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) int quantityOnHand,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED,
 					description = "Quantity on hand at or below the low-stock threshold") boolean lowStock,
+			@Schema(description = "Weighted average cost of the production batches, in the product's currency; "
+					+ "null before the first batch") Long averageUnitCostCents,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean archived,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED,
 					description = "Send it back when changing the variant") long version) {
@@ -165,8 +167,8 @@ class ProductController {
 			int onHand = stock == null ? 0 : stock.quantityOnHand();
 			return new ProductVariantResponse(variant.getId(), variant.getProductId(), variant.getSize(),
 					variant.getColor(), variant.getSku(), variant.getPriceCents(), variant.effectivePriceCents(product),
-					variant.getLowStockThreshold(), onHand, onHand <= variant.getLowStockThreshold(), variant.isArchived(),
-					variant.getVersion());
+					variant.getLowStockThreshold(), onHand, onHand <= variant.getLowStockThreshold(),
+					stock == null ? null : stock.averageUnitCostCents(), variant.isArchived(), variant.getVersion());
 		}
 
 	}

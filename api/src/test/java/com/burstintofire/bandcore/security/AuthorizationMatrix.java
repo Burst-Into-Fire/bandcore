@@ -105,7 +105,14 @@ final class AuthorizationMatrix {
 			rule(HttpMethod.POST, "/variants/{variantId}/unarchive", ADMIN_ONLY),
 			// The fixture product has two variants, so the one under test may be deleted.
 			rule(HttpMethod.DELETE, "/variants/{variantId}", ADMIN_ONLY),
-			rule(HttpMethod.GET, "/variants/{variantId}/movements", EVERY_ROLE));
+			rule(HttpMethod.GET, "/variants/{variantId}/movements", EVERY_ROLE),
+			rule(HttpMethod.GET, "/batches", EVERY_ROLE),
+			rule(HttpMethod.GET, "/batches/{batchId}", EVERY_ROLE),
+			rule(HttpMethod.POST, "/batches", ADMIN_ONLY, fixture -> """
+					{"currency": "BRL", "costMode": "PER_ITEM", "items": [{"variantId": "%s", "quantity": 10, "unitCostCents": 2500}]}"""
+				.formatted(fixture.pathVariables().get("variantId"))),
+			rule(HttpMethod.PATCH, "/batches/{batchId}", ADMIN_ONLY, fixture -> "{\"version\": 0, \"notes\": \"Gráfica\"}"),
+			rule(HttpMethod.POST, "/batches/{batchId}/cancel", ADMIN_ONLY, fixture -> "{\"version\": 0}"));
 
 	/** Endpoints on the central host: any authenticated account, no role. */
 	static final List<Rule> CENTRAL = List.of(

@@ -202,6 +202,41 @@ public class TestFixtures {
 				""".formatted(quantity, quantity, variantId));
 	}
 
+	/**
+	 * A production batch received on 2026-01-10 with one line, consistent with the ledger: the
+	 * BATCH_IN movement, the stock it leaves and the variant's average cost. Returns the batch id.
+	 */
+	public UUID batch(UUID bandId, UUID variantId, int quantity, long unitCostCents, String supplier) {
+		UUID id = UUID.randomUUID();
+		OwnerSql.inBand(bandId, """
+				WITH level AS (
+				    SELECT band_id, variant_id, quantity_on_hand AS before, average_unit_cost_cents AS average
+				    FROM bandcore.stock_levels WHERE variant_id = '%3$s'),
+				batch AS (
+				    INSERT INTO bandcore.production_batches (id, band_id, supplier, received_on, currency, cost_mode,
+				        total_cost_cents, created_by, created_at, updated_at)
+				    VALUES ('%1$s', '%2$s', '%6$s', DATE '2026-01-10', 'BRL', 'PER_ITEM', %4$d * %5$d, gen_random_uuid(),
+				        now(), now())
+				    RETURNING id),
+				movement AS (
+				    INSERT INTO bandcore.stock_movements (id, band_id, variant_id, type, quantity_delta, quantity_after,
+				        source_type, source_id, occurred_at)
+				    SELECT gen_random_uuid(), l.band_id, l.variant_id, 'BATCH_IN', %4$d, l.before + %4$d, 'BATCH', b.id, now()
+				    FROM level l, batch b
+				    RETURNING id, band_id, variant_id, quantity_after),
+				item AS (
+				    INSERT INTO bandcore.batch_items (id, band_id, batch_id, variant_id, position, quantity, line_cost_cents,
+				        quantity_before, average_cost_before_cents, movement_id)
+				    SELECT gen_random_uuid(), m.band_id, b.id, m.variant_id, 0, %4$d, %4$d * %5$d, l.before, l.average, m.id
+				    FROM movement m, batch b, level l)
+				UPDATE bandcore.stock_levels s SET quantity_on_hand = m.quantity_after, last_movement_id = m.id,
+				    average_unit_cost_cents = (coalesce(l.average, 0) * l.before + %4$d * %5$d) / (l.before + %4$d)
+				FROM movement m, level l
+				WHERE s.band_id = m.band_id AND s.variant_id = m.variant_id
+				""".formatted(id, bandId, variantId, quantity, unitCostCents, supplier));
+		return id;
+	}
+
 	/** The member (integrante) linked to an account in a band. */
 	public UUID memberOf(UUID bandId, UUID userId) {
 		return UUID.fromString(OwnerSql.superuserQueryForString(

@@ -76,6 +76,8 @@ An expense is a member's **own** when they created it or when the member (integr
 | `GET /api/products`, `GET /api/products/{id}` | band | `merch:read` (`?status=ACTIVE` leaves out archived products and variants) |
 | `POST /api/products`, `PATCH`/`DELETE /api/products/{id}`, `POST /api/products/{id}/archive`, `/unarchive`, `POST /api/products/{id}/variants` | band | `merch:manage`; a product with stock history cannot be deleted (409 `PRODUCT_HAS_HISTORY`) |
 | `GET /api/variants/{id}/movements` | band | `merch:read` |
+| `GET /api/batches`, `GET /api/batches/{id}` | band | `merch:read` |
+| `POST /api/batches`, `PATCH /api/batches/{id}`, `POST /api/batches/{id}/cancel` | band | `merch:manage`; a batch can be cancelled only while it is the latest stock movement of its variants (409 `BATCH_HAS_LATER_MOVEMENTS`) |
 | `PUT`/`DELETE /api/variants/{id}`, `POST /api/variants/{id}/archive`, `/unarchive` | band | `merch:manage`; a variant with stock history (409 `VARIANT_HAS_HISTORY`) or the only variant of a product (409 `LAST_VARIANT`) cannot be deleted |
 | `POST /api/invitations/accept` | central | Any authenticated account whose verified email is the invited one |
 | `POST /api/invitations/preview` | central | Public (the token is the credential) |

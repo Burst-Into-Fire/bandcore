@@ -96,6 +96,7 @@ Stock can never go below zero (RN03), even when several phones sell the last uni
 - `stock_movements` is append-only: every change, with its type, delta, the quantity it left, its source and who made it. `sequence` orders the movements of a variant.
 - Every change goes through the merch module's `StockService`, which updates the level and inserts the movement in one statement, and only when the result is not negative (`... WHERE quantity_on_hand + :delta >= 0`). Zero rows updated means insufficient stock (409 `INSUFFICIENT_STOCK`). Changes to several variants are applied in order of variant id, so they never wait for each other's locks in opposite orders.
 - `StockService.drift()` lists the variants whose quantity differs from the sum of their movements; the stock tests assert it stays empty.
+- `stock_levels.average_unit_cost_cents` is the weighted average cost of the production batches ([ADR-0009](adr/0009-cogs-weighted-average-unit-cost.md)). Each `batch_items` row keeps the variant's quantity and average from before the batch, so cancelling the latest batch restores both exactly.
 
 ## Row-level security at runtime
 

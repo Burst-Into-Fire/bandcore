@@ -321,6 +321,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Production batches of the current band, latest received first
+         * @description Pages start at 0.
+         */
+        get: operations["listBatches"];
+        put?: never;
+        /**
+         * Receive a production batch (admins)
+         * @description Its units come into stock and each variant's average unit cost takes them in. PER_ITEM needs every item's unit cost; ALLOCATED needs the total, split by quantity. Without receivedOn, it is today in the band's time zone. 422 VARIANT_ARCHIVED, BATCH_CURRENCY_MISMATCH (every product must be in the batch's currency) or BATCH_DUPLICATE_VARIANT.
+         */
+        post: operations["registerBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/batches/{batchId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One production batch of the current band */
+        get: operations["getBatch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change a batch's supplier, order date or notes (admins)
+         * @description Quantities and costs never change. Send the version that was read: 409 VERSION_CONFLICT when it changed meanwhile. Omitted fields are left unchanged; empty texts clear them.
+         */
+        patch: operations["updateBatch"];
+        trace?: never;
+    };
+    "/batches/{batchId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel a batch (admins)
+         * @description Takes its units back out of stock and restores each variant's average cost. Only while it is the latest stock movement of each of its variants (see cancellable): 409 BATCH_HAS_LATER_MOVEMENTS otherwise. An expense created from the batch does not change.
+         */
+        post: operations["cancelBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/expense-categories": {
         parameters: {
             query?: never;
@@ -1112,6 +1177,72 @@ export interface components {
             role: "ADMIN" | "MEMBER" | "READ_ONLY";
             slug: string;
         };
+        BatchItemRequest: {
+            /** Format: int32 */
+            quantity: number;
+            /**
+             * Format: int64
+             * @description Needed when costMode is PER_ITEM
+             */
+            unitCostCents?: number;
+            /** Format: uuid */
+            variantId: string;
+        };
+        BatchItemResponse: {
+            color?: string;
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: int64
+             * @description What the line cost; the lines add up to the batch total
+             */
+            lineCostCents: number;
+            /** Format: uuid */
+            productId: string;
+            productName: string;
+            /** Format: int32 */
+            quantity: number;
+            size?: string;
+            /** Format: uuid */
+            variantId: string;
+        };
+        BatchResponse: {
+            /** @description Still the latest movement of each of its variants, so it can be cancelled */
+            cancellable: boolean;
+            /** Format: date-time */
+            cancelledAt?: string;
+            /** @enum {string} */
+            costMode: "PER_ITEM" | "ALLOCATED";
+            /** Format: date-time */
+            createdAt: string;
+            /** @enum {string} */
+            currency: "BRL" | "USD";
+            /** Format: uuid */
+            id: string;
+            items: components["schemas"]["BatchItemResponse"][];
+            notes?: string;
+            /** Format: date */
+            orderedOn?: string;
+            /** Format: date */
+            receivedOn: string;
+            /** @enum {string} */
+            status: "RECEIVED" | "CANCELLED";
+            supplier?: string;
+            /** Format: int64 */
+            totalCostCents: number;
+            /**
+             * Format: int64
+             * @description Send it back when changing or cancelling the batch
+             */
+            version: number;
+        };
+        CancelBatchRequest: {
+            /**
+             * Format: int64
+             * @description The version that was read
+             */
+            version: number;
+        };
         CategoryResponse: {
             archived: boolean;
             color?: string;
@@ -1420,6 +1551,17 @@ export interface components {
             slug: string;
             url: string;
         };
+        PageResponseBatchResponse: {
+            items: components["schemas"]["BatchResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
         PageResponseExpenseResponse: {
             items: components["schemas"]["ExpenseResponse"][];
             /** Format: int32 */
@@ -1528,6 +1670,11 @@ export interface components {
         };
         ProductVariantResponse: {
             archived: boolean;
+            /**
+             * Format: int64
+             * @description Weighted average cost of the production batches, in the product's currency; null before the first batch
+             */
+            averageUnitCostCents?: number;
             color?: string;
             /**
              * Format: int64
@@ -1556,6 +1703,30 @@ export interface components {
              * @description Send it back when changing the variant
              */
             version: number;
+        };
+        RegisterBatchRequest: {
+            /** @enum {string} */
+            costMode: "PER_ITEM" | "ALLOCATED";
+            /**
+             * @description Every product in the batch must be in it
+             * @enum {string}
+             */
+            currency: "BRL" | "USD";
+            items: components["schemas"]["BatchItemRequest"][];
+            notes?: string;
+            /** Format: date */
+            orderedOn?: string;
+            /**
+             * Format: date
+             * @description Defaults to today in the band's time zone
+             */
+            receivedOn?: string;
+            supplier?: string;
+            /**
+             * Format: int64
+             * @description Needed when costMode is ALLOCATED; computed otherwise
+             */
+            totalCostCents?: number;
         };
         ReplaceVariantRequest: {
             /** @description Empty for none */
@@ -1748,6 +1919,19 @@ export interface components {
             currency?: "BRL" | "USD";
             name?: string;
             timezone?: string;
+        };
+        UpdateBatchRequest: {
+            /** @description Empty clears them */
+            notes?: string;
+            /** Format: date */
+            orderedOn?: string;
+            /** @description Empty clears it */
+            supplier?: string;
+            /**
+             * Format: int64
+             * @description The version that was read
+             */
+            version: number;
         };
         UpdateCategoryRequest: {
             /** @description #rrggbb; empty clears it */
@@ -2227,6 +2411,127 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SlugAvailabilityResponse"];
+                };
+            };
+        };
+    };
+    listBatches: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseBatchResponse"];
+                };
+            };
+        };
+    };
+    registerBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BatchResponse"];
+                };
+            };
+        };
+    };
+    getBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BatchResponse"];
+                };
+            };
+        };
+    };
+    updateBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BatchResponse"];
+                };
+            };
+        };
+    };
+    cancelBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BatchResponse"];
                 };
             };
         };
