@@ -73,7 +73,12 @@ final class AuthorizationMatrix {
 			// The fixture expense was created by someone else: members may only change their own.
 			rule(HttpMethod.PATCH, "/expenses/{expenseId}", ADMIN_ONLY,
 					fixture -> "{\"version\": 0, \"description\": \"Renamed\"}"),
-			rule(HttpMethod.DELETE, "/expenses/{expenseId}", ADMIN_ONLY));
+			rule(HttpMethod.DELETE, "/expenses/{expenseId}", ADMIN_ONLY),
+			rule(HttpMethod.GET, "/expenses/upcoming", EVERY_ROLE),
+			// Members may mark anyone's planned expense as paid by themselves (no payer: their own member).
+			rule(HttpMethod.POST, "/expenses/{expenseId}/pay", WRITERS, fixture -> "{}"),
+			rule(HttpMethod.POST, "/expenses/{expenseId}/revert-payment", ADMIN_ONLY, fixture -> "{}")
+				.with("expenseId", "paidExpenseId"));
 
 	/** Endpoints on the central host: any authenticated account, no role. */
 	static final List<Rule> CENTRAL = List.of(
@@ -87,7 +92,20 @@ final class AuthorizationMatrix {
 	record Fixture(Map<String, String> pathVariables) {
 	}
 
-	record Rule(HttpMethod method, String path, Set<Role> allowed, Function<Fixture, String> body, String query) {
+	/**
+	 * @param resources which fixture resource fills a path variable when it is not the one with the
+	 *        same name (for example a paid expense for {@code {expenseId}})
+	 */
+	record Rule(HttpMethod method, String path, Set<Role> allowed, Function<Fixture, String> body, String query,
+			Map<String, String> resources) {
+
+		/** The same rule, filling {@code variable} with the fixture's {@code resource}. */
+		Rule with(String variable, String resource) {
+			Map<String, String> merged = new java.util.HashMap<>(resources);
+			merged.put(variable, resource);
+			return new Rule(method, path, allowed, body, query, Map.copyOf(merged));
+		}
+
 
 		String key() {
 			return method + " " + path;
@@ -95,6 +113,9 @@ final class AuthorizationMatrix {
 
 		String url(Fixture fixture) {
 			String url = path;
+			for (Map.Entry<String, String> alias : resources.entrySet()) {
+				url = url.replace("{" + alias.getKey() + "}", fixture.pathVariables().get(alias.getValue()));
+			}
 			for (Map.Entry<String, String> variable : fixture.pathVariables().entrySet()) {
 				url = url.replace("{" + variable.getKey() + "}", variable.getValue());
 			}
@@ -117,7 +138,7 @@ final class AuthorizationMatrix {
 
 	private static Rule rule(HttpMethod method, String path, Set<Role> allowed, Function<Fixture, String> body,
 			String query) {
-		return new Rule(method, path, allowed, body, query);
+		return new Rule(method, path, allowed, body, query, Map.of());
 	}
 
 	private AuthorizationMatrix() {

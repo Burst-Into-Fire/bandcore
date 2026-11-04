@@ -70,6 +70,14 @@ class ExpenseController {
 		return PageResponse.of(expenses.list(filter, sort, page, size), ExpenseResponse::of);
 	}
 
+	@GetMapping("/upcoming")
+	@Operation(operationId = "listUpcomingExpenses",
+			summary = "Planned expenses still to pay, overdue first, up to some days ahead (at most 100)",
+			description = "Days are counted from today in the band's time zone.")
+	List<ExpenseResponse> upcoming(@RequestParam(defaultValue = "30") @Min(0) @Max(Expenses.MAX_UPCOMING_DAYS) int days) {
+		return expenses.upcoming(days).stream().map(ExpenseResponse::of).toList();
+	}
+
 	@GetMapping("/{expenseId}")
 	@Operation(operationId = "getExpense", summary = "One expense of the current band")
 	ExpenseResponse get(@PathVariable UUID expenseId) {
@@ -97,6 +105,24 @@ class ExpenseController {
 				new Expenses.ExpenseChanges(request.version(), request.description(), request.categoryId(),
 						request.currency(), request.amountCents(), request.expenseDate(), request.paidByMemberId(),
 						request.paidOn(), request.notes(), SplitBody.toRequest(request.split()))));
+	}
+
+	@PostMapping("/{expenseId}/pay")
+	@Operation(operationId = "payExpense", summary = "Mark a planned expense as paid",
+			description = "Admins and the expense's creator say who paid; other members can only pay it themselves. "
+					+ "Without payerMemberId the caller's own member pays; without paidOn it is paid today (band time "
+					+ "zone). 409 EXPENSE_NOT_PLANNED when it is already paid.")
+	ExpenseResponse pay(@PathVariable UUID expenseId, @Valid @RequestBody PayExpenseRequest request) {
+		return ExpenseResponse.of(expenses.pay(expenseId, request.payerMemberId(), request.paidOn(), request.version()));
+	}
+
+	@PostMapping("/{expenseId}/revert-payment")
+	@Operation(operationId = "revertExpensePayment",
+			summary = "Turn a paid expense back into a planned one (admins), for payments recorded by mistake",
+			description = "409 EXPENSE_NOT_PAID when it is not paid.")
+	ExpenseResponse revertPayment(@PathVariable UUID expenseId,
+			@Valid @RequestBody(required = false) VersionRequest request) {
+		return ExpenseResponse.of(expenses.revertPayment(expenseId, request == null ? null : request.version()));
 	}
 
 	@DeleteMapping("/{expenseId}")
@@ -187,8 +213,21 @@ class ExpenseController {
 
 	}
 
+	record PayExpenseRequest(@Schema(description = "Defaults to the caller's own member") UUID payerMemberId,
+			@Schema(description = "Defaults to today in the band's time zone") LocalDate paidOn,
+			@Schema(description = "The version that was read; 409 VERSION_CONFLICT when it changed") @PositiveOrZero
+			Long version) {
+	}
+
+	record VersionRequest(@Schema(description = "The version that was read; 409 VERSION_CONFLICT when it changed")
+	@PositiveOrZero Long version) {
+	}
+
 	record AccessResponse(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean edit,
-			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean delete) {
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean delete,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "Mark as paid") boolean pay,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED,
+					description = "Turn back into planned") boolean revertPayment) {
 	}
 
 	record ExpenseResponse(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id,
@@ -197,7 +236,10 @@ class ExpenseController {
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) Currency currency,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) long amountCents,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) LocalDate expenseDate,
-			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) ExpenseStatus status, UUID paidByMemberId,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) ExpenseStatus status,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED,
+					description = "Planned and dated before today in the band's time zone") boolean overdue,
+			UUID paidByMemberId,
 			LocalDate paidOn, String notes,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) SplitResponse split,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID createdBy,
@@ -212,9 +254,11 @@ class ExpenseController {
 			Expense expense = details.expense();
 			return new ExpenseResponse(expense.getId(), expense.getDescription(), expense.getCategoryId(),
 					expense.getCurrency(), expense.getAmountCents(), expense.getExpenseDate(), expense.getStatus(),
-					expense.getPaidByMemberId(), expense.getPaidOn(), expense.getNotes(),
+					details.overdue(), expense.getPaidByMemberId(), expense.getPaidOn(), expense.getNotes(),
 					SplitResponse.of(expense, details.shares()), expense.getCreatedBy(),
-					expense.getVersion(), new AccessResponse(details.access().edit(), details.access().delete()),
+					expense.getVersion(),
+					new AccessResponse(details.access().edit(), details.access().delete(), details.access().pay(),
+							details.access().revertPayment()),
 					expense.getCreatedAt(), expense.getUpdatedAt());
 		}
 

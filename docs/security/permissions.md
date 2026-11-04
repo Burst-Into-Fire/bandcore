@@ -15,7 +15,8 @@ Roles are per band: the same person can be `ADMIN` in one band and `READ_ONLY` i
 | View merch, events and reports | Yes | Yes | Yes | `merch:read` |
 | Create expenses and settlements | Yes | Yes | No | `finance:write` |
 | Edit or delete expenses and settlements | All | Own only | No | `finance:manage` (all), `finance:write` + ownership check (own) |
-| Mark a planned expense as paid | Yes | Own only | No | `finance:manage` (all), `finance:write` + ownership check (own) |
+| Mark a planned expense as paid | Yes | Own, or paying it themselves | No | `finance:manage` (all), `finance:write` + ownership check (own; anyone's when the payer is their own member) |
+| Turn a paid expense back into planned | Yes | No | No | `finance:manage` |
 | Create events and register sales | Yes | Yes | No | `sale:write` |
 | Refund sales | Yes | Open events only | No | `sale:refund` + open-event check for members |
 | Manage products, variants, batches and stock adjustments | Yes | No | No | `merch:manage` |
@@ -65,6 +66,9 @@ An expense is a member's **own** when they created it or when the member (integr
 | `GET /api/expenses`, `GET /api/expenses/{id}` | band | `finance:read` |
 | `POST /api/expenses` | band | `finance:write` |
 | `PATCH`/`DELETE /api/expenses/{id}` | band | `finance:manage` (any), or `finance:write` on one's own expenses (403 otherwise). The split travels with the expense |
+| `GET /api/expenses/upcoming` | band | `finance:read` |
+| `POST /api/expenses/{id}/pay` | band | `finance:manage`, or `finance:write` on one's own expense, or on anyone's when paying it themselves |
+| `POST /api/expenses/{id}/revert-payment` | band | `finance:manage` |
 | `POST /api/invitations/accept` | central | Any authenticated account whose verified email is the invited one |
 | `POST /api/invitations/preview` | central | Public (the token is the credential) |
 | `GET /api/me/bands`, `GET /api/bands/slug-availability`, `POST /api/bands` | central | Any authenticated account (creating a band also needs a verified email) |

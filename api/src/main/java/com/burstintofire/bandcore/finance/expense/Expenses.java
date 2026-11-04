@@ -33,6 +33,7 @@ import com.burstintofire.bandcore.shared.security.Permissions;
 import com.burstintofire.bandcore.shared.tenant.TenantContextHolder;
 import com.burstintofire.bandcore.shared.web.ApiException;
 import com.burstintofire.bandcore.shared.web.ErrorCode;
+import com.burstintofire.bandcore.tenancy.BandCalendar;
 import com.burstintofire.bandcore.tenancy.BandMembers;
 
 /**
@@ -67,11 +68,15 @@ public class Expenses {
 	}
 
 	/** What the current user may do with an expense. */
-	public record Access(boolean edit, boolean delete) {
+	public record Access(boolean edit, boolean delete, boolean pay, boolean revertPayment) {
 	}
 
-	public record ExpenseDetails(Expense expense, List<ExpenseSplit> shares, Access access) {
+	/** @param overdue planned, and its date is before today in the band's time zone */
+	public record ExpenseDetails(Expense expense, List<ExpenseSplit> shares, Access access, boolean overdue) {
 	}
+
+	/** Upcoming lists look at most this far ahead. */
+	public static final int MAX_UPCOMING_DAYS = 366;
 
 	private final ExpenseRepository expenses;
 
@@ -83,6 +88,8 @@ public class Expenses {
 
 	private final BandMembers members;
 
+	private final BandCalendar calendar;
+
 	private final AuditRecorder audit;
 
 	private final IdGenerator ids;
@@ -90,13 +97,14 @@ public class Expenses {
 	private final Clock clock;
 
 	Expenses(ExpenseRepository expenses, ExpenseSplitRepository splits, ExpenseSearch search,
-			ExpenseCategoryRepository categories, BandMembers members, AuditRecorder audit, IdGenerator ids,
-			Clock clock) {
+			ExpenseCategoryRepository categories, BandMembers members, BandCalendar calendar, AuditRecorder audit,
+			IdGenerator ids, Clock clock) {
 		this.expenses = expenses;
 		this.splits = splits;
 		this.search = search;
 		this.categories = categories;
 		this.members = members;
+		this.calendar = calendar;
 		this.audit = audit;
 		this.ids = ids;
 		this.clock = clock;
@@ -142,7 +150,7 @@ public class Expenses {
 		expenses.saveAndFlush(expense);
 		List<ExpenseSplit> saved = replaceShares(expense, shares);
 		audit.record("expense.created", "expense", expense.getId(), snapshot(expense, saved));
-		return new ExpenseDetails(expense, saved, access(expense, ownership()));
+		return details(expense, saved, ownership());
 	}
 
 	@PreAuthorize(Permissions.CAN_WRITE_FINANCE)
@@ -201,7 +209,76 @@ public class Expenses {
 			flush(expense);
 			audit.record("expense.updated", "expense", expense.getId(), diff);
 		}
-		return new ExpenseDetails(expense, after, access(expense, ownership));
+		return details(expense, after, ownership);
+	}
+
+	/**
+	 * Planned expenses still to pay, overdue ones first, up to {@code days} from today in the
+	 * band's time zone; for the dashboard.
+	 */
+	@PreAuthorize(Permissions.CAN_READ_FINANCE)
+	@Transactional(readOnly = true)
+	public List<ExpenseDetails> upcoming(int days) {
+		Ownership ownership = ownership();
+		List<Expense> planned = expenses.findUpcoming(bandId(), calendar.today().plusDays(days));
+		Map<UUID, List<ExpenseSplit>> shares = sharesOf(planned.stream().map(Expense::getId).toList());
+		return planned.stream()
+			.map(expense -> details(expense, shares.getOrDefault(expense.getId(), List.of()), ownership))
+			.toList();
+	}
+
+	/**
+	 * PLANNED to PAID: the move that changes balances. Who may do it: admins; the member who
+	 * created it; and any member paying it themselves. Without a payer, the caller's own member
+	 * pays; without a date, it is paid today.
+	 */
+	@PreAuthorize(Permissions.CAN_WRITE_FINANCE)
+	@Transactional
+	public ExpenseDetails pay(UUID expenseId, UUID payerMemberId, LocalDate paidOn, Long version) {
+		Expense expense = find(expenseId);
+		Ownership ownership = ownership();
+		UUID payer = payerMemberId != null ? payerMemberId : ownership.memberId().orElseThrow(Expenses::payerRequired);
+		if (!ownership.mayPay(expense, payer)) {
+			throw new ApiException(HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED,
+					"Only admins and its creator mark someone else's payment.");
+		}
+		if (version != null) {
+			requireVersion(expense, version);
+		}
+		if (expense.isPaid()) {
+			throw new ApiException(HttpStatus.CONFLICT, ErrorCode.EXPENSE_NOT_PLANNED, "This expense is already paid.");
+		}
+		expense.markPaid(activeMember(payer, "payerMemberId"), paidOn != null ? paidOn : calendar.today());
+		expense.touch(clock.instant());
+		flush(expense);
+		Map<String, Object> changes = new LinkedHashMap<>();
+		changes.put("paid_by_member_id", expense.getPaidByMemberId().toString());
+		changes.put("paid_on", expense.getPaidOn().toString());
+		changes.put("amount_cents", expense.getAmountCents());
+		changes.put("currency", expense.getCurrency().name());
+		audit.record("expense.paid", "expense", expense.getId(), changes);
+		return details(expense, ownership);
+	}
+
+	/** PAID back to PLANNED, for payments recorded by mistake (admins). */
+	@PreAuthorize(Permissions.CAN_MANAGE_FINANCE)
+	@Transactional
+	public ExpenseDetails revertPayment(UUID expenseId, Long version) {
+		Expense expense = find(expenseId);
+		if (version != null) {
+			requireVersion(expense, version);
+		}
+		if (!expense.isPaid()) {
+			throw new ApiException(HttpStatus.CONFLICT, ErrorCode.EXPENSE_NOT_PAID, "This expense is not paid.");
+		}
+		Map<String, Object> changes = new LinkedHashMap<>();
+		changes.put("paid_by_member_id", AuditRecorder.change(expense.getPaidByMemberId().toString(), null));
+		changes.put("paid_on", AuditRecorder.change(expense.getPaidOn().toString(), null));
+		expense.markPlanned();
+		expense.touch(clock.instant());
+		flush(expense);
+		audit.record("expense.payment_reverted", "expense", expense.getId(), changes);
+		return details(expense, ownership());
 	}
 
 	/**
@@ -248,12 +325,15 @@ public class Expenses {
 	}
 
 	ExpenseDetails details(Expense expense, List<ExpenseSplit> shares, Ownership ownership) {
-		return new ExpenseDetails(expense, shares, access(expense, ownership));
+		boolean overdue = !expense.isPaid() && expense.getExpenseDate().isBefore(calendar.today());
+		return new ExpenseDetails(expense, shares, access(expense, ownership), overdue);
 	}
 
-	Access access(Expense expense, Ownership ownership) {
+	static Access access(Expense expense, Ownership ownership) {
 		boolean owns = ownership.mayChange(expense);
-		return new Access(owns, owns);
+		boolean pay = !expense.isPaid()
+				&& (owns || ownership.memberId().filter(member -> ownership.mayPay(expense, member)).isPresent());
+		return new Access(owns, owns, pay, expense.isPaid() && ownership.manage());
 	}
 
 	/** Visible but not theirs: 403, as docs/security/permissions.md says. */
@@ -399,6 +479,11 @@ public class Expenses {
 			return userId.equals(expense.getCreatedBy())
 					|| (expense.getPaidByMemberId() != null && memberId.filter(expense.getPaidByMemberId()::equals)
 						.isPresent());
+		}
+
+		/** Admins and the creator record anyone's payment; anyone with write access, their own. */
+		boolean mayPay(Expense expense, UUID payer) {
+			return mayChange(expense) || (write && memberId.filter(payer::equals).isPresent());
 		}
 
 	}
