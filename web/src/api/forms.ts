@@ -28,3 +28,21 @@ export function applyProblem<T extends FieldValues>(
     setError('root.server', { type: 'server', message: errorKey(error.code) });
   }
 }
+
+/**
+ * The same error with list fields named as react-hook-form names them: the API says
+ * `items[0].quantity`, a form field array says `items.0.quantity`.
+ */
+export function withFormPaths(error: unknown): unknown {
+  if (!(error instanceof ApiError)) {
+    return error;
+  }
+  return new ApiError(
+    error.status,
+    error.code,
+    error.fieldErrors.map((fieldError) => ({
+      ...fieldError,
+      field: fieldError.field.replace(/\[(\d+)\]/g, '.$1'),
+    })),
+  );
+}

@@ -141,7 +141,12 @@ function ExpenseRow({ expense, context }: { expense: Expense; context: ListConte
             <span className="text-right font-semibold tabular-nums">
               {formatMoney(expense.amountCents, expense.currency)}
             </span>
-            <ExpenseBadge expense={expense} />
+            <span className="flex flex-wrap justify-end gap-1">
+              {expense.source?.type === 'BATCH' ? (
+                <StatusBadge tone="neutral">{t('expenses.fromBatch')}</StatusBadge>
+              ) : null}
+              <ExpenseBadge expense={expense} />
+            </span>
           </span>
           <ChevronDownIcon
             className={`text-muted transition-transform ${open ? 'rotate-180' : ''}`}

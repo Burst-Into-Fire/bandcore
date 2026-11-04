@@ -29,6 +29,7 @@ test('the band workspace at 360, 768 and 1280 px', async ({ page }, testInfo) =>
     for (const [name, path, heading, loaded] of [
       ['summary', '/', 'Resumo', 'Acerto entre integrantes'],
       ['expenses', '/expenses', 'Gastos', 'Nenhum gasto registrado'],
+      ['merch', '/merch', 'Merch', 'Nenhum produto ainda'],
       ['members', '/members', 'Integrantes', 'Acessos'],
       ['settings', '/settings', 'Configurações', 'Fuso horário'],
     ] as const) {

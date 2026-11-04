@@ -34,6 +34,7 @@ function bandApi(role: 'ADMIN' | 'MEMBER') {
       }),
     ),
     http.get(apiUrl('/members'), () => HttpResponse.json([])),
+    http.get(apiUrl('/products'), () => HttpResponse.json([])),
     ...emptyFinanceHandlers,
   );
   startSession('token');
@@ -88,7 +89,7 @@ describe('AppShell', () => {
 
     await user.click(within(navigation()).getByRole('link', { name: 'Merch' }));
     expect(router.state.location.pathname).toBe('/merch');
-    expect(screen.getByText('Em breve')).toBeInTheDocument();
+    expect(await screen.findByText('Nenhum produto ainda')).toBeInTheDocument();
   });
 
   it('uses a compact header and bottom navigation on a 360 px phone', async () => {
