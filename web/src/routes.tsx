@@ -15,6 +15,7 @@ import { MembersPage } from './pages/members/MembersPage';
 import { MyBandsPage } from './pages/MyBandsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { SettlementsPage } from './pages/settlements/SettlementsPage';
 import { SignupPage } from './pages/SignupPage';
 import { SummaryPage } from './pages/SummaryPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
@@ -34,6 +35,7 @@ export function createRoutes(host: Host): RouteObject[] {
             children: [
               { path: '/', element: <SummaryPage /> },
               { path: '/expenses', element: <ExpensesPage /> },
+              { path: '/expenses/settlements', element: <SettlementsPage /> },
               { path: '/merch', element: <ComingSoonPage section="merch" /> },
               { path: '/members', element: <MembersPage /> },
               { path: '/settings', element: <BandSettingsPage /> },

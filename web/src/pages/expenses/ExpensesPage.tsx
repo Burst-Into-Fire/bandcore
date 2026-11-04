@@ -18,6 +18,7 @@ import { DESKTOP, useMediaQuery } from '../../lib/useMediaQuery';
 import { errorMessage } from '../errorMessage';
 import { ExpenseForm } from './ExpenseForm';
 import { ExpenseList } from './ExpenseList';
+import { ExpenseTabs } from './ExpenseTabs';
 import { memberName } from './splitState';
 import { categoryLabel, type Expense } from './types';
 
@@ -141,6 +142,7 @@ export function ExpensesPage() {
           ) : null
         }
       />
+      <ExpenseTabs />
       {editing && ready ? (
         <ExpenseForm
           key={editing.kind === 'edit' ? editing.expense.id : 'new'}

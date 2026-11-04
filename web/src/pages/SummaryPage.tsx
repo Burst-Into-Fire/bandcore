@@ -13,6 +13,7 @@ import { formatMoney } from '../lib/money';
 import { errorMessage } from './errorMessage';
 import { ExpenseBadge } from './expenses/ExpenseList';
 import { roleLabel } from './roles';
+import { SettlementCard } from './settlements/SettlementCard';
 
 /**
  * Resumo: the band's dashboard, with the latest expenses. The figures arrive with balances (M6)
@@ -50,12 +51,7 @@ export function SummaryPage() {
         <KpiTile label={t('summary.merchProfit')} value="—" caption={t('summary.soon')} />
       </div>
       <div className="grid gap-3 lg:grid-cols-2">
-        <Card title={t('summary.settlement')}>
-          <EmptyState
-            title={t('summary.settlementEmpty')}
-            description={t('summary.settlementHint')}
-          />
-        </Card>
+        <SettlementCard showHistoryLink />
         <Card title={t('summary.stock')}>
           <EmptyState title={t('summary.stockEmpty')} description={t('summary.stockHint')} />
         </Card>

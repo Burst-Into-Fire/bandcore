@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
+import { emptyFinanceHandlers } from '../test/finance';
 import { BAND, renderRoute } from '../test/render';
 import { apiUrl, problem, server } from '../test/server';
 
@@ -29,9 +30,8 @@ function bandApi() {
         timezone: 'America/Sao_Paulo',
       }),
     ),
-    http.get(apiUrl('/expenses'), () =>
-      HttpResponse.json({ items: [], page: 0, size: 5, totalItems: 0, totalPages: 0 }),
-    ),
+    http.get(apiUrl('/members'), () => HttpResponse.json([])),
+    ...emptyFinanceHandlers,
   );
 }
 
