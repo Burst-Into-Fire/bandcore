@@ -50,4 +50,15 @@ describe('MoneyInput', () => {
 
     expect(input).toHaveValue('0,00');
   });
+
+  it('adds digits at the end even when the caret was placed in the middle', async () => {
+    render(<Harness onValue={() => {}} />);
+    const input = screen.getByLabelText('Valor');
+
+    await userEvent.click(input);
+    (input as HTMLInputElement).setSelectionRange(1, 1);
+    await userEvent.keyboard('10001');
+
+    expect(input).toHaveValue('100,01');
+  });
 });

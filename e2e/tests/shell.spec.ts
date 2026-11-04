@@ -28,6 +28,7 @@ test('the band workspace at 360, 768 and 1280 px', async ({ page }, testInfo) =>
     // The last item is content that loads last, so the screenshot shows the full page.
     for (const [name, path, heading, loaded] of [
       ['summary', '/', 'Resumo', 'Acerto entre integrantes'],
+      ['expenses', '/expenses', 'Gastos', 'Nenhum gasto registrado'],
       ['members', '/members', 'Integrantes', 'Acessos'],
       ['settings', '/settings', 'Configurações', 'Fuso horário'],
     ] as const) {

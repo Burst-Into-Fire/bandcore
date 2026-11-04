@@ -33,6 +33,10 @@ function bandApi(role: 'ADMIN' | 'MEMBER') {
       }),
     ),
     http.get(apiUrl('/members'), () => HttpResponse.json([])),
+    http.get(apiUrl('/expense-categories'), () => HttpResponse.json([])),
+    http.get(apiUrl('/expenses'), () =>
+      HttpResponse.json({ items: [], page: 0, size: 50, totalItems: 0, totalPages: 0 }),
+    ),
   );
   startSession('token');
 }
@@ -82,6 +86,10 @@ describe('AppShell', () => {
 
     expect(router.state.location.pathname).toBe('/expenses');
     expect(screen.getByRole('heading', { name: 'Gastos' })).toBeInTheDocument();
+    expect(await screen.findByText('Nenhum gasto registrado')).toBeInTheDocument();
+
+    await user.click(within(navigation()).getByRole('link', { name: 'Merch' }));
+    expect(router.state.location.pathname).toBe('/merch');
     expect(screen.getByText('Em breve')).toBeInTheDocument();
   });
 
