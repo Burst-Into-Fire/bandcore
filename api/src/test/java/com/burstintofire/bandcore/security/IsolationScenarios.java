@@ -65,6 +65,7 @@ final class IsolationScenarios {
 					target -> "{\"payerMemberId\": \"%s\"}".formatted(target.resources().get("memberId"))),
 			probe(HttpMethod.POST, "/expenses/{expenseId}/revert-payment", target -> "{\"version\": 0}"),
 			probe(HttpMethod.GET, "/balances"),
+			probe(HttpMethod.GET, "/balances/settlement-plan"),
 			probe(HttpMethod.GET, "/settlements"),
 			probe(HttpMethod.GET, "/settlements/{settlementId}"),
 			probe(HttpMethod.POST, "/settlements", target -> """

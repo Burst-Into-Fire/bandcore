@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.burstintofire.bandcore.shared.money.Currency;
 import com.burstintofire.bandcore.shared.security.Permissions;
 import com.burstintofire.bandcore.shared.tenant.TenantContextHolder;
 import com.burstintofire.bandcore.tenancy.BandMembers;
@@ -38,6 +39,20 @@ public class Balances {
 				members.activeStatus(totals.stream().map(MemberTotals::memberId).distinct().toList()));
 		activeMembers.forEach(memberId -> status.put(memberId, true));
 		return BalanceCalculator.balances(totals, status, activeMembers);
+	}
+
+	public record CurrencyPlan(Currency currency,
+			List<SettlementPlanner.Transfer> transfers) {
+	}
+
+	/** Suggested transfers that settle every current balance, per currency (RF19). */
+	@PreAuthorize(Permissions.CAN_READ_FINANCE)
+	@Transactional(readOnly = true)
+	public List<CurrencyPlan> settlementPlan() {
+		return current(null).stream()
+			.map(currency -> new CurrencyPlan(currency.currency(), SettlementPlanner.plan(currency.members())))
+			.filter(plan -> !plan.transfers().isEmpty())
+			.toList();
 	}
 
 }

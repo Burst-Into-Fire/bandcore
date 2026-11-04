@@ -40,6 +40,38 @@ class BalanceController {
 				balances.current(asOf).stream().map(CurrencyBalancesResponse::of).toList());
 	}
 
+	@GetMapping("/settlement-plan")
+	@Operation(operationId = "getSettlementPlan",
+			summary = "Suggested transfers that settle every balance, per currency",
+			description = "The largest debtor pays the largest creditor, so n members need at most n - 1 transfers; "
+					+ "the same balances always give the same plan. Record a transfer with POST /api/settlements. "
+					+ "Currencies already settled are not listed.")
+	SettlementPlanResponse settlementPlan() {
+		return new SettlementPlanResponse(balances.settlementPlan()
+			.stream()
+			.map(plan -> new CurrencyPlanResponse(plan.currency(),
+					plan.transfers()
+						.stream()
+						.map(transfer -> new TransferResponse(transfer.fromMemberId(), transfer.toMemberId(),
+								transfer.amountCents()))
+						.toList()))
+			.toList());
+	}
+
+	record SettlementPlanResponse(
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<CurrencyPlanResponse> currencies) {
+	}
+
+	record CurrencyPlanResponse(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) Currency currency,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<TransferResponse> transfers) {
+	}
+
+	record TransferResponse(
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "Who pays") UUID fromMemberId,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "Who receives") UUID toMemberId,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) long amountCents) {
+	}
+
 	record BalancesResponse(LocalDate asOf,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<CurrencyBalancesResponse> currencies) {
 	}

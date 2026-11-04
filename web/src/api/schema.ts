@@ -229,6 +229,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/balances/settlement-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Suggested transfers that settle every balance, per currency
+         * @description The largest debtor pays the largest creditor, so n members need at most n - 1 transfers; the same balances always give the same plan. Record a transfer with POST /api/settlements. Currencies already settled are not listed.
+         */
+        get: operations["getSettlementPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/band": {
         parameters: {
             query?: never;
@@ -1001,6 +1021,11 @@ export interface components {
             /** @description Who receives first, then who is settled, then who owes */
             members: components["schemas"]["MemberBalanceResponse"][];
         };
+        CurrencyPlanResponse: {
+            /** @enum {string} */
+            currency: "BRL" | "USD";
+            transfers: components["schemas"]["TransferResponse"][];
+        };
         ExpenseResponse: {
             /** @description What the current user may do with this expense */
             access: components["schemas"]["AccessResponse"];
@@ -1212,6 +1237,9 @@ export interface components {
             delete: boolean;
             edit: boolean;
         };
+        SettlementPlanResponse: {
+            currencies: components["schemas"]["CurrencyPlanResponse"][];
+        };
         SettlementResponse: {
             /** @description What the current user may do with this settlement */
             access: components["schemas"]["SettlementAccessResponse"];
@@ -1316,6 +1344,20 @@ export interface components {
             expiresIn: number;
             /** @example Bearer */
             tokenType: string;
+        };
+        TransferResponse: {
+            /** Format: int64 */
+            amountCents: number;
+            /**
+             * Format: uuid
+             * @description Who pays
+             */
+            fromMemberId: string;
+            /**
+             * Format: uuid
+             * @description Who receives
+             */
+            toMemberId: string;
         };
         UpdateBandRequest: {
             /**
@@ -1660,6 +1702,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BalancesResponse"];
+                };
+            };
+        };
+    };
+    getSettlementPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SettlementPlanResponse"];
                 };
             };
         };

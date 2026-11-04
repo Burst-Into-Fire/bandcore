@@ -69,7 +69,7 @@ An expense is a member's **own** when they created it or when the member (integr
 | `GET /api/expenses/upcoming` | band | `finance:read` |
 | `POST /api/expenses/{id}/pay` | band | `finance:manage`, or `finance:write` on one's own expense, or on anyone's when paying it themselves |
 | `POST /api/expenses/{id}/revert-payment` | band | `finance:manage` |
-| `GET /api/balances` | band | `finance:read` |
+| `GET /api/balances`, `GET /api/balances/settlement-plan` | band | `finance:read` |
 | `GET /api/settlements`, `GET /api/settlements/{id}` | band | `finance:read` |
 | `POST /api/settlements` | band | `finance:write` (between any two members of the band, including members who left) |
 | `PATCH`/`DELETE /api/settlements/{id}` | band | `finance:manage` (any), or `finance:write` on settlements the user recorded or whose member is one of the two parties (403 otherwise) |
