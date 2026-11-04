@@ -84,7 +84,21 @@ public enum ErrorCode {
 	/** The split has no members, repeats a member or misses a value its mode needs. */
 	SPLIT_INVALID,
 	/** A settlement goes from one member to another, never to the same member. */
-	SETTLEMENT_SAME_MEMBER;
+	SETTLEMENT_SAME_MEMBER,
+
+	// Merch
+	/** Another product of the band already has this name (archived ones included). */
+	PRODUCT_NAME_TAKEN,
+	/** The product already has a variant with this size and color. */
+	VARIANT_TAKEN,
+	/** Another variant of the band already has this SKU. */
+	SKU_TAKEN,
+	/** The product has stock history: archive it instead of deleting. */
+	PRODUCT_HAS_HISTORY,
+	/** The variant has stock history: archive it instead of deleting. */
+	VARIANT_HAS_HISTORY,
+	/** A product keeps at least one variant: delete the product instead. */
+	LAST_VARIANT;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {

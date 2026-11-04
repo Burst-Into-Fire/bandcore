@@ -797,6 +797,109 @@ export interface paths {
         patch: operations["changeMembershipRole"];
         trace?: never;
     };
+    "/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Products of the current band by name, with their variants
+         * @description ACTIVE leaves out archived products and variants (what sales offer); ALL is the whole catalog.
+         */
+        get: operations["listProducts"];
+        put?: never;
+        /**
+         * Create a product with its variants (admins)
+         * @description Without variants, the product gets one default variant (no size, no color). 409 PRODUCT_NAME_TAKEN, VARIANT_TAKEN (same size and color) or SKU_TAKEN.
+         */
+        post: operations["createProduct"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{productId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One product of the current band, with all its variants */
+        get: operations["getProduct"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a product whose variants never moved stock (admins)
+         * @description 409 PRODUCT_HAS_HISTORY otherwise: archive it instead.
+         */
+        delete: operations["deleteProduct"];
+        options?: never;
+        head?: never;
+        /**
+         * Change a product (admins)
+         * @description Send the version that was read: 409 VERSION_CONFLICT when it changed meanwhile. Omitted fields are left unchanged; an empty description clears it.
+         */
+        patch: operations["updateProduct"];
+        trace?: never;
+    };
+    "/products/{productId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive a product (admins): it stays on past records but can no longer be sold */
+        post: operations["archiveProduct"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{productId}/unarchive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bring an archived product back (admins) */
+        post: operations["unarchiveProduct"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{productId}/variants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a variant to a product (admins)
+         * @description 409 VARIANT_TAKEN (same size and color) or SKU_TAKEN.
+         */
+        post: operations["addProductVariant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/settlements": {
         parameters: {
             query?: never;
@@ -877,6 +980,64 @@ export interface paths {
         get: operations["getFinanceSummary"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/variants/{variantId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change a variant (admins): send every value
+         * @description Send the version that was read: 409 VERSION_CONFLICT when it changed meanwhile. A null price sells at the product's price. 409 VARIANT_TAKEN (same size and color) or SKU_TAKEN.
+         */
+        put: operations["replaceVariant"];
+        post?: never;
+        /**
+         * Delete a variant that never moved stock (admins)
+         * @description 409 VARIANT_HAS_HISTORY otherwise (archive it instead); 409 LAST_VARIANT for the only variant of a product (delete the product instead).
+         */
+        delete: operations["deleteVariant"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/variants/{variantId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive a variant (admins): it stays on past records but can no longer be sold */
+        post: operations["archiveVariant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/variants/{variantId}/unarchive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bring an archived variant back (admins) */
+        post: operations["unarchiveVariant"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1014,6 +1175,19 @@ export interface components {
             displayName: string;
             /** @example Vocal */
             instrument?: string;
+        };
+        CreateProductRequest: {
+            /**
+             * @description Of every price and cost of the product
+             * @enum {string}
+             */
+            currency: "BRL" | "USD";
+            /** Format: int64 */
+            defaultPriceCents: number;
+            description?: string;
+            name: string;
+            /** @description In display order; empty creates one default variant */
+            variants?: components["schemas"]["ProductVariantRequest"][];
         };
         CreateSettlementRequest: {
             /** Format: int64 */
@@ -1280,6 +1454,97 @@ export interface components {
             /** @enum {string} */
             role: "ADMIN" | "MEMBER" | "READ_ONLY";
         };
+        ProductResponse: {
+            archived: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** @enum {string} */
+            currency: "BRL" | "USD";
+            /** Format: int64 */
+            defaultPriceCents: number;
+            description?: string;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @description In display order */
+            variants: components["schemas"]["ProductVariantResponse"][];
+            /**
+             * Format: int64
+             * @description Send it back when changing the product
+             */
+            version: number;
+        };
+        ProductVariantRequest: {
+            /** @description Empty for none */
+            color?: string;
+            /**
+             * Format: int32
+             * @description Low stock at or below this quantity; 0 by default
+             */
+            lowStockThreshold?: number;
+            /**
+             * Format: int64
+             * @description Omit to sell at the product's price
+             */
+            priceCents?: number;
+            /**
+             * @description Empty for none
+             * @example M
+             */
+            size?: string;
+            /** @description Optional, unique in the band */
+            sku?: string;
+        };
+        ProductVariantResponse: {
+            archived: boolean;
+            color?: string;
+            /**
+             * Format: int64
+             * @description What a sale charges: the variant's price or the product's
+             */
+            effectivePriceCents: number;
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            lowStockThreshold: number;
+            /**
+             * Format: int64
+             * @description The variant's own price; null sells at the product's
+             */
+            priceCents?: number;
+            /** Format: uuid */
+            productId: string;
+            size?: string;
+            sku?: string;
+            /**
+             * Format: int64
+             * @description Send it back when changing the variant
+             */
+            version: number;
+        };
+        ReplaceVariantRequest: {
+            /** @description Empty for none */
+            color?: string;
+            /**
+             * Format: int32
+             * @description Low stock at or below this quantity; 0 by default
+             */
+            lowStockThreshold?: number;
+            /**
+             * Format: int64
+             * @description Null sells at the product's price
+             */
+            priceCents?: number;
+            /** @description Empty for none */
+            size?: string;
+            /** @description Empty for none */
+            sku?: string;
+            /**
+             * Format: int64
+             * @description The version that was read
+             */
+            version: number;
+        };
         ResendVerificationRequest: {
             /** Format: email */
             email: string;
@@ -1457,6 +1722,20 @@ export interface components {
         UpdateMemberRequest: {
             displayName?: string;
             instrument?: string;
+        };
+        UpdateProductRequest: {
+            /** @enum {string} */
+            currency?: "BRL" | "USD";
+            /** Format: int64 */
+            defaultPriceCents?: number;
+            /** @description Empty clears it */
+            description?: string;
+            name?: string;
+            /**
+             * Format: int64
+             * @description The version that was read
+             */
+            version: number;
         };
         UpdateSettlementRequest: {
             /** Format: int64 */
@@ -2683,6 +2962,193 @@ export interface operations {
             };
         };
     };
+    listProducts: {
+        parameters: {
+            query?: {
+                status?: "ACTIVE" | "ALL";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductResponse"][];
+                };
+            };
+        };
+    };
+    createProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProductRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductResponse"];
+                };
+            };
+        };
+    };
+    getProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductResponse"];
+                };
+            };
+        };
+    };
+    deleteProduct: {
+        parameters: {
+            query?: {
+                /** @description The version that was read; 409 VERSION_CONFLICT when it changed */
+                version?: number;
+            };
+            header?: never;
+            path: {
+                productId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProductRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductResponse"];
+                };
+            };
+        };
+    };
+    archiveProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductResponse"];
+                };
+            };
+        };
+    };
+    unarchiveProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductResponse"];
+                };
+            };
+        };
+    };
+    addProductVariant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductVariantRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductVariantResponse"];
+                };
+            };
+        };
+    };
     listSettlements: {
         parameters: {
             query?: {
@@ -2845,6 +3311,99 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["FinanceSummaryResponse"];
+                };
+            };
+        };
+    };
+    replaceVariant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                variantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplaceVariantRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductVariantResponse"];
+                };
+            };
+        };
+    };
+    deleteVariant: {
+        parameters: {
+            query?: {
+                /** @description The version that was read; 409 VERSION_CONFLICT when it changed */
+                version?: number;
+            };
+            header?: never;
+            path: {
+                variantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    archiveVariant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                variantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductVariantResponse"];
+                };
+            };
+        };
+    };
+    unarchiveVariant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                variantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductVariantResponse"];
                 };
             };
         };

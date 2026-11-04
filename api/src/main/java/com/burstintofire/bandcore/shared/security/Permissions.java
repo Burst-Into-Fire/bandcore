@@ -67,6 +67,10 @@ public final class Permissions {
 
 	public static final String CAN_MANAGE_FINANCE = HAS + FINANCE_MANAGE + END;
 
+	public static final String CAN_READ_MERCH = HAS + MERCH_READ + END;
+
+	public static final String CAN_MANAGE_MERCH = HAS + MERCH_MANAGE + END;
+
 	private Permissions() {
 	}
 

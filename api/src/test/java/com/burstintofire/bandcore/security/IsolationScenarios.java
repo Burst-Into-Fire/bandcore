@@ -74,7 +74,20 @@ final class IsolationScenarios {
 				.formatted(target.resources().get("memberId"), target.resources().get("otherMemberId"))),
 			probe(HttpMethod.PATCH, "/settlements/{settlementId}",
 					target -> "{\"version\": 0, \"note\": \"Taken over\"}"),
-			probe(HttpMethod.DELETE, "/settlements/{settlementId}"));
+			probe(HttpMethod.DELETE, "/settlements/{settlementId}"),
+			probe(HttpMethod.GET, "/products"),
+			probe(HttpMethod.GET, "/products/{productId}"),
+			probe(HttpMethod.POST, "/products",
+					target -> "{\"name\": \"Intruder product\", \"currency\": \"BRL\", \"defaultPriceCents\": 100}"),
+			probe(HttpMethod.PATCH, "/products/{productId}", target -> "{\"version\": 0, \"name\": \"Taken over\"}"),
+			probe(HttpMethod.POST, "/products/{productId}/archive"),
+			probe(HttpMethod.POST, "/products/{productId}/unarchive"),
+			probe(HttpMethod.DELETE, "/products/{productId}"),
+			probe(HttpMethod.POST, "/products/{productId}/variants", target -> "{\"size\": \"XG\"}"),
+			probe(HttpMethod.PUT, "/variants/{variantId}", target -> "{\"version\": 0, \"size\": \"XG\"}"),
+			probe(HttpMethod.POST, "/variants/{variantId}/archive"),
+			probe(HttpMethod.POST, "/variants/{variantId}/unarchive"),
+			probe(HttpMethod.DELETE, "/variants/{variantId}"));
 
 	/** The band an attack aims at, and its resources by path variable name. */
 	record Target(String bandId, String slug, Map<String, String> resources) {

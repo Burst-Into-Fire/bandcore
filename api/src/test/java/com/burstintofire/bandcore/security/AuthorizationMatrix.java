@@ -90,7 +90,21 @@ final class AuthorizationMatrix {
 			// The fixture settlement is between two other members and recorded by someone else.
 			rule(HttpMethod.PATCH, "/settlements/{settlementId}", ADMIN_ONLY,
 					fixture -> "{\"version\": 0, \"note\": \"Pix\"}"),
-			rule(HttpMethod.DELETE, "/settlements/{settlementId}", ADMIN_ONLY));
+			rule(HttpMethod.DELETE, "/settlements/{settlementId}", ADMIN_ONLY),
+			rule(HttpMethod.GET, "/products", EVERY_ROLE),
+			rule(HttpMethod.GET, "/products/{productId}", EVERY_ROLE),
+			rule(HttpMethod.POST, "/products", ADMIN_ONLY,
+					fixture -> "{\"name\": \"New product\", \"currency\": \"BRL\", \"defaultPriceCents\": 5000}"),
+			rule(HttpMethod.PATCH, "/products/{productId}", ADMIN_ONLY, fixture -> "{\"version\": 0, \"name\": \"Renamed\"}"),
+			rule(HttpMethod.POST, "/products/{productId}/archive", ADMIN_ONLY),
+			rule(HttpMethod.POST, "/products/{productId}/unarchive", ADMIN_ONLY),
+			rule(HttpMethod.DELETE, "/products/{productId}", ADMIN_ONLY),
+			rule(HttpMethod.POST, "/products/{productId}/variants", ADMIN_ONLY, fixture -> "{\"size\": \"XG\"}"),
+			rule(HttpMethod.PUT, "/variants/{variantId}", ADMIN_ONLY, fixture -> "{\"version\": 0, \"size\": \"GG\"}"),
+			rule(HttpMethod.POST, "/variants/{variantId}/archive", ADMIN_ONLY),
+			rule(HttpMethod.POST, "/variants/{variantId}/unarchive", ADMIN_ONLY),
+			// The fixture product has two variants, so the one under test may be deleted.
+			rule(HttpMethod.DELETE, "/variants/{variantId}", ADMIN_ONLY));
 
 	/** Endpoints on the central host: any authenticated account, no role. */
 	static final List<Rule> CENTRAL = List.of(
