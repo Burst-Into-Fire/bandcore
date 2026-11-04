@@ -89,6 +89,8 @@ final class IsolationScenarios {
 			probe(HttpMethod.POST, "/variants/{variantId}/unarchive"),
 			probe(HttpMethod.DELETE, "/variants/{variantId}"),
 			probe(HttpMethod.GET, "/variants/{variantId}/movements"),
+			probe(HttpMethod.POST, "/variants/{variantId}/adjustments",
+					target -> "{\"quantityDelta\": -1, \"reason\": \"LOST\"}"),
 			probe(HttpMethod.GET, "/batches"),
 			probe(HttpMethod.GET, "/batches/{batchId}"),
 			probe(HttpMethod.POST, "/batches", target -> """

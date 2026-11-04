@@ -1075,6 +1075,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/variants/{variantId}/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Correct a variant's stock by hand, with a reason (admins)
+         * @description Give the counted quantity or the change, not both; OTHER needs a note. The average unit cost does not change. 409 INSUFFICIENT_STOCK when the stock would go below zero; 422 STOCK_UNCHANGED when nothing would change. Archived variants can be adjusted too.
+         */
+        post: operations["adjustStock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/variants/{variantId}/archive": {
         parameters: {
             query?: never;
@@ -1146,6 +1166,22 @@ export interface components {
             pay: boolean;
             /** @description Turn back into planned */
             revertPayment: boolean;
+        };
+        AdjustStockRequest: {
+            /**
+             * Format: int32
+             * @description The quantity found in a count
+             */
+            countedQuantity?: number;
+            /** @description Required for OTHER */
+            note?: string;
+            /**
+             * Format: int32
+             * @description Units found (positive) or gone (negative)
+             */
+            quantityDelta?: number;
+            /** @enum {string} */
+            reason: "COUNT" | "DAMAGED" | "LOST" | "GIFT" | "OTHER";
         };
         BalancesResponse: {
             /** Format: date */
@@ -3788,6 +3824,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    adjustStock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                variantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjustStockRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StockMovementResponse"];
+                };
             };
         };
     };

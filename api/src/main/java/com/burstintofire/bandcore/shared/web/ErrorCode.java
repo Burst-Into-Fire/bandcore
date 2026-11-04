@@ -114,7 +114,9 @@ public enum ErrorCode {
 	/** The production batch is already cancelled. */
 	BATCH_CANCELLED,
 	/** A production batch that costs nothing cannot become an expense. */
-	BATCH_COST_REQUIRED;
+	BATCH_COST_REQUIRED,
+	/** The adjustment would leave the stock as it is. */
+	STOCK_UNCHANGED;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {

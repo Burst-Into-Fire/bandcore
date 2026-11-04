@@ -106,6 +106,8 @@ final class AuthorizationMatrix {
 			// The fixture product has two variants, so the one under test may be deleted.
 			rule(HttpMethod.DELETE, "/variants/{variantId}", ADMIN_ONLY),
 			rule(HttpMethod.GET, "/variants/{variantId}/movements", EVERY_ROLE),
+			rule(HttpMethod.POST, "/variants/{variantId}/adjustments", ADMIN_ONLY,
+					fixture -> "{\"countedQuantity\": 3, \"reason\": \"COUNT\"}"),
 			rule(HttpMethod.GET, "/batches", EVERY_ROLE),
 			rule(HttpMethod.GET, "/batches/{batchId}", EVERY_ROLE),
 			rule(HttpMethod.POST, "/batches", ADMIN_ONLY, fixture -> """
