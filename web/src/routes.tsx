@@ -4,13 +4,15 @@ import { RequireSession } from './auth/RequireSession';
 import type { Host } from './lib/host';
 import { AcceptInvitationPage } from './pages/AcceptInvitationPage';
 import { BandSettingsPage } from './pages/BandSettingsPage';
-import { ComingSoonPage } from './pages/ComingSoonPage';
 import { CreateBandPage } from './pages/CreateBandPage';
 import { ExpensesPage } from './pages/expenses/ExpensesPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { HandoffPage } from './pages/HandoffPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
+import { BatchesPage } from './pages/merch/BatchesPage';
+import { ProductsPage } from './pages/merch/ProductsPage';
+import { StockPage } from './pages/merch/StockPage';
 import { MembersPage } from './pages/members/MembersPage';
 import { MyBandsPage } from './pages/MyBandsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -36,7 +38,9 @@ export function createRoutes(host: Host): RouteObject[] {
               { path: '/', element: <SummaryPage /> },
               { path: '/expenses', element: <ExpensesPage /> },
               { path: '/expenses/settlements', element: <SettlementsPage /> },
-              { path: '/merch', element: <ComingSoonPage section="merch" /> },
+              { path: '/merch', element: <ProductsPage /> },
+              { path: '/merch/stock', element: <StockPage /> },
+              { path: '/merch/batches', element: <BatchesPage /> },
               { path: '/members', element: <MembersPage /> },
               { path: '/settings', element: <BandSettingsPage /> },
             ],

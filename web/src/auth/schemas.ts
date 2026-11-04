@@ -106,3 +106,100 @@ export const settlementSchema = z
     path: ['toMemberId'],
     message: 'errors.SETTLEMENT_SAME_MEMBER',
   });
+
+/** Merch quantities are whole units; an empty number field reads as NaN, which zod refuses. */
+const units = z.number({ error: 'validation.wholeNumber' }).int('validation.wholeNumber');
+
+export const variantSchema = z.object({
+  size: z.string().trim().max(20, 'validation.sizeTooLong'),
+  color: z.string().trim().max(40, 'validation.colorTooLong'),
+  sku: z.string().trim().max(40, 'validation.skuTooLong'),
+  /** 0 sells at the product's price. */
+  priceCents: z.number().int().nonnegative(),
+  lowStockThreshold: units.min(0, 'validation.wholeNumber').max(100_000, 'validation.wholeNumber'),
+});
+
+export const productSchema = z.object({
+  name: z.string().trim().min(1, 'validation.required').max(120, 'validation.productNameTooLong'),
+  description: z.string().trim().max(500, 'validation.notesTooLong'),
+  currency: z.enum(['BRL', 'USD']),
+  defaultPriceCents: z.number().int().nonnegative(),
+  variants: z.array(variantSchema).max(50),
+});
+
+export const batchSchema = z
+  .object({
+    supplier: z.string().trim().max(120, 'validation.descriptionTooLong'),
+    orderedOn: z.string(),
+    receivedOn: z.string().min(1, 'validation.required'),
+    currency: z.enum(['BRL', 'USD']),
+    costMode: z.enum(['PER_ITEM', 'ALLOCATED']),
+    totalCostCents: z.number().int().nonnegative(),
+    notes: z.string().trim().max(500, 'validation.notesTooLong'),
+    items: z
+      .array(
+        z.object({
+          variantId: z.string().min(1, 'validation.variantRequired'),
+          quantity: z
+            .number({ error: 'validation.quantityRequired' })
+            .int('validation.quantityRequired')
+            .min(1, 'validation.quantityRequired')
+            .max(100_000, 'validation.quantityRequired'),
+          unitCostCents: z.number().int().nonnegative(),
+        }),
+      )
+      .min(1)
+      .max(100),
+    createExpense: z.boolean(),
+    expense: z.object({
+      description: z.string().trim().max(120, 'validation.descriptionTooLong'),
+      categoryId: z.string(),
+      status: z.enum(['PAID', 'PLANNED']),
+      paidByMemberId: z.string(),
+    }),
+  })
+  .superRefine((values, context) => {
+    if (!values.createExpense) {
+      return;
+    }
+    if (values.expense.description === '') {
+      context.addIssue({
+        code: 'custom',
+        path: ['expense', 'description'],
+        message: 'validation.required',
+      });
+    }
+    if (values.expense.categoryId === '') {
+      context.addIssue({
+        code: 'custom',
+        path: ['expense', 'categoryId'],
+        message: 'validation.required',
+      });
+    }
+    if (values.expense.status === 'PAID' && values.expense.paidByMemberId === '') {
+      context.addIssue({
+        code: 'custom',
+        path: ['expense', 'paidByMemberId'],
+        message: 'errors.PAYER_REQUIRED',
+      });
+    }
+  });
+
+export const adjustmentSchema = z
+  .object({
+    mode: z.enum(['COUNT', 'DELTA']),
+    quantity: units,
+    reason: z.enum(['COUNT', 'DAMAGED', 'LOST', 'GIFT', 'OTHER']),
+    note: z.string().trim().max(500, 'validation.notesTooLong'),
+  })
+  .superRefine((values, context) => {
+    if (values.mode === 'COUNT' && values.quantity < 0) {
+      context.addIssue({ code: 'custom', path: ['quantity'], message: 'validation.wholeNumber' });
+    }
+    if (values.mode === 'DELTA' && values.quantity === 0) {
+      context.addIssue({ code: 'custom', path: ['quantity'], message: 'validation.deltaRequired' });
+    }
+    if (values.reason === 'OTHER' && values.note === '') {
+      context.addIssue({ code: 'custom', path: ['note'], message: 'validation.noteRequired' });
+    }
+  });
