@@ -54,6 +54,7 @@ Decided 2026-11-03: BRL and USD from the start (RF40, RNF08, RN08). Every amount
 - [ ] Insufficient stock → 409 with availability per item
 - [ ] Idempotent `POST`: the same id with the same payload returns the existing sale; the same id with a different payload → 409
 - [ ] Selling on a closed event → 409
+- [ ] Selling an archived variant or product → 422 (moved here from M7-01)
 
 ### Acceptance criteria
 
@@ -61,7 +62,7 @@ Decided 2026-11-03: BRL and USD from the start (RF40, RNF08, RN08). Every amount
 
 ### Tests required
 
-- Integration: a sale decrements stock and stores both snapshots; a multi-item sale with one item short is rejected entirely and stock is unchanged; a retried request returns the same sale without decrementing again; concurrent sales of the last unit over HTTP; closed event → 409; a variant from another band → rejected; authorization matrix and isolation entries; audit events
+- Integration: a sale decrements stock and stores both snapshots; a multi-item sale with one item short is rejected entirely and stock is unchanged; a retried request returns the same sale without decrementing again; concurrent sales of the last unit over HTTP; closed event → 409; archived variant → 422; a variant from another band → rejected; authorization matrix and isolation entries; audit events
 
 ---
 
@@ -102,9 +103,9 @@ Refunds give money back and usually put the item back into stock. They can never
 
 After a show, the band needs to know what sold, how much came in by payment method (to check the cash box and PIX), and the profit per product.
 
-### Open question
+### Unit cost
 
-RF21 has a unit cost entered manually on each product. This roadmap derives the unit cost from production batches (weighted average). To be decided before this issue starts.
+Decided 2026-11-04 ([ADR-0009](../adr/0009-cogs-weighted-average-unit-cost.md)): the unit cost is the weighted average of production batches, snapshotted on each sold item (M8-02). A product has a single currency, so revenue and COGS of an item are always in the same currency.
 
 ### Scope
 

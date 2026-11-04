@@ -21,14 +21,14 @@ Merch items such as "Camiseta preta" come in variants (M, G, GG). Stock and pric
 
 Decided 2026-11-03: BRL and USD from the start (RF40, RNF08, RN08). Every amount stores its own currency, the band's default currency only pre-fills forms, and amounts in different currencies are never added together: totals and balances are computed per currency.
 
-### Open question
+### Unit cost and product currency
 
-RF21 has a unit cost entered manually on each product. This roadmap derives the unit cost from production batches (weighted average). To be decided before this issue starts.
+Decided 2026-11-04 ([ADR-0009](../adr/0009-cogs-weighted-average-unit-cost.md)): the unit cost is not entered on the product; it is the weighted average of production batches (M7-03). A product has a single currency for its prices and cost, pre-filled with the band's default currency; it can change only while none of its variants has stock movements.
 
 ### Scope
 
-- [ ] `products` tenant table: name, description, `default_price_cents`, active flag
-- [ ] `product_variants` tenant table: `product_id`, attributes (size, color; JSONB with validated keys or explicit columns, decided in the issue), SKU (unique per band), optional `price_cents` override, `low_stock_threshold`, active flag
+- [ ] `products` tenant table: name (unique per band), description, currency, `default_price_cents`, archived flag
+- [ ] `product_variants` tenant table: `product_id`, optional `size` and `color` columns (free text, unique per product), optional SKU (unique per band when set), optional `price_cents` override, `low_stock_threshold`, archived flag. A product without variations gets one default variant (no size, no color)
 - [ ] Admins manage the catalog; products and variants with history are archived instead of deleted
 - [ ] Listing for sales screens (active only) and for the catalog (all)
 
@@ -38,7 +38,7 @@ RF21 has a unit cost entered manually on each product. This roadmap derives the 
 
 ### Tests required
 
-- Integration: CRUD; SKU unique per band but reusable in another band; negative price → 422; archived variant cannot be sold; authorization matrix and isolation entries; audit events
+- Integration: CRUD; SKU unique per band but reusable in another band; negative price → 400; archived variants leave the active listing (selling them is refused in M8-02); authorization matrix and isolation entries; audit events
 
 ---
 
@@ -54,7 +54,7 @@ Stock must never go negative, even when several phones sell the last unit at the
 ### Scope
 
 - [ ] `stock_levels` tenant table: `variant_id`, `quantity_on_hand` with `CHECK (quantity_on_hand >= 0)`
-- [ ] `stock_movements` append-only tenant table: `variant_id`, `type` (`BATCH_IN`, `SALE`, `REFUND`, `ADJUSTMENT`, `RECONCILIATION`), `quantity_delta`, reference to the source, actor, `occurred_at`; `bandcore_app` has only `INSERT` and `SELECT`
+- [ ] `stock_movements` append-only tenant table: `variant_id`, `type` (`BATCH_IN`, `BATCH_REVERSAL`, `SALE`, `REFUND`, `ADJUSTMENT`, `RECONCILIATION`), `quantity_delta`, quantity after the movement, reference to the source, actor, `occurred_at`; `bandcore_app` has only `INSERT` and `SELECT`
 - [ ] A single module-internal `StockService` through which every change passes: atomic conditional update (`… SET quantity_on_hand = quantity_on_hand + :delta WHERE … AND quantity_on_hand + :delta >= 0`); zero rows updated means insufficient stock; the movement is inserted in the same transaction
 - [ ] Consistency check: `quantity_on_hand` equals the sum of movements for every variant
 
@@ -77,16 +77,17 @@ Stock must never go negative, even when several phones sell the last unit at the
 
 Profit uses the cost of what was sold (COGS). Each batch brings stock in at a cost, and the variant's unit cost is the weighted average of what is in stock.
 
-### Open question
+### Decision
 
-RF21 has a unit cost entered manually on each product. This roadmap derives the unit cost from production batches (weighted average). To be decided before this issue starts.
+Decided 2026-11-04 ([ADR-0009](../adr/0009-cogs-weighted-average-unit-cost.md)): the unit cost is the weighted average of production batches; merch the band already has enters as a batch. Batch quantities and costs are immutable; supplier, order date and notes can be edited. A batch can be cancelled only while it is the latest movement of every variant it touched, which restores quantity and average exactly.
 
 ### Scope
 
-- [ ] `production_batches` tenant table: supplier, ordered and received dates, `total_cost_cents`, notes
-- [ ] `batch_items`: variant, quantity, `unit_cost_cents` (entered per item, or allocated from the total by quantity with `Allocation`)
-- [ ] Receiving a batch creates `BATCH_IN` movements
-- [ ] Weighted average cost per variant: `new_avg = (qty_on_hand × avg + qty_in × unit_cost) / (qty_on_hand + qty_in)`, rounded half-up to the cent (documented)
+- [ ] `production_batches` tenant table: supplier, ordered and received dates, currency, `total_cost_cents`, notes, status (`RECEIVED`, `CANCELLED`)
+- [ ] `batch_items`: variant, quantity, line cost (unit cost × quantity when entered per item, or allocated from the total by quantity with `Allocation`), quantity and average before the batch
+- [ ] Receiving a batch creates `BATCH_IN` movements; cancelling it creates `BATCH_REVERSAL` movements
+- [ ] Weighted average cost per variant: `new_avg = (qty_on_hand × avg + line_cost) / (qty_on_hand + qty_in)`, rounded half-up to the cent (documented)
+- [ ] Every item is in the batch's currency, which must be its product's currency
 - [ ] Admins only
 
 ### Acceptance criteria
@@ -97,7 +98,7 @@ RF21 has a unit cost entered manually on each product. This roadmap derives the 
 
 - Unit: weighted average rounding cases
 - Property-based (jqwik): the average always lies between the minimum and maximum input costs
-- Integration: a batch increases stock and sets cost; a second batch with a different cost updates the average; allocated item costs sum exactly to the batch total; isolation entry; audit events
+- Integration: a batch increases stock and sets cost; a second batch with a different cost updates the average; allocated item costs sum exactly to the batch total; cancelling the latest batch restores quantity and average, cancelling an older one → 409; isolation entry; audit events
 
 ---
 
@@ -110,13 +111,16 @@ RF21 has a unit cost entered manually on each product. This roadmap derives the 
 
 This is where the two modules meet: the cost of a merch batch can become an expense split among the members. The modules stay decoupled through an application event.
 
+### Decision
+
+Decided 2026-11-04: the listener is synchronous and runs in the batch's transaction, like `BandCreated` → default categories. The batch and its expense are saved together or not at all, an invalid split answers 422 right away, and the listener runs with the admin's tenant and identity. The Spring Modulith event publication registry is left for the first truly asynchronous integration.
+
 ### Scope
 
-- [ ] Optional "create expense" on batch registration, with payer, status (planned or paid) and split configuration
-- [ ] `merch` publishes `ProductionBatchRegistered` (with `band_id`); `finance` listens and creates an expense in the merch category, linked to the batch (`source_type = BATCH`, `source_id`)
-- [ ] Spring Modulith event publication registry, so the event is not lost if the listener fails; idempotent listener (unique on the source)
-- [ ] The listener sets the tenant context explicitly from the event's `band_id`
-- [ ] Rule for later edits: changing the batch cost does not silently change a paid expense; the UI warns and an admin updates the expense
+- [ ] Optional "create expense" on batch registration, with description, category (the UI pre-selects the default merch category), payer, status (planned or paid) and split configuration
+- [ ] `merch` publishes `ProductionBatchRegistered` (with `band_id`); `finance` listens in the same transaction and creates the expense, linked to the batch (`source_type = BATCH`, `source_id`, unique per band)
+- [ ] Finance errors (archived category, inactive payer, invalid split) roll back the batch and point at the `expense.*` fields
+- [ ] Rule for later edits: cancelling a batch never changes its expense; the UI warns and an admin updates the expense
 
 ### Acceptance criteria
 
@@ -124,8 +128,8 @@ This is where the two modules meet: the cost of a merch batch can become an expe
 
 ### Tests required
 
-- Integration (Spring Modulith `Scenario`): batch with expense → expense and splits created; listener failure → retried from the publication registry without duplicates; the expense is created in the right band (RLS confirms)
-- Architecture: `merch` does not depend on `finance` internals
+- Integration: batch with expense → expense and splits created, linked to the batch; invalid expense → 422 and neither batch, stock movement nor expense is saved; a second expense for the same source is refused; the expense is created in the right band (RLS confirms)
+- Architecture: `merch` does not depend on `finance`
 
 ---
 
@@ -142,6 +146,7 @@ Physical counts drift: items get damaged, lost or given away. Adjustments fix th
 
 - [ ] Admins record a counted quantity or a delta with a reason (`COUNT`, `DAMAGED`, `LOST`, `GIFT`, `OTHER`), creating an `ADJUSTMENT` movement
 - [ ] Never below zero
+- [ ] The weighted average cost does not change ([ADR-0009](../adr/0009-cogs-weighted-average-unit-cost.md))
 - [ ] Audited
 
 ### Acceptance criteria
@@ -150,7 +155,7 @@ Physical counts drift: items get damaged, lost or given away. Adjustments fix th
 
 ### Tests required
 
-- Integration: adjusting to a count sets the exact quantity; a result below zero → 409; `MEMBER` → 403; audit event; isolation entry
+- Integration: adjusting to a count sets the exact quantity; a result below zero → 409; the average cost is unchanged; `MEMBER` → 403; audit event; isolation entry
 
 ---
 
