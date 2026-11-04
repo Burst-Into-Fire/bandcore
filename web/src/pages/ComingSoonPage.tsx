@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/states';
 
-/** A section whose module is not built yet (Gastos in M5, Merch in M7). */
-export function ComingSoonPage({ section }: { section: 'expenses' | 'merch' }) {
+/** A section whose module is not built yet (Merch in M7). */
+export function ComingSoonPage({ section }: { section: 'merch' }) {
   const { t } = useTranslation();
   return (
     <>

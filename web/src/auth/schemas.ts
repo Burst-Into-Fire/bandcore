@@ -66,3 +66,29 @@ export const createBandSchema = z.object({
   name: nameSchema,
   slug: z.string().trim().toLowerCase().refine(isWellFormedSlug, 'validation.slugInvalid'),
 });
+
+export const expenseSchema = z
+  .object({
+    description: z
+      .string()
+      .trim()
+      .min(1, 'validation.required')
+      .max(120, 'validation.descriptionTooLong'),
+    categoryId: z.string().min(1, 'validation.required'),
+    amountCents: z.number().int().positive('validation.amountRequired'),
+    currency: z.enum(['BRL', 'USD']),
+    expenseDate: z.string().min(1, 'validation.required'),
+    status: z.enum(['PAID', 'PLANNED']),
+    paidByMemberId: z.string(),
+    notes: z.string().trim().max(500, 'validation.notesTooLong'),
+  })
+  .refine((values) => values.status === 'PLANNED' || values.paidByMemberId !== '', {
+    path: ['paidByMemberId'],
+    message: 'errors.PAYER_REQUIRED',
+  });
+
+export const categorySchema = z.object({
+  name: z.string().trim().min(1, 'validation.required').max(40, 'validation.categoryNameTooLong'),
+  useColor: z.boolean(),
+  color: z.string(),
+});

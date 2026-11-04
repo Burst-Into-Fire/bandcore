@@ -29,6 +29,9 @@ function bandApi() {
         timezone: 'America/Sao_Paulo',
       }),
     ),
+    http.get(apiUrl('/expenses'), () =>
+      HttpResponse.json({ items: [], page: 0, size: 5, totalItems: 0, totalPages: 0 }),
+    ),
   );
 }
 

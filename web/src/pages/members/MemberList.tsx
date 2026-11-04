@@ -5,11 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../../api/client';
 import { unwrap } from '../../api/problem';
 import { StatusBadge } from '../../components/Card';
+import { Confirm } from '../../components/Confirm';
 import { FormAlert } from '../../components/FormAlert';
 import { SelectField } from '../../components/SelectField';
 import { primaryButton, textLink } from '../../components/buttons';
 import { errorMessage } from '../errorMessage';
-import { Confirm } from './Confirm';
 import { MemberForm } from './MemberForm';
 import type { Member, Membership } from './types';
 

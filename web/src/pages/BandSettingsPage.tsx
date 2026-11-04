@@ -20,6 +20,7 @@ import { bandHostName, useHost } from '../lib/host';
 import { CURRENCIES, type Currency } from '../lib/money';
 import { timeZoneOptions } from '../lib/timezones';
 import { errorMessage } from './errorMessage';
+import { CategoriesCard } from './settings/CategoriesCard';
 
 type SettingsInput = z.input<typeof bandSettingsSchema>;
 type SettingsValues = z.output<typeof bandSettingsSchema>;
@@ -56,7 +57,12 @@ function SettingsContent() {
   if (!can('band:manage')) {
     return <p className="text-muted">{t('settings.adminsOnly')}</p>;
   }
-  return <SettingsForm band={band.data} />;
+  return (
+    <>
+      <SettingsForm band={band.data} />
+      <CategoriesCard />
+    </>
+  );
 }
 
 function SettingsForm({

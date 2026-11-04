@@ -6,6 +6,7 @@ import { AcceptInvitationPage } from './pages/AcceptInvitationPage';
 import { BandSettingsPage } from './pages/BandSettingsPage';
 import { ComingSoonPage } from './pages/ComingSoonPage';
 import { CreateBandPage } from './pages/CreateBandPage';
+import { ExpensesPage } from './pages/expenses/ExpensesPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { HandoffPage } from './pages/HandoffPage';
 import { HomePage } from './pages/HomePage';
@@ -32,7 +33,7 @@ export function createRoutes(host: Host): RouteObject[] {
             element: <AppShell />,
             children: [
               { path: '/', element: <SummaryPage /> },
-              { path: '/expenses', element: <ComingSoonPage section="expenses" /> },
+              { path: '/expenses', element: <ExpensesPage /> },
               { path: '/merch', element: <ComingSoonPage section="merch" /> },
               { path: '/members', element: <MembersPage /> },
               { path: '/settings', element: <BandSettingsPage /> },

@@ -71,6 +71,7 @@ const BADGE_TONES = {
   success: 'border-success/40 text-success',
   warning: 'border-warning/40 text-warning',
   neutral: 'border-border text-muted',
+  accent: 'border-accent/40 text-accent',
 } as const;
 
 /** Small status label (paid/planned, active/inactive, pending/expired). */

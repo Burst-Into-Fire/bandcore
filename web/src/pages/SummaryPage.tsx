@@ -1,19 +1,26 @@
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 
+import { api } from '../api/client';
+import { unwrap } from '../api/problem';
 import { useBandAccess } from '../auth/useBandAccess';
-import { Card, KpiTile } from '../components/Card';
+import { Card, KpiTile, ValueList } from '../components/Card';
+import { primaryButton, textLink } from '../components/buttons';
 import { PageHeader } from '../components/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '../components/states';
+import { formatMoney } from '../lib/money';
 import { errorMessage } from './errorMessage';
+import { ExpenseBadge } from './expenses/ExpenseList';
 import { roleLabel } from './roles';
 
 /**
- * Resumo: the band's dashboard. The figures arrive with expenses (M5), balances (M6) and merch
- * (M7); until then the cards say what each one will show.
+ * Resumo: the band's dashboard, with the latest expenses. The figures arrive with balances (M6)
+ * and merch (M7); until then the cards say what each one will show.
  */
 export function SummaryPage() {
   const { t } = useTranslation();
-  const { me, role } = useBandAccess();
+  const { me, role, can } = useBandAccess();
 
   if (me.isPending) {
     return <LoadingState />;
@@ -26,6 +33,13 @@ export function SummaryPage() {
       <PageHeader
         title={t('summary.title')}
         subtitle={t('bandHome.welcome', { name: me.data.displayName })}
+        action={
+          can('finance:write') ? (
+            <Link to="/expenses?new=1" className={`${primaryButton} inline-block`}>
+              {t('expenses.new')}
+            </Link>
+          ) : null
+        }
       />
       {role ? (
         <p className="text-muted -mt-4">{t('bandHome.role', { role: roleLabel(t, role) })}</p>
@@ -46,12 +60,47 @@ export function SummaryPage() {
           <EmptyState title={t('summary.stockEmpty')} description={t('summary.stockHint')} />
         </Card>
       </div>
-      <Card title={t('summary.latestExpenses')}>
+      <LatestExpenses />
+    </>
+  );
+}
+
+/** The five most recent expenses, linking to Gastos. */
+function LatestExpenses() {
+  const { t } = useTranslation();
+  const latest = useQuery({
+    queryKey: ['expenses', 'latest'],
+    queryFn: async () => unwrap(await api.GET('/expenses', { params: { query: { size: 5 } } })),
+  });
+  return (
+    <Card
+      title={t('summary.latestExpenses')}
+      action={
+        <Link to="/expenses" className={textLink}>
+          {t('summary.allExpenses')}
+        </Link>
+      }
+    >
+      {latest.isPending ? <LoadingState /> : null}
+      {latest.isError ? (
+        <ErrorState message={errorMessage(t, latest.error)} onRetry={() => void latest.refetch()} />
+      ) : null}
+      {latest.data?.items.length === 0 ? (
         <EmptyState
           title={t('summary.latestExpensesEmpty')}
           description={t('summary.latestExpensesHint')}
         />
-      </Card>
-    </>
+      ) : null}
+      {latest.data && latest.data.items.length > 0 ? (
+        <ValueList
+          items={latest.data.items.map((expense) => ({
+            key: expense.id,
+            label: expense.description,
+            detail: <ExpenseBadge expense={expense} />,
+            value: formatMoney(expense.amountCents, expense.currency),
+          }))}
+        />
+      ) : null}
+    </Card>
   );
 }

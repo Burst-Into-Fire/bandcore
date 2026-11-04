@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-import { primaryButton, secondaryButton } from '../../components/buttons';
+import { primaryButton, secondaryButton } from './buttons';
 
 /** In-page confirmation for destructive actions: the question with Confirm and Cancel. */
 export function Confirm({
@@ -24,10 +24,10 @@ export function Confirm({
       <p>{question}</p>
       <div className="flex flex-wrap gap-2">
         <button type="button" className={primaryButton} disabled={pending} onClick={onConfirm}>
-          {t('members.confirm')}
+          {t('common.confirm')}
         </button>
         <button type="button" className={secondaryButton} onClick={onCancel}>
-          {t('members.cancel')}
+          {t('common.cancel')}
         </button>
       </div>
     </div>

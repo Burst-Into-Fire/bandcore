@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../../api/client';
 import { unwrap } from '../../api/problem';
 import { textLink } from '../../components/buttons';
+import { Confirm } from '../../components/Confirm';
 import { FormAlert } from '../../components/FormAlert';
 import { errorMessage } from '../errorMessage';
 import { roleLabel } from '../roles';
-import { Confirm } from './Confirm';
 import { ROLES, type Membership, type Role } from './types';
 
 type Pending = { membership: Membership; role?: Role; remove?: boolean } | null;

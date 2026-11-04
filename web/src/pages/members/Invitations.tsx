@@ -11,6 +11,7 @@ import { unwrap } from '../../api/problem';
 import { invitationSchema } from '../../auth/schemas';
 import { primaryButton, textLink } from '../../components/buttons';
 import { Card, StatusBadge } from '../../components/Card';
+import { Confirm } from '../../components/Confirm';
 import { FormAlert } from '../../components/FormAlert';
 import { SelectField } from '../../components/SelectField';
 import { ErrorState, LoadingState } from '../../components/states';
@@ -19,7 +20,6 @@ import { translateKey } from '../../i18n/messages';
 import { formatDate } from '../../lib/dates';
 import { errorMessage } from '../errorMessage';
 import { roleLabel } from '../roles';
-import { Confirm } from './Confirm';
 import { ROLES, type Invitation, type Member } from './types';
 
 type InviteInput = z.input<typeof invitationSchema>;
