@@ -41,6 +41,7 @@ const ERROR_CODES = [
   'SPLIT_SUM_MISMATCH',
   'SPLIT_PERCENT_SUM',
   'SPLIT_INVALID',
+  'SETTLEMENT_SAME_MEMBER',
 ] as const;
 
 /** Bean Validation codes in `errors[].code` of a VALIDATION_FAILED problem. */

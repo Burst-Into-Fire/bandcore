@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { startSession } from '../auth/session';
 import { browser } from '../lib/navigation';
+import { emptyFinanceHandlers } from '../test/finance';
 import { BAND, renderRoute } from '../test/render';
 import { apiUrl, server } from '../test/server';
 import { setViewportWidth } from '../test/viewport';
@@ -33,10 +34,7 @@ function bandApi(role: 'ADMIN' | 'MEMBER') {
       }),
     ),
     http.get(apiUrl('/members'), () => HttpResponse.json([])),
-    http.get(apiUrl('/expense-categories'), () => HttpResponse.json([])),
-    http.get(apiUrl('/expenses'), () =>
-      HttpResponse.json({ items: [], page: 0, size: 50, totalItems: 0, totalPages: 0 }),
-    ),
+    ...emptyFinanceHandlers,
   );
   startSession('token');
 }

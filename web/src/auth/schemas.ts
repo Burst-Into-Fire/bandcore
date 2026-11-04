@@ -92,3 +92,17 @@ export const categorySchema = z.object({
   useColor: z.boolean(),
   color: z.string(),
 });
+
+export const settlementSchema = z
+  .object({
+    fromMemberId: z.string().min(1, 'validation.required'),
+    toMemberId: z.string().min(1, 'validation.required'),
+    currency: z.enum(['BRL', 'USD']),
+    amountCents: z.number().int().positive('validation.amountRequired'),
+    paidOn: z.string().min(1, 'validation.required'),
+    note: z.string().trim().max(500, 'validation.notesTooLong'),
+  })
+  .refine((values) => values.fromMemberId === '' || values.fromMemberId !== values.toMemberId, {
+    path: ['toMemberId'],
+    message: 'errors.SETTLEMENT_SAME_MEMBER',
+  });
