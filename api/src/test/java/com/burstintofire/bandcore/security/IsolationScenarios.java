@@ -97,7 +97,12 @@ final class IsolationScenarios {
 					{"currency": "BRL", "costMode": "PER_ITEM", "items": [{"variantId": "%s", "quantity": 1, "unitCostCents": 100}]}"""
 				.formatted(target.resources().get("variantId"))),
 			probe(HttpMethod.PATCH, "/batches/{batchId}", target -> "{\"version\": 0, \"notes\": \"Taken over\"}"),
-			probe(HttpMethod.POST, "/batches/{batchId}/cancel", target -> "{\"version\": 0}"));
+			probe(HttpMethod.POST, "/batches/{batchId}/cancel", target -> "{\"version\": 0}"),
+			probe(HttpMethod.GET, "/events"),
+			probe(HttpMethod.GET, "/events/{eventId}"),
+			probe(HttpMethod.POST, "/events", target -> """
+					{"name": "Intruder", "startsAt": "2026-02-01T20:00:00Z"}"""),
+			probe(HttpMethod.PATCH, "/events/{eventId}", target -> "{\"version\": 0, \"name\": \"Taken over\"}"));
 
 	/** The band an attack aims at, and its resources by path variable name. */
 	record Target(String bandId, String slug, Map<String, String> resources) {

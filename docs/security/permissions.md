@@ -18,6 +18,7 @@ Roles are per band: the same person can be `ADMIN` in one band and `READ_ONLY` i
 | Mark a planned expense as paid | Yes | Own, or paying it themselves | No | `finance:manage` (all), `finance:write` + ownership check (own; anyone's when the payer is their own member) |
 | Turn a paid expense back into planned | Yes | No | No | `finance:manage` |
 | Create events and register sales | Yes | Yes | No | `sale:write` |
+| Edit events | Yes | Yes | No | `sale:write` |
 | Refund sales | Yes | Open events only | No | `sale:refund` + open-event check for members |
 | Manage products, variants, batches and stock adjustments | Yes | No | No | `merch:manage` |
 | Close events and resolve pending reconciliations | Yes | No | No | `event:close` |
@@ -79,6 +80,8 @@ An expense is a member's **own** when they created it or when the member (integr
 | `POST /api/variants/{id}/adjustments` | band | `merch:manage`; never below zero (409 `INSUFFICIENT_STOCK`) |
 | `GET /api/batches`, `GET /api/batches/{id}` | band | `merch:read` |
 | `POST /api/batches`, `PATCH /api/batches/{id}`, `POST /api/batches/{id}/cancel` | band | `merch:manage`; a batch can be cancelled only while it is the latest stock movement of its variants (409 `BATCH_HAS_LATER_MOVEMENTS`). With `expense`, the batch's cost also becomes a split expense under the expense rules (admins have `finance:write`), saved with the batch or not at all |
+| `GET /api/events`, `GET /api/events/{id}` | band | `merch:read`; lists upcoming by default, or accepts `period=PAST`/`ALL` |
+| `POST /api/events`, `PATCH /api/events/{id}` | band | `sale:write` |
 | `PUT`/`DELETE /api/variants/{id}`, `POST /api/variants/{id}/archive`, `/unarchive` | band | `merch:manage`; a variant with stock history (409 `VARIANT_HAS_HISTORY`) or the only variant of a product (409 `LAST_VARIANT`) cannot be deleted |
 | `POST /api/invitations/accept` | central | Any authenticated account whose verified email is the invited one |
 | `POST /api/invitations/preview` | central | Public (the token is the credential) |

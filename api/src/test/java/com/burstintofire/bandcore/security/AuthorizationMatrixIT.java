@@ -75,13 +75,15 @@ class AuthorizationMatrixIT extends IntegrationTest {
 		// The batch is on another product, so the one under test has no history and may be deleted.
 		UUID batch = fixtures.batch(band, fixtures.variant(band, fixtures.product(band, "Patch"), "U"), 10, 500,
 				"Gráfica");
+		UUID event = fixtures.event(band, "Festival", java.time.Instant.parse("2026-02-01T20:00:00Z"));
 		var fixture = new AuthorizationMatrix.Fixture(Map.ofEntries(Map.entry("memberId", member.toString()),
 				Map.entry("userId", unlinked.toString()), Map.entry("invitationId", invitation.toString()),
 				Map.entry("membershipId", otherAdmin.toString()), Map.entry("categoryId", category.toString()),
 				Map.entry("expenseId", expense.toString()), Map.entry("paidExpenseId", paidExpense.toString()),
 				Map.entry("settlementId", settlement.toString()), Map.entry("payerId", payer.toString()),
 				Map.entry("payeeId", payee.toString()), Map.entry("productId", product.toString()),
-				Map.entry("variantId", variant.toString()), Map.entry("batchId", batch.toString())));
+				Map.entry("variantId", variant.toString()), Map.entry("batchId", batch.toString()),
+				Map.entry("eventId", event.toString())));
 
 		ResponseEntity<String> response = host.send(rule.method(), rule.url(fixture), rule.body().apply(fixture),
 				headers -> headers.setBearerAuth(token));

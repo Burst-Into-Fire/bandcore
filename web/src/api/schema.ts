@@ -386,6 +386,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List upcoming, past, or all events of the current band
+         * @description UPCOMING is the default. Upcoming events are ordered by start time; past events are newest first.
+         */
+        get: operations["listEvents"];
+        put?: never;
+        /** Create an open event (admins and members) */
+        post: operations["createEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{eventId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get one event of the current band */
+        get: operations["getEvent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edit an event (admins and members)
+         * @description Send the version that was read: 409 VERSION_CONFLICT when it changed meanwhile. Empty venue or city clears that field; omitted fields stay unchanged.
+         */
+        patch: operations["updateEvent"];
+        trace?: never;
+    };
     "/expense-categories": {
         parameters: {
             query?: never;
@@ -1365,6 +1407,16 @@ export interface components {
             color?: string;
             name: string;
         };
+        CreateEventRequest: {
+            city?: string;
+            name: string;
+            /**
+             * Format: date-time
+             * @description ISO-8601 date and time with offset
+             */
+            startsAt: string;
+            venue?: string;
+        };
         CreateExpenseRequest: {
             /** Format: int64 */
             amountCents: number;
@@ -1474,6 +1526,27 @@ export interface components {
             plannedCents: number;
             /** Format: int64 */
             totalCents: number;
+        };
+        EventResponse: {
+            city?: string;
+            /** Format: date-time */
+            closedAt?: string;
+            /** Format: uuid */
+            closedBy?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            /** Format: date-time */
+            startsAt?: string;
+            /** @enum {string} */
+            status?: "OPEN" | "CLOSED";
+            /** Format: date-time */
+            updatedAt?: string;
+            venue?: string;
+            /** Format: int64 */
+            version?: number;
         };
         ExpenseResponse: {
             /** @description What the current user may do with this expense */
@@ -2030,6 +2103,18 @@ export interface components {
             /** @description #rrggbb; empty clears it */
             color?: string;
             name?: string;
+        };
+        UpdateEventRequest: {
+            city?: string;
+            name?: string;
+            /** Format: date-time */
+            startsAt?: string;
+            venue?: string;
+            /**
+             * Format: int64
+             * @description The version that was read
+             */
+            version: number;
         };
         UpdateExpenseRequest: {
             /** Format: int64 */
@@ -2625,6 +2710,100 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BatchResponse"];
+                };
+            };
+        };
+    };
+    listEvents: {
+        parameters: {
+            query?: {
+                period?: "UPCOMING" | "PAST" | "ALL";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventResponse"][];
+                };
+            };
+        };
+    };
+    createEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEventRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventResponse"];
+                };
+            };
+        };
+    };
+    getEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventResponse"];
+                };
+            };
+        };
+    };
+    updateEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEventRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EventResponse"];
                 };
             };
         };

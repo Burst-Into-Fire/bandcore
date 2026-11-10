@@ -69,6 +69,8 @@ public final class Permissions {
 
 	public static final String CAN_READ_MERCH = HAS + MERCH_READ + END;
 
+	public static final String CAN_WRITE_SALES = HAS + SALE_WRITE + END;
+
 	public static final String CAN_MANAGE_MERCH = HAS + MERCH_MANAGE + END;
 
 	private Permissions() {
