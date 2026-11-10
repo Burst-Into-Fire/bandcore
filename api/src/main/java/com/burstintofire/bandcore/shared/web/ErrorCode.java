@@ -116,7 +116,15 @@ public enum ErrorCode {
 	/** A production batch that costs nothing cannot become an expense. */
 	BATCH_COST_REQUIRED,
 	/** The adjustment would leave the stock as it is. */
-	STOCK_UNCHANGED;
+	STOCK_UNCHANGED,
+	/** A sale id was already used with a different request body. */
+	SALE_IDEMPOTENCY_CONFLICT,
+	/** Every product in a sale must use the same currency. */
+	SALE_CURRENCY_MISMATCH,
+	/** A sale cannot contain the same variant more than once. */
+	SALE_DUPLICATE_VARIANT,
+	/** Sales cannot be registered on an event that is closed. */
+	EVENT_CLOSED;
 
 	/** Default code for a status when no more specific code applies. */
 	public static ErrorCode forStatus(HttpStatusCode status) {

@@ -8,6 +8,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 
 import org.springframework.http.HttpMethod;
@@ -120,7 +121,12 @@ final class AuthorizationMatrix {
 			rule(HttpMethod.POST, "/events", WRITERS,
 					fixture -> "{\"name\": \"Festival\", \"startsAt\": \"2026-02-01T20:00:00Z\"}"),
 			rule(HttpMethod.PATCH, "/events/{eventId}", WRITERS,
-					fixture -> "{\"version\": 0, \"name\": \"Festival ajustado\"}"));
+					fixture -> "{\"version\": 0, \"name\": \"Festival ajustado\"}"),
+			rule(HttpMethod.POST, "/sales", WRITERS, fixture -> """
+					{"id": "%s", "eventId": "%s", "paymentMethod": "PIX",
+					 "items": [{"variantId": "%s", "quantity": 1}]}"""
+				.formatted(UUID.randomUUID(), fixture.pathVariables().get("eventId"),
+						fixture.pathVariables().get("saleVariantId"))));
 
 	/** Endpoints on the central host: any authenticated account, no role. */
 	static final List<Rule> CENTRAL = List.of(

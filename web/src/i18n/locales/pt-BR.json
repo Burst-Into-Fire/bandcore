@@ -118,7 +118,11 @@
     "BATCH_HAS_LATER_MOVEMENTS": "O estoque destas variantes mudou depois deste lote. Para corrigir, ajuste o estoque.",
     "BATCH_CANCELLED": "Este lote já foi cancelado.",
     "BATCH_COST_REQUIRED": "Um lote sem custo não vira gasto.",
-    "STOCK_UNCHANGED": "O estoque já tem essa quantidade."
+    "STOCK_UNCHANGED": "O estoque já tem essa quantidade.",
+    "SALE_IDEMPOTENCY_CONFLICT": "Este identificador de venda já foi usado com outros dados.",
+    "SALE_CURRENCY_MISMATCH": "Todos os itens da venda precisam estar na mesma moeda.",
+    "SALE_DUPLICATE_VARIANT": "Cada variante pode aparecer apenas uma vez na venda.",
+    "EVENT_CLOSED": "Não é possível registrar vendas em um evento fechado."
   },
   "session": {
     "loading": "Carregando sua sessão…"

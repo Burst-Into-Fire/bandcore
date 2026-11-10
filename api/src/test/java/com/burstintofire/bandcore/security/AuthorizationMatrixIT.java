@@ -76,6 +76,9 @@ class AuthorizationMatrixIT extends IntegrationTest {
 		UUID batch = fixtures.batch(band, fixtures.variant(band, fixtures.product(band, "Patch"), "U"), 10, 500,
 				"Gráfica");
 		UUID event = fixtures.event(band, "Festival", java.time.Instant.parse("2026-02-01T20:00:00Z"));
+		UUID saleProduct = fixtures.product(band, "Sale probe");
+		UUID saleVariant = fixtures.variant(band, saleProduct, "U");
+		fixtures.batch(band, saleVariant, 2, 500, "Sale probe supplier");
 		var fixture = new AuthorizationMatrix.Fixture(Map.ofEntries(Map.entry("memberId", member.toString()),
 				Map.entry("userId", unlinked.toString()), Map.entry("invitationId", invitation.toString()),
 				Map.entry("membershipId", otherAdmin.toString()), Map.entry("categoryId", category.toString()),
@@ -83,7 +86,7 @@ class AuthorizationMatrixIT extends IntegrationTest {
 				Map.entry("settlementId", settlement.toString()), Map.entry("payerId", payer.toString()),
 				Map.entry("payeeId", payee.toString()), Map.entry("productId", product.toString()),
 				Map.entry("variantId", variant.toString()), Map.entry("batchId", batch.toString()),
-				Map.entry("eventId", event.toString())));
+				Map.entry("eventId", event.toString()), Map.entry("saleVariantId", saleVariant.toString())));
 
 		ResponseEntity<String> response = host.send(rule.method(), rule.url(fixture), rule.body().apply(fixture),
 				headers -> headers.setBearerAuth(token));

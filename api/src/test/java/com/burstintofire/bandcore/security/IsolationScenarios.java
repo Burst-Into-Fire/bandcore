@@ -2,6 +2,7 @@ package com.burstintofire.bandcore.security;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 import org.springframework.http.HttpMethod;
@@ -102,7 +103,12 @@ final class IsolationScenarios {
 			probe(HttpMethod.GET, "/events/{eventId}"),
 			probe(HttpMethod.POST, "/events", target -> """
 					{"name": "Intruder", "startsAt": "2026-02-01T20:00:00Z"}"""),
-			probe(HttpMethod.PATCH, "/events/{eventId}", target -> "{\"version\": 0, \"name\": \"Taken over\"}"));
+			probe(HttpMethod.PATCH, "/events/{eventId}", target -> "{\"version\": 0, \"name\": \"Taken over\"}"),
+			probe(HttpMethod.POST, "/sales", target -> """
+					{"id": "%s", "eventId": "%s", "paymentMethod": "PIX",
+					 "items": [{"variantId": "%s", "quantity": 1}]}"""
+				.formatted(UUID.randomUUID(), target.resources().get("eventId"),
+						target.resources().get("variantId"))));
 
 	/** The band an attack aims at, and its resources by path variable name. */
 	record Target(String bandId, String slug, Map<String, String> resources) {

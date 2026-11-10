@@ -1007,6 +1007,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register a sale and decrement stock atomically
+         * @description The client supplies an idempotency UUID. Repeating the same payload returns the sale; reusing its id with a different payload returns 409. All items must use one currency.
+         */
+        post: operations["createSale"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/settlements": {
         parameters: {
             query?: never;
@@ -1475,6 +1495,18 @@ export interface components {
             /** @description In display order; empty creates one default variant */
             variants?: components["schemas"]["ProductVariantRequest"][];
         };
+        CreateSaleRequest: {
+            /** Format: uuid */
+            eventId?: string;
+            /**
+             * Format: uuid
+             * @description Client-generated idempotency UUID
+             */
+            id: string;
+            items: components["schemas"]["SaleItemRequest"][];
+            /** @enum {string} */
+            paymentMethod: "CASH" | "PIX" | "CARD" | "OTHER";
+        };
         CreateSettlementRequest: {
             /** Format: int64 */
             amountCents: number;
@@ -1920,6 +1952,58 @@ export interface components {
         ResendVerificationRequest: {
             /** Format: email */
             email: string;
+        };
+        SaleItemRequest: {
+            /**
+             * Format: int64
+             * @description Optional total discount for this line in integer cents
+             */
+            discountCents?: number;
+            discountReason?: string;
+            /** Format: int32 */
+            quantity: number;
+            /** Format: uuid */
+            variantId: string;
+        };
+        SaleItemResponse: {
+            /** Format: int64 */
+            discountCents?: number;
+            discountReason?: string;
+            /** Format: uuid */
+            id?: string;
+            /** Format: int32 */
+            position?: number;
+            /** Format: int32 */
+            quantity?: number;
+            /** Format: int64 */
+            unitCostCents?: number;
+            /** Format: int64 */
+            unitPriceCents?: number;
+            /** Format: uuid */
+            variantId?: string;
+        };
+        SaleResponse: {
+            /** Format: date-time */
+            createdAt?: string;
+            /** @enum {string} */
+            currency?: "BRL" | "USD";
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            id?: string;
+            items?: components["schemas"]["SaleItemResponse"][];
+            /** @enum {string} */
+            paymentMethod?: "CASH" | "PIX" | "CARD" | "OTHER";
+            /** Format: uuid */
+            sellerUserId?: string;
+            /** Format: date-time */
+            soldAt?: string;
+            /** @enum {string} */
+            source?: "ONLINE" | "OFFLINE";
+            /** @enum {string} */
+            status?: "COMPLETED" | "PENDING_RECONCILIATION" | "CANCELLED";
+            /** Format: int64 */
+            totalCents?: number;
         };
         SettlementAccessResponse: {
             delete: boolean;
@@ -3787,6 +3871,48 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ProductVariantResponse"];
+                };
+            };
+        };
+    };
+    createSale: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSaleRequest"];
+            };
+        };
+        responses: {
+            /** @description Existing sale returned for an idempotent retry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SaleResponse"];
+                };
+            };
+            /** @description Sale registered */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SaleResponse"];
+                };
+            };
+            /** @description Idempotency key reused with a different payload */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SaleResponse"];
                 };
             };
         };

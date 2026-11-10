@@ -57,6 +57,10 @@ const ERROR_CODES = [
   'BATCH_CANCELLED',
   'BATCH_COST_REQUIRED',
   'STOCK_UNCHANGED',
+  'SALE_IDEMPOTENCY_CONFLICT',
+  'SALE_CURRENCY_MISMATCH',
+  'SALE_DUPLICATE_VARIANT',
+  'EVENT_CLOSED',
 ] as const;
 
 /** Bean Validation codes in `errors[].code` of a VALIDATION_FAILED problem. */
