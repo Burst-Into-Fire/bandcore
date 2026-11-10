@@ -70,7 +70,10 @@ class ApiSmokeIT extends IntegrationTest {
 		String document = response.getBody();
 		assertThat(JsonPath.<String>read(document, "$.servers[0].url")).isEqualTo("/api");
 		assertThat(JsonPath.<Map<String, Object>>read(document, "$.paths")).containsKey("/status");
-		assertThat(JsonPath.<Map<String, Object>>read(document, "$.paths")).containsKeys("/events", "/events/{eventId}");
+		assertThat(JsonPath.<Map<String, Object>>read(document, "$.paths"))
+			.containsKeys("/events", "/events/{eventId}", "/sales");
+		assertThat(JsonPath.<Map<String, Object>>read(document, "$.paths['/sales'].post.responses"))
+			.containsKeys("200", "201", "409");
 
 		Path output = Path.of("target", "openapi", "openapi.json");
 		Files.createDirectories(output.getParent());

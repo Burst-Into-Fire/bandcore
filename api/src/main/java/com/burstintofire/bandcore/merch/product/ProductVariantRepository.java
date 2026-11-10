@@ -4,7 +4,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.persistence.LockModeType;
+
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.burstintofire.bandcore.shared.persistence.TenantRepository;
 
@@ -15,6 +19,10 @@ public interface ProductVariantRepository extends TenantRepository<ProductVarian
 
 	@Query("SELECT v FROM ProductVariant v WHERE v.bandId = :bandId AND v.id IN :ids")
 	List<ProductVariant> findByBandIdAndIdIn(UUID bandId, List<UUID> ids);
+
+	@Lock(LockModeType.PESSIMISTIC_READ)
+	@Query("SELECT v FROM ProductVariant v WHERE v.bandId = :bandId AND v.id IN :ids ORDER BY v.id")
+	List<ProductVariant> findForSaleByBandIdAndIdIn(@Param("bandId") UUID bandId, @Param("ids") List<UUID> ids);
 
 	@Query("SELECT v FROM ProductVariant v WHERE v.bandId = :bandId ORDER BY v.productId, v.position, v.id")
 	List<ProductVariant> findByBandId(UUID bandId);
