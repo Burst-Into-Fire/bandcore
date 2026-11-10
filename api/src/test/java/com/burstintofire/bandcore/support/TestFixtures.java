@@ -2,6 +2,7 @@ package com.burstintofire.bandcore.support;
 
 import java.util.Map;
 import java.util.UUID;
+import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.jayway.jsonpath.JsonPath;
@@ -153,6 +154,16 @@ public class TestFixtures {
 				    paid_on, note, created_by, created_at, updated_at)
 				VALUES ('%s', '%s', '%s', '%s', 'BRL', 5000, DATE '2026-11-20', '%s', '%s', now(), now())
 				""".formatted(id, bandId, fromMemberId, toMemberId, note, createdBy));
+		return id;
+	}
+
+	/** An open event (show), created directly for endpoint and authorization fixtures. */
+	public UUID event(UUID bandId, String name, Instant startsAt) {
+		UUID id = UUID.randomUUID();
+		OwnerSql.inBand(bandId, """
+				INSERT INTO bandcore.events (id, band_id, name, starts_at, status, created_by, created_at, updated_at)
+				VALUES ('%s', '%s', '%s', '%s', 'OPEN', gen_random_uuid(), now(), now())
+				""".formatted(id, bandId, name, startsAt));
 		return id;
 	}
 

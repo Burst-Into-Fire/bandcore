@@ -114,7 +114,13 @@ final class AuthorizationMatrix {
 					{"currency": "BRL", "costMode": "PER_ITEM", "items": [{"variantId": "%s", "quantity": 10, "unitCostCents": 2500}]}"""
 				.formatted(fixture.pathVariables().get("variantId"))),
 			rule(HttpMethod.PATCH, "/batches/{batchId}", ADMIN_ONLY, fixture -> "{\"version\": 0, \"notes\": \"Gráfica\"}"),
-			rule(HttpMethod.POST, "/batches/{batchId}/cancel", ADMIN_ONLY, fixture -> "{\"version\": 0}"));
+			rule(HttpMethod.POST, "/batches/{batchId}/cancel", ADMIN_ONLY, fixture -> "{\"version\": 0}"),
+			rule(HttpMethod.GET, "/events", EVERY_ROLE),
+			rule(HttpMethod.GET, "/events/{eventId}", EVERY_ROLE),
+			rule(HttpMethod.POST, "/events", WRITERS,
+					fixture -> "{\"name\": \"Festival\", \"startsAt\": \"2026-02-01T20:00:00Z\"}"),
+			rule(HttpMethod.PATCH, "/events/{eventId}", WRITERS,
+					fixture -> "{\"version\": 0, \"name\": \"Festival ajustado\"}"));
 
 	/** Endpoints on the central host: any authenticated account, no role. */
 	static final List<Rule> CENTRAL = List.of(

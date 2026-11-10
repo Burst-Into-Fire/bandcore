@@ -199,6 +199,10 @@ class TenantIsolationIT extends IntegrationTest {
 
 		UUID bravoBatch;
 
+		UUID alphaEvent;
+
+		UUID bravoEvent;
+
 		ApiClient alphaHost;
 
 		ApiClient bravoHost;
@@ -246,6 +250,9 @@ class TenantIsolationIT extends IntegrationTest {
 			fixtures.received(world.bravo, world.bravoVariant, 7);
 			world.alphaBatch = fixtures.batch(world.alpha, world.alphaVariant, 10, 2500, "Alpha print shop");
 			world.bravoBatch = fixtures.batch(world.bravo, world.bravoVariant, 5, 3100, "Bravo secret supplier");
+			world.alphaEvent = fixtures.event(world.alpha, "Alpha show", java.time.Instant.parse("2026-02-01T20:00:00Z"));
+			world.bravoEvent = fixtures.event(world.bravo, "Bravo secret show",
+					java.time.Instant.parse("2026-02-01T20:00:00Z"));
 			world.alphaInvitation = fixtures.invitation(world.alpha, "alpha.invited@example.com", "MEMBER", alphaAdmin).id();
 			world.bravoInvitation = fixtures.invitation(world.bravo, "bravo.invited.secret@example.com", "ADMIN",
 					world.bravoAdmin).id();
@@ -266,7 +273,7 @@ class TenantIsolationIT extends IntegrationTest {
 							Map.entry("settlementId", bravoSettlement.toString()),
 							Map.entry("otherMemberId", bravoOtherMember.toString()),
 							Map.entry("productId", bravoProduct.toString()), Map.entry("variantId", bravoVariant.toString()),
-							Map.entry("batchId", bravoBatch.toString())));
+							Map.entry("batchId", bravoBatch.toString()), Map.entry("eventId", bravoEvent.toString())));
 		}
 
 		IsolationScenarios.Target alphaTarget() {
@@ -278,7 +285,7 @@ class TenantIsolationIT extends IntegrationTest {
 							Map.entry("settlementId", alphaSettlement.toString()),
 							Map.entry("otherMemberId", alphaOtherMember.toString()),
 							Map.entry("productId", alphaProduct.toString()), Map.entry("variantId", alphaVariant.toString()),
-							Map.entry("batchId", alphaBatch.toString())));
+							Map.entry("batchId", alphaBatch.toString()), Map.entry("eventId", alphaEvent.toString())));
 		}
 
 		/** Strings that must never appear in a response to band A's requests. */
@@ -288,7 +295,8 @@ class TenantIsolationIT extends IntegrationTest {
 					"bravo.invited.secret@example.com", bravoCategory.toString(), "Bravo secret category", bravoExpense.toString(),
 					"Bravo secret expense", bravoSettlement.toString(), "Bravo secret pix", bravoOtherMember.toString(),
 					"Bete Bravo Secreta", bravoProduct.toString(), "Bravo secret shirt", bravoVariant.toString(),
-					"BravoSecretSize", bravoBatch.toString(), "Bravo secret supplier");
+					"BravoSecretSize", bravoBatch.toString(), "Bravo secret supplier", bravoEvent.toString(),
+					"Bravo secret show");
 		}
 
 	}
